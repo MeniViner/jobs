@@ -1,16 +1,16 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header/Header';
-import Footer from './components/Footer/Footer';
-import HomePage from './pages/HomePage/HomePage';
-import LoginPage from './pages/LoginPage/LoginPage';
-import RegisterPage from './pages/RegisterPage/RegisterPage';
-import DashboardWorker from './pages/DashboardWorker/DashboardWorker';
-import DashboardEmployer from './pages/DashboardEmployer/DashboardEmployer';
-import JobList from './pages/JobList/JobList';
-import JobDetails from './pages/JobDetails/JobDetails';
-import ProfilePage from './pages/ProfilePage/ProfilePage';
-import NotFound from './pages/NotFound/NotFound';
+import Header from './components/Header';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import DashboardWorker from './pages/DashboardWorker';
+import DashboardEmployer from './pages/DashboardEmployer';
+import JobList from './pages/JobList';
+import JobDetails from './pages/JobDetails';
+import ProfilePage from './pages/ProfilePage';
+import NotFound from './pages/NotFound';
+
 
 function App() {
   return (
@@ -27,7 +27,6 @@ function App() {
         <Route path="/profile/:id" element={<ProfilePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <Footer />
     </Router>
   );
 }

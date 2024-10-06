@@ -2,6 +2,7 @@ import React from 'react';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import { Link } from 'react-router-dom';
 
+
 function Header() {
   return (
     <AppBar position="static">
@@ -27,6 +28,9 @@ function Header() {
           </Button>
           <Button color="inherit" component={Link} to="/admin/messages">
             ניהול הודעות
+          </Button>
+          <Button color="inherit" component={Link} to="/ManageUsers">
+            ניהול משתמשים
           </Button>
           <Button color="inherit" component={Link} to="/employer-profile">
             פרופיל מעסיק

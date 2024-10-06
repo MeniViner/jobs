@@ -12,7 +12,7 @@ import JobListPage from './pages/JobListPage';
 import ProfilePage from './pages/ProfilePage';
 import EmployerProfile from './pages/EmployerProfile';
 import RegisterPage from './pages/profile/registerPage';
-
+import ManageUsers from './pages/Management/ManageUsers';
 
 function App() {
   return (
@@ -28,6 +28,7 @@ function App() {
             <Route path="/profile/:id" element={<ProfilePage />} />
             <Route path="/post-job" element={<PostJob />} />
             <Route path="/admin/messages" element={<AdminMessagesDashboard />} />
+            <Route path="/ManageUsers" element={<ManageUsers />} />
             <Route path="/employer-profile" element={<EmployerProfile />} />
           </Routes>
         </Router>

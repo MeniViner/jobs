@@ -44,8 +44,16 @@ export default function PostJob() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Attempting to submit job:", jobData);
+
+    if (!jobData.title || !jobData.company || !jobData.location || !jobData.type || !jobData.salary || !jobData.description) {
+      setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
+      return;
+    }
+
     try {
-      await addDoc(collection(db, 'jobs'), jobData);
+      const docRef = await addDoc(collection(db, 'jobs'), jobData);
+      console.log("Document written with ID: ", docRef.id);
       setSnackbar({ open: true, message: 'המשרה פורסמה בהצלחה!' });
       setJobData({
         title: '',
@@ -57,7 +65,7 @@ export default function PostJob() {
       });
     } catch (error) {
       console.error("Error adding document: ", error);
-      setSnackbar({ open: true, message: 'אירעה שגיאה בפרסום המשרה. נסה שנית.' });
+      setSnackbar({ open: true, message: `אירעה שגיאה בפרסום המשרה: ${error.message}` });
     }
   };
 

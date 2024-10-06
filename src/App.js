@@ -14,9 +14,10 @@ import JobListPage from './pages/JobListPage';
 import EmployerProfile from './pages/profile/EmployerProfile';
 import ManageUsers from './pages/Management/ManageUsers';
 import AccountPage from './pages/profile/AccountPage';
-import JobChat from './pages/JobChat'; // Import for the chat page
+import JobChat from './pages/JobChat';
 import LoginPage from './pages/profile/loginPage';
 import AdminPage from './pages/Management/AdminPage';
+import EmployerChatPage from './pages/Myworks'; // Import the new EmployerChatPage
 
 // Create a theme with RTL support
 const theme = createTheme({
@@ -47,7 +48,8 @@ function App() {
               <Route path="/account" element={<AccountPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/employer-profile" element={<EmployerProfile />} />
-              <Route path="/chat/:jobId" element={<JobChat />} /> {/* Route for the chat page with job ID */}
+              <Route path="/chat/:jobId" element={<JobChat />} />
+              <Route path="/employer-chat" element={<EmployerChatPage />} /> {/* Add the new route */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Router>

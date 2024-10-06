@@ -27,6 +27,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import WorkIcon from '@mui/icons-material/Work';
 import AddIcon from '@mui/icons-material/Add';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import ChatIcon from '@mui/icons-material/Chat';
 
 function Header() {
   const { user } = useContext(AuthContext);
@@ -63,6 +64,7 @@ function Header() {
     { text: 'עבודות', icon: <WorkIcon />, link: '/jobs' },
     { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job', authRequired: true },
     { text: 'דף ניהול', icon: <AdminPanelSettingsIcon />, link: '/admin' },
+    { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/employer-chat', authRequired: true }, // Add the new menu item
   ];
 
   const drawer = (

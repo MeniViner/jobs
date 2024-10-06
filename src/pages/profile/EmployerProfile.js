@@ -1,8 +1,3 @@
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -13,9 +8,8 @@ import {
   Grid,
   Avatar,
   Snackbar,
-  IconButton
 } from '@mui/material';
-import { Edit, Chat } from '@mui/icons-material'; // ייבוא אייקון הצ'אט
+import { Edit } from '@mui/icons-material';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -78,11 +72,6 @@ function EmployerProfile() {
     setEmployer({ ...employer, [e.target.name]: e.target.value });
   };
 
-  // פונקציה לניווט לצ'אט של המעסיק
-  const handleChatClick = () => {
-    navigate(`/chat/${auth.currentUser.uid}`); // נווט לדף הצ'אט עם מזהה המעסיק
-  };
-
   if (!employer) {
     return <Typography>טוען...</Typography>;
   }
@@ -117,15 +106,9 @@ function EmployerProfile() {
               ערוך פרופיל
             </Button>
           </Grid>
-          <Grid item>
-            <IconButton color="primary" onClick={handleChatClick}>
-              <Chat /> {/* אייקון של צ'אט */}
-            </IconButton>
-          </Grid>
         </Grid>
 
         <Grid container spacing={3} sx={{ mt: 2 }}>
-          {/* המשך שדות העריכה */}
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth

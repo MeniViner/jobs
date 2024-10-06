@@ -18,7 +18,6 @@ import AccountPage from './pages/profile/AccountPage';
 import JobChat from './pages/JobChat'; // ייבוא דף הצ'אט
 import LoginPage from './pages/profile/loginPage';
 import AdminPage from './pages/Management/AdminPage';
-import JobChat from './pages/JobChat'; // Moved this import to the top
 
 // Create a theme with RTL support
 const theme = createTheme({

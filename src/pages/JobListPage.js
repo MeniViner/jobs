@@ -171,6 +171,7 @@ function JobListPage() {
   const [loading, setLoading] = useState(true);
   const auth = getAuth();
   const currentUser = auth.currentUser;
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchJobs();
@@ -178,13 +179,16 @@ function JobListPage() {
 
   const fetchJobs = async () => {
     setLoading(true);
+    setError(null);
     try {
       const jobsCollection = collection(db, 'jobs');
       const jobSnapshot = await getDocs(jobsCollection);
       const jobList = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log('Fetched jobs:', jobList);
       setJobs(jobList);
     } catch (error) {
       console.error("Error fetching jobs: ", error);
+      setError("אירעה שגיאה בטעינת העבודות. אנא נסה שוב מאוחר יותר.");
     } finally {
       setLoading(false);
     }
@@ -246,6 +250,8 @@ function JobListPage() {
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress />
         </Box>
+      ) : error ? (
+        <Typography color="error" align="center">{error}</Typography>
       ) : filteredJobs.length > 0 ? (
         <Grid container spacing={3}>
           {filteredJobs.map((job) => (
@@ -256,7 +262,7 @@ function JobListPage() {
                     {job.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Work fontSize="small" sx={{ mr: 1 }} /> {job.company}
+                    <Work fontSize="small" sx={{ mr: 1 }} /> {job.companyName || 'שם העסק לא זמין'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <LocationOn fontSize="small" sx={{ mr: 1 }} /> {job.location}

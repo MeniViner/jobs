@@ -12,7 +12,10 @@ import HomePage from './pages/HomePage';
 import JobListPage from './pages/JobListPage';
 import ProfileComponents from './components/ProfileComponents';
 import EmployerProfile from './pages/EmployerProfile';
-import UserProfile from './components/UserProfile';
+import ManageUsers from './pages/Management/ManageUsers';
+import LoginPage from './pages/profile/loginPage'
+import AccountPage from './pages/profile/AccountPage'
+
 import JobChat from './pages/JobChat'; // ייבוא דף הצ'אט
 
 function App() {
@@ -24,11 +27,13 @@ function App() {
           <Header />
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/profile" element={<UserProfile />} />
             <Route path="/jobs" element={<JobListPage />} />
-            <Route path="/register" element={<ProfileComponents.RegisterPage />} />
+            <Route path="/employer-register" element={<ProfileComponents.RegisterPage />} />
             <Route path="/post-job" element={<PostJob />} />
             <Route path="/admin/messages" element={<AdminMessagesDashboard />} />
+            <Route path="/ManageUsers" element={<ManageUsers />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/employer-profile" element={<EmployerProfile />} />
             <Route path="/chat/:jobId" element={<JobChat />} /> {/* נתיב לדף הצ'אט עם מזהה העבודה */}
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -40,3 +45,12 @@ function App() {
 }
 
 export default App;
+
+
+
+
+
+
+
+
+

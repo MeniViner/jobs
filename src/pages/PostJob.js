@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Container, 
   Typography, 
@@ -10,8 +10,8 @@ import {
   Paper,
   IconButton
 } from '@mui/material';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../services/firebase';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { getAuth } from 'firebase/auth';
@@ -27,7 +27,6 @@ const jobTypes = [
 export default function PostJob() {
   const [jobData, setJobData] = useState({
     title: '',
-    company: '',
     location: '',
     type: '',
     salary: '',
@@ -40,6 +39,26 @@ export default function PostJob() {
     open: false,
     message: ''
   });
+  const [businessName, setBusinessName] = useState('');
+
+  useEffect(() => {
+    fetchBusinessName();
+  }, []);
+
+  const fetchBusinessName = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const employerDoc = await getDoc(doc(db, 'employers', user.uid));
+      if (employerDoc.exists()) {
+        const companyName = employerDoc.data().companyName;
+        setBusinessName(companyName);
+        setJobData(prevData => ({
+          ...prevData,
+          companyName: companyName  // Add this line
+        }));
+      }
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -78,22 +97,35 @@ export default function PostJob() {
     console.log("Attempting to submit job:", jobData);
   
     // בדיקת ולידציה - שכל השדות מלאים
-    if (!jobData.title || !jobData.company || !jobData.location || !jobData.type || !jobData.salary || !jobData.description || !jobData.startTime || !jobData.endTime || jobData.workDates.some(date => !date)) {
+    if (!jobData.title || !jobData.location || !jobData.type || !jobData.salary || !jobData.description || !jobData.startTime || !jobData.endTime || jobData.workDates.some(date => !date)) {
       setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
       return;
     }
   
     try {
       const currentUser = getAuth().currentUser; // מקבל את המידע על המשתמש הנוכחי
-      const docRef = await addDoc(collection(db, 'jobs'), {
+      const user = auth.currentUser;
+      if (!user) {
+        setSnackbar({ open: true, message: 'יש להתחבר כדי לפרסם משרה' });
+        return;
+      }
+
+      const jobToSubmit = {
         ...jobData,
+        employerId: user.uid,
+        companyName: businessName,  // Add this line
+      };
+
+      console.log("Job to submit:", jobToSubmit);
+
+      const docRef = await addDoc(collection(db, 'jobs'), {
+        ...jobToSubmit,
         postedBy: currentUser.uid // מוסיף את השדה postedBy
       });
       console.log("Document written with ID: ", docRef.id);
       setSnackbar({ open: true, message: 'המשרה פורסמה בהצלחה!' });
       setJobData({
         title: '',
-        company: '',
         location: '',
         type: '',
         salary: '',
@@ -118,25 +150,18 @@ export default function PostJob() {
         <Typography variant="h4" gutterBottom align="center">
           פרסום משרה חדשה
         </Typography>
+        <Typography variant="h6" gutterBottom align="center">
+          {businessName ? `מפרסם: ${businessName}` : 'טוען...'}
+        </Typography>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
                 required
                 fullWidth
                 label="כותרת המשרה"
                 name="title"
                 value={jobData.title}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="שם החברה"
-                name="company"
-                value={jobData.company}
                 onChange={handleChange}
               />
             </Grid>

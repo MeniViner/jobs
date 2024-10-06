@@ -5,6 +5,7 @@ import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
 
+
 function UserProfile() {
   const { user, setUser } = useContext(AuthContext);
   const navigate = useNavigate();

@@ -14,6 +14,8 @@ import EmployerProfile from './pages/EmployerProfile';
 import RegisterPage from './pages/profile/registerPage';
 import ManageUsers from './pages/Management/ManageUsers';
 
+
+
 function App() {
   return (
     <AuthProvider>
@@ -23,12 +25,12 @@ function App() {
           <Header />
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/profile" element={<UserProfile />} />
             <Route path="/jobs" element={<JobListPage />} />
-            <Route path="/register" element={<ProfileComponents.RegisterPage />} />
+            <Route path="/employer-register" element={<ProfileComponents.RegisterPage />} />
             <Route path="/post-job" element={<PostJob />} />
             <Route path="/admin/messages" element={<AdminMessagesDashboard />} />
             <Route path="/ManageUsers" element={<ManageUsers />} />
+            <Route path="/RegisterPage" element={<RegisterPage />} />
             <Route path="/employer-profile" element={<EmployerProfile />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

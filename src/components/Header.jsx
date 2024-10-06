@@ -20,10 +20,14 @@ function Header() {
           {user ? (
             <Button color="inherit" component={Link} to="/profile">פרופיל</Button>
           ) : (
-            <Button color="inherit" component={Link} to="/profile">התחבר</Button>
+            <>
+            {/* <Button color="inherit" component={Link} to="/profile">התחבר</Button> */}
+            <Button color="inherit" component={Link} to="/RegisterPage">הירשם</Button>
+            </>
           )}
           <Button color="inherit" component={Link} to="/employer-profile">פרופיל מעסיק</Button>
           <Button color="inherit" component={Link} to="/admin/messages">ניהול הודעות</Button>
+          <Button color="inherit" component={Link} to="/ManageUsers">ניהול משתמשים</Button>
         </Box>
       </Toolbar>
     </AppBar>

@@ -17,6 +17,7 @@ import EmployerProfile from './pages/EmployerProfile';
 import ManageUsers from './pages/Management/ManageUsers';
 import LoginPage from './pages/profile/loginPage';
 import AccountPage from './pages/profile/AccountPage';
+import JobChat from './pages/JobChat'; // ייבוא דף הצ'אט
 
 // Create a theme with RTL support
 const theme = createTheme({
@@ -28,7 +29,6 @@ const cacheRtl = createCache({
   key: 'muirtl',
   stylisPlugins: [rtlPlugin],
 });
-import JobChat from './pages/JobChat'; // ייבוא דף הצ'אט
 
 function App() {
   return (

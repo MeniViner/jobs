@@ -57,7 +57,7 @@ function App() {
         </ThemeProvider>
       </CacheProvider>
     </AuthProvider>
-  );
+  ); 
 }
 
 export default App;

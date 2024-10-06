@@ -49,7 +49,12 @@ export default function PostJob() {
     if (user) {
       const employerDoc = await getDoc(doc(db, 'employers', user.uid));
       if (employerDoc.exists()) {
-        setBusinessName(employerDoc.data().companyName);
+        const companyName = employerDoc.data().companyName;
+        setBusinessName(companyName);
+        setJobData(prevData => ({
+          ...prevData,
+          companyName: companyName  // Add this line
+        }));
       }
     }
   };
@@ -105,7 +110,10 @@ export default function PostJob() {
       const jobToSubmit = {
         ...jobData,
         employerId: user.uid,
+        companyName: businessName,  // Add this line
       };
+
+      console.log("Job to submit:", jobToSubmit);
 
       const docRef = await addDoc(collection(db, 'jobs'), jobToSubmit);
       console.log("Document written with ID: ", docRef.id);

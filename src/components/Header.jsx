@@ -29,7 +29,7 @@ import AddIcon from '@mui/icons-material/Add';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ChatIcon from '@mui/icons-material/Chat';
 
-function Header() {
+export default function Header() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const auth = getAuth();
@@ -63,8 +63,8 @@ function Header() {
     { text: 'דף הבית', icon: <HomeIcon />, link: '/' },
     { text: 'עבודות', icon: <WorkIcon />, link: '/jobs' },
     { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job', authRequired: true },
-    { text: 'דף ניהול', icon: <AdminPanelSettingsIcon />, link: '/admin' },
-    { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/employer-chat', authRequired: true }, // Add the new menu item
+    { text: 'דף ניהול', icon: <AdminPanelSettingsIcon />, link: '/admin', adminRequired: true },
+    { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/employer-chat', authRequired: true },
   ];
 
   const drawer = (
@@ -74,7 +74,9 @@ function Header() {
       </Typography>
       <List>
         {menuItems.map((item) => (
-          (!item.authRequired || user) && (
+          ((!item.authRequired && !item.adminRequired) || 
+           (item.authRequired && user) || 
+           (item.adminRequired && user?.isAdmin)) && (
             <ListItem key={item.text} component={Link} to={item.link}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
@@ -139,7 +141,9 @@ function Header() {
         ) : (
           <Box>
             {menuItems.map((item) => (
-              (!item.authRequired || user) && (
+              ((!item.authRequired && !item.adminRequired) || 
+               (item.authRequired && user) || 
+               (item.adminRequired && user?.isAdmin)) && (
                 <Button key={item.text} color="inherit" component={Link} to={item.link}>
                   {item.text}
                 </Button>
@@ -199,5 +203,3 @@ function Header() {
     </AppBar>
   );
 }
-
-export default Header;

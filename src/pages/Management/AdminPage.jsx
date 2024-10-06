@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Container, Typography, Tabs, Tab, Box } from '@mui/material';
+import AdminUsersPage from './AdminUsersPage';
 import ManageUsers from './ManageUsers';
 import AdminJobsDashboard from './AdminMessagesDashboard';
+import { AuthContext } from '../../contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
 
-function TabPanel(props) {
+interface TabPanelProps {
+  children?: React.ReactNode;
+  value: number;
+  index: number;
+}
+
+function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
 
   return (
@@ -23,7 +32,7 @@ function TabPanel(props) {
   );
 }
 
-function a11yProps(index) {
+function a11yProps(index: number) {
   return {
     id: `simple-tab-${index}`,
     'aria-controls': `simple-tabpanel-${index}`,
@@ -32,10 +41,15 @@ function a11yProps(index) {
 
 export default function AdminPage() {
   const [value, setValue] = useState(0);
+  const { user } = useContext(AuthContext);
 
-  const handleChange = (event, newValue) => {
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
+
+  if (!user?.isAdmin) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -43,15 +57,24 @@ export default function AdminPage() {
         דף ניהול
       </Typography>
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={value} onChange={handleChange} aria-label="admin tabs">
-          <Tab label="ניהול משתמשים" {...a11yProps(0)} />
-          <Tab label="ניהול משרות" {...a11yProps(1)} />
+        <Tabs 
+          value={value} 
+          onChange={handleChange} 
+          aria-label="admin tabs"
+          sx={{ '& .MuiTabs-flexContainer': { flexDirection: 'row-reverse' } }}
+        >
+          <Tab label="ניהול הרשאות" {...a11yProps(0)} />
+          <Tab label="צפייה במשתמשים" {...a11yProps(1)} />
+          <Tab label="ניהול משרות" {...a11yProps(2)} />
         </Tabs>
       </Box>
       <TabPanel value={value} index={0}>
-        <ManageUsers />
+        <AdminUsersPage />
       </TabPanel>
       <TabPanel value={value} index={1}>
+        <ManageUsers />
+      </TabPanel>
+      <TabPanel value={value} index={2}>
         <AdminJobsDashboard />
       </TabPanel>
     </Container>

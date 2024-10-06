@@ -4,6 +4,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
 import theme from './theme';
+import PostJob from './pages/PostJob';
 
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
@@ -22,6 +23,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/jobs" element={<JobListPage />} />
             <Route path="/profile/:id" element={<ProfilePage />} />
+            <Route path="/post-job" element={<PostJob />} />
           </Routes>
         </Router>
       </ThemeProvider>

@@ -1,12 +1,9 @@
 import React from 'react';
+import { Typography } from '@mui/material';
 
 function HomePage() {
   return (
-    <main className="home-page">
-      <h1>ברוכים הבאים ל-Social Jobs</h1>
-      <p>הפלטפורמה המובילה למציאת עבודות מזדמנות בקלות ובמהירות.</p>
-      {/* ניתן להוסיף כאן חיפוש מהיר, עבודות פופולריות וכו' */}
-    </main>
+    <Typography variant="h4">Welcome to the Job Platform</Typography>
   );
 }
 

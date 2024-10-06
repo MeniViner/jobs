@@ -1,13 +1,15 @@
 import React from 'react';
 import { Card, CardContent, Typography, Button } from '@mui/material';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const JobCard = ({ job }) => {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleApply = () => {
     // In a real application, this would open a modal or navigate to an application page
     console.log(`Applying for job: ${job.id}`);
+    // For example, navigate to a job application page:
+    // navigate(`/apply/${job.id}`);
   };
 
   return (

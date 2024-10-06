@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from '../services/firebase';
-import { Card, CardContent, Typography, Grid, TextField, Button } from '@mui/material';
+import { Typography, Grid, TextField, Button } from '@mui/material';
 import JobCard from '../components/JobCard';
 
 const JobListPage = () => {

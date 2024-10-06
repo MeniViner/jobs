@@ -10,7 +10,7 @@ import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import JobListPage from './pages/JobListPage';
 import ProfilePage from './pages/ProfilePage';
-
+import EmployerProfile from './pages/EmployerProfile';
 
 function App() {
   return (
@@ -25,6 +25,7 @@ function App() {
             <Route path="/profile/:id" element={<ProfilePage />} />
             <Route path="/post-job" element={<PostJob />} />
             <Route path="/admin/messages" element={<AdminMessagesDashboard />} />
+            <Route path="/employer-profile" element={<EmployerProfile />} />
           </Routes>
         </Router>
       </ThemeProvider>

@@ -10,11 +10,27 @@ function Header() {
           פלטפורמת עבודות מזדמנות
         </Typography>
         <Box>
-          <Button color="inherit" component={Link} to="/">דף הבית</Button>
-          <Button color="inherit" component={Link} to="/jobs">עבודות</Button>
-          <Button color="inherit" component={Link} to="/login">התחברות</Button>
-          <Button color="inherit" component={Link} to="/register">הרשמה</Button>
-          <Button color="inherit" component={Link} to="/admin/messages">ניהול הודעות</Button>
+          <Button color="inherit" component={Link} to="/">
+            דף הבית
+          </Button>
+          <Button color="inherit" component={Link} to="/jobs">
+            עבודות
+          </Button>
+          <Button color="inherit" component={Link} to="/post-job">
+            פרסם עבודה
+          </Button>
+          <Button color="inherit" component={Link} to="/login">
+            התחברות
+          </Button>
+          <Button color="inherit" component={Link} to="/register">
+            הרשמה
+          </Button>
+          <Button color="inherit" component={Link} to="/admin/messages">
+            ניהול הודעות
+          </Button>
+          <Button color="inherit" component={Link} to="/employer-profile">
+            פרופיל מעסיק
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>

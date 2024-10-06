@@ -10,9 +10,10 @@ import {
   CardActions,
   CircularProgress,
   Box,
-  Chip
+  Chip,
+  Divider
 } from '@mui/material';
-import { Work, LocationOn, AttachMoney } from '@mui/icons-material';
+import { Work, LocationOn, AttachMoney, AccessTime, DateRange } from '@mui/icons-material';
 import { collection, query, getDocs } from "firebase/firestore";
 import { db } from '../services/firebase';
 
@@ -98,7 +99,34 @@ function JobListPage() {
                   <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <AttachMoney fontSize="small" sx={{ mr: 1 }} /> ₪{job.salary} לשעה
                   </Typography>
-                  <Chip label={job.type} size="small" sx={{ mt: 1 }} />
+                  {job.startTime && job.endTime && (
+                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <AccessTime fontSize="small" sx={{ mr: 1 }} /> {job.startTime} - {job.endTime}
+                    </Typography>
+                  )}
+                  <Chip label={job.type} size="small" sx={{ mt: 1, mb: 2 }} />
+                  <Divider sx={{ my: 1 }} />
+                  {job.workDates && job.workDates.length > 0 && (
+                    <>
+                      <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+                        תאריכי עבודה:
+                      </Typography>
+                      {job.workDates.map((date, index) => (
+                        <Typography key={index} variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                          <DateRange fontSize="small" sx={{ mr: 1 }} /> {date}
+                        </Typography>
+                      ))}
+                      <Divider sx={{ my: 1 }} />
+                    </>
+                  )}
+                  <Typography variant="body2" sx={{ mt: 2 }}>
+                    תיאור המשרה:
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {job.description && job.description.length > 100 
+                      ? `${job.description.substring(0, 100)}...` 
+                      : job.description}
+                  </Typography>
                 </CardContent>
                 <CardActions>
                   <Button size="small" variant="outlined">צפייה בפרטים</Button>

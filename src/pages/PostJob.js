@@ -7,10 +7,13 @@ import {
   Grid, 
   MenuItem, 
   Snackbar,
-  Paper
+  Paper,
+  IconButton
 } from '@mui/material';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 
 const jobTypes = [
   'משרה מלאה',
@@ -28,6 +31,9 @@ export default function PostJob() {
     type: '',
     salary: '',
     description: '',
+    startTime: '',
+    endTime: '',
+    workDates: [''],
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -42,11 +48,35 @@ export default function PostJob() {
     }));
   };
 
+  const handleDateChange = (value, index) => {
+    const newWorkDates = [...jobData.workDates];
+    newWorkDates[index] = value;
+    setJobData({
+      ...jobData,
+      workDates: newWorkDates
+    });
+  };
+
+  const addWorkDate = () => {
+    setJobData({
+      ...jobData,
+      workDates: [...jobData.workDates, '']
+    });
+  };
+
+  const removeWorkDate = (index) => {
+    const newWorkDates = jobData.workDates.filter((_, i) => i !== index);
+    setJobData({
+      ...jobData,
+      workDates: newWorkDates
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Attempting to submit job:", jobData);
 
-    if (!jobData.title || !jobData.company || !jobData.location || !jobData.type || !jobData.salary || !jobData.description) {
+    if (!jobData.title || !jobData.company || !jobData.location || !jobData.type || !jobData.salary || !jobData.description || !jobData.startTime || !jobData.endTime || jobData.workDates.some(date => !date)) {
       setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
       return;
     }
@@ -62,6 +92,9 @@ export default function PostJob() {
         type: '',
         salary: '',
         description: '',
+        startTime: '',
+        endTime: '',
+        workDates: [''],
       });
     } catch (error) {
       console.error("Error adding document: ", error);
@@ -138,6 +171,70 @@ export default function PostJob() {
                 value={jobData.salary}
                 onChange={handleChange}
               />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                label="שעת התחלה"
+                name="startTime"
+                type="time"
+                value={jobData.startTime}
+                onChange={handleChange}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                inputProps={{
+                  step: 300, // 5 min
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                label="שעת סיום"
+                name="endTime"
+                type="time"
+                value={jobData.endTime}
+                onChange={handleChange}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                inputProps={{
+                  step: 300, // 5 min
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                תאריכי עבודה
+              </Typography>
+              {jobData.workDates.map((date, index) => (
+                <Grid container spacing={2} key={index} alignItems="center">
+                  <Grid item xs>
+                    <TextField
+                      fullWidth
+                      label={`תאריך עבודה ${index + 1}`}
+                      type="date"
+                      value={date}
+                      onChange={(e) => handleDateChange(e.target.value, index)}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                      margin="normal"
+                    />
+                  </Grid>
+                  <Grid item>
+                    <IconButton onClick={() => removeWorkDate(index)} disabled={jobData.workDates.length === 1}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Grid>
+                </Grid>
+              ))}
+              <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
+                הוסף תאריך עבודה
+              </Button>
             </Grid>
             <Grid item xs={12}>
               <TextField

@@ -51,18 +51,18 @@ function JobListPage() {
         return;
       }
 
-      // יצירת מסמך עבור המועמד בתוך העבודה, ולאחר מכן הוספת הצ'אטים כתת-אוסף
-      const chatRef = collection(db, 'jobChats', jobId, 'applicants', currentUser.uid, 'messages');
-      await addDoc(chatRef, {
-        senderId: currentUser.uid,
-        text: 'אני מתעניין בעבודה הזו',
+      // יצירת מסמך עבור המועמד בתוך העבודה
+      const applicantRef = collection(db, 'jobChats', jobId, 'applicants');
+      await addDoc(applicantRef, {
+        applicantId: currentUser.uid,
+        name: currentUser.displayName || "Unknown",
         timestamp: serverTimestamp(),
       });
-      console.log('Message sent successfully');
+      console.log('Application submitted successfully');
       alert('הגשת המועמדות נשלחה בהצלחה!');
     } catch (error) {
-      console.error('Error sending message: ', error);
-      alert('אירעה שגיאה בשליחת ההודעה.');
+      console.error('Error submitting application: ', error);
+      alert('אירעה שגיאה בשליחת המועמדות.');
     }
   };
 

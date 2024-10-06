@@ -1,111 +1,208 @@
 .account-page {
-    max-width: 800px;
+    font-family: Arial, sans-serif;
+    max-width: 100%;
     margin: 0 auto;
     padding: 20px;
-    font-family: Arial, sans-serif;
+    background-color: #f8f8f8;
+    padding-bottom: 70px; /* To account for the bottom navigation */
   }
   
-  .account-page h1 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 30px;
-    font-size: 2.5em;
+.account-page .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
   }
   
-  .account-page  .user-info {
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    padding: 30px;
-    margin-bottom: 30px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.account-page .header h1 {
+    font-size: 24px;
+    margin: 0;
   }
   
-  .account-page  .user-picture {
-    width: 150px;
-    height: 150px;
+.account-page .notification-icon {
+    width: 24px;
+    height: 24px;
+  }
+  
+.account-page .user-profile {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  
+.account-page .user-picture {
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    display: block;
-    margin: 0 auto 30px;
-    object-fit: cover;
-    border: 3px solid #fff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-right: 15px;
   }
   
-  .account-page .user-info p {
-    margin: 15px 0;
-    font-size: 1.1em;
-    line-height: 1.5;
+.account-page .user-info h2 {
+    margin: 0;
+    font-size: 18px;
   }
   
-  .account-page  .user-info strong {
-    font-weight: bold;
-    color: #444;
-    margin-right: 10px;
+.account-page .user-info p {
+    margin: 5px 0 0;
+    color: #777;
   }
   
-  .account-page  .sign-out-button {
+.account-page .chevron-right {
+    margin-left: auto;
+    font-size: 24px;
+    color: #777;
+  }
+  
+.account-page .upgrade-section {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  
+.account-page .upgrade-section h3 {
+    margin-top: 0;
+  }
+  
+.account-page .upgrade-button {
+    background-color: #ff5a5f;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  
+.account-page .settings-section {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  
+.account-page .settings-section h3 {
+    margin-top: 0;
+  }
+  
+.account-page .settings-section ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+.account-page .settings-section li {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+  }
+  
+.account-page .settings-section li:last-child {
+    border-bottom: none;
+  }
+  
+.account-page .settings-section li.active {
+    color: #ff5a5f;
+  }
+  
+.account-page .settings-icon {
+    margin-right: 15px;
+    width: 20px;
+    height: 20px;
+  }
+  
+.account-page .sign-out-button {
     display: block;
     width: 100%;
     padding: 15px;
     background-color: #f44336;
     color: white;
     border: none;
-    border-radius: 4px;
-    font-size: 1.1em;
+    border-radius: 5px;
+    font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
+    margin-top: 20px;
   }
   
-  .account-page  .sign-out-button:hover {
-    background-color: #d32f2f;
-    transform: translateY(-2px);
+.account-page .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    background-color: white;
+    padding: 10px 0;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
   }
   
-  .account-page  .sign-out-button:active {
-    transform: translateY(0);
+.account-page .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 12px;
   }
   
-  .account-page  .loading {
+.account-page .nav-icon {
+    font-size: 20px;
+    margin-bottom: 5px;
+  }
+  
+.account-page .nav-item.active {
+    color: #ff5a5f;
+  }
+  
+.account-page .loading {
     text-align: center;
-    font-size: 1.2em;
+    font-size: 18px;
     margin-top: 50px;
-    color: #666;
   }
   
-  .account-page  .error-message {
-    background-color: #ffebee;
-    color: #c62828;
-    padding: 15px;
-    border-radius: 4px;
+.account-page .section-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
     margin-bottom: 20px;
-    font-size: 1em;
-    text-align: center;
   }
   
-  @media (max-width: 600px) {
-    .account-page {
-      padding: 15px;
-    }
+.account-page .section-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+  }
   
-    .account-page h1 {
-      font-size: 2em;
-    }
+.account-page .form-group {
+    margin-bottom: 15px;
+  }
   
-    .account-page .user-info {
-      padding: 20px;
-    }
+.account-page .form-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
   
-    .account-page .user-picture {
-      width: 100px;
-      height: 100px;
-    }
+.account-page .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+  }
   
-    .account-page .user-info p {
-      font-size: 1em;
-    }
+.account-page button[type="submit"] {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+  }
   
-    .account-page .sign-out-button {
-      padding: 12px;
-      font-size: 1em;
-    }
+.account-page button[type="submit"]:disabled {
+    background-color: #ddd;
+    cursor: not-allowed;
   }

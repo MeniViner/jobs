@@ -12,10 +12,8 @@ import JobListPage from './pages/JobListPage';
 import ProfileComponents from './components/ProfileComponents';
 import EmployerProfile from './pages/EmployerProfile';
 import ManageUsers from './pages/Management/ManageUsers';
-import AccountPage from './pages/profile/AccountPage'
 import LoginPage from './pages/profile/loginPage'
-
-
+import AccountPage from './pages/profile/AccountPage'
 
 
 function App() {

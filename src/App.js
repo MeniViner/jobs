@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
+import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
 import PostJob from './pages/PostJob';
 import AdminMessagesDashboard from './pages/AdminMessagesDashboard';
@@ -12,6 +12,7 @@ import JobListPage from './pages/JobListPage';
 import ProfilePage from './pages/ProfilePage';
 import EmployerProfile from './pages/EmployerProfile';
 import RegisterPage from './pages/profile/registerPage';
+
 
 function App() {
   return (

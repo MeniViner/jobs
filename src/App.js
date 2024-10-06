@@ -38,7 +38,7 @@ function App() {
           <CssBaseline />
           <Router>
             <Header />
-            <Routes>
+            <Routes> 
               <Route path="/" element={<HomePage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/jobs" element={<JobListPage />} />

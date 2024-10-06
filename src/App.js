@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
-import { AuthProvider } from './contexts/AuthContext';
 import CssBaseline from '@mui/material/CssBaseline';
+import { AuthProvider } from './contexts/AuthContext';
 import theme from './theme';
 import PostJob from './pages/PostJob';
 import AdminMessagesDashboard from './pages/AdminMessagesDashboard';
@@ -11,8 +11,7 @@ import HomePage from './pages/HomePage';
 import JobListPage from './pages/JobListPage';
 import ProfileComponents from './components/ProfileComponents';
 import EmployerProfile from './pages/EmployerProfile';
-import RegisterPage from './pages/profile/registerPage';
-
+import UserProfile from './components/UserProfile';
 
 function App() {
   return (
@@ -23,7 +22,7 @@ function App() {
           <Header />
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/profile" element={<UserProfile />} />
             <Route path="/jobs" element={<JobListPage />} />
             <Route path="/register" element={<ProfileComponents.RegisterPage />} />
             <Route path="/post-job" element={<PostJob />} />

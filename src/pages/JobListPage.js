@@ -13,7 +13,7 @@ import {
   Chip
 } from '@mui/material';
 import { Work, LocationOn, AttachMoney } from '@mui/icons-material';
-import { collection, query, getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from '../services/firebase';
 
 function JobListPage() {

@@ -11,6 +11,7 @@ import HomePage from './pages/HomePage';
 import JobListPage from './pages/JobListPage';
 import ProfilePage from './pages/ProfilePage';
 
+import RegisterPage from './pages/profile/registerPage';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Header />
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route path="/jobs" element={<JobListPage />} />
             <Route path="/profile/:id" element={<ProfilePage />} />
             <Route path="/post-job" element={<PostJob />} />

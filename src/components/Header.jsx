@@ -14,6 +14,7 @@ function Header() {
           <Button color="inherit" component={Link} to="/jobs">עבודות</Button>
           <Button color="inherit" component={Link} to="/login">התחברות</Button>
           <Button color="inherit" component={Link} to="/register">הרשמה</Button>
+          <Button color="inherit" component={Link} to="/admin/messages">ניהול הודעות</Button>
         </Box>
       </Toolbar>
     </AppBar>

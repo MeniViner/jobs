@@ -11,7 +11,7 @@ import AdminMessagesDashboard from './pages/Management/AdminMessagesDashboard';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import JobListPage from './pages/JobListPage';
-import EmployerProfile from './pages/EmployerProfile';
+import EmployerProfile from './pages/profile/EmployerProfile';
 import ManageUsers from './pages/Management/ManageUsers';
 import AccountPage from './pages/profile/AccountPage';
 import JobChat from './pages/JobChat'; // Import for the chat page

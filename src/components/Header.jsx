@@ -63,8 +63,9 @@ export default function Header() {
     { text: 'דף הבית', icon: <HomeIcon />, link: '/' },
     { text: 'עבודות', icon: <WorkIcon />, link: '/jobs' },
     { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job', authRequired: true },
-    { text: 'דף ניהול', icon: <AdminPanelSettingsIcon />, link: '/admin', adminRequired: true },
     { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/employer-chat', authRequired: true },
+    { text: 'דף ניהול', icon: <AdminPanelSettingsIcon />, link: '/admin', adminRequired: true },
+
   ];
 
   const drawer = (

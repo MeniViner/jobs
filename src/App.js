@@ -9,8 +9,7 @@ import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import JobListPage from './pages/JobListPage';
 import ProfilePage from './pages/ProfilePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+
 
 function App() {
   return (
@@ -23,8 +22,6 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/jobs" element={<JobListPage />} />
             <Route path="/profile/:id" element={<ProfilePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
           </Routes>
         </Router>
       </ThemeProvider>

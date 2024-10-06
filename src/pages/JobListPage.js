@@ -14,8 +14,8 @@ import {
   Divider
 } from '@mui/material';
 import { Work, LocationOn, AttachMoney, AccessTime, DateRange } from '@mui/icons-material';
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db, auth } from '../services/firebase';
+import { collection, getDocs } from "firebase/firestore";
+import { db } from '../services/firebase';
 
 function JobListPage() {
   const [jobs, setJobs] = useState([]);
@@ -33,27 +33,8 @@ function JobListPage() {
     try {
       const jobsCollection = collection(db, 'jobs');
       const jobSnapshot = await getDocs(jobsCollection);
-      console.log('Raw job data:', jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      
-      const jobList = await Promise.all(jobSnapshot.docs.map(async doc => {
-        const jobData = doc.data();
-        console.log('Processing job:', jobData);
-        
-        let businessName = 'Unknown Business';
-        if (jobData.employerId) {
-          const employerDoc = await getDocs(query(collection(db, 'employers'), where('uid', '==', jobData.employerId)));
-          const employerData = employerDoc.docs[0]?.data();
-          businessName = employerData?.companyName || 'Unknown Business';
-        }
-        
-        return { 
-          id: doc.id, 
-          ...jobData, 
-          businessName: businessName
-        };
-      }));
-      
-      console.log('Processed job list:', jobList);
+      const jobList = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log('Fetched jobs:', jobList);
       setJobs(jobList);
     } catch (error) {
       console.error("Error fetching jobs: ", error);
@@ -71,8 +52,6 @@ function JobListPage() {
     job.title.toLowerCase().includes(filter.title.toLowerCase()) &&
     job.location.toLowerCase().includes(filter.location.toLowerCase())
   );
-
-  console.log('Filtered jobs:', filteredJobs);
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
@@ -118,7 +97,7 @@ function JobListPage() {
                     {job.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Work fontSize="small" sx={{ mr: 1 }} /> {job.businessName}
+                    <Work fontSize="small" sx={{ mr: 1 }} /> {job.companyName || 'שם העסק לא זמין'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <LocationOn fontSize="small" sx={{ mr: 1 }} /> {job.location}

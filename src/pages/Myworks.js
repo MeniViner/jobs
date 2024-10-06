@@ -42,17 +42,32 @@ function EmployerChatPage() {
     const jobsSnapshot = await getDocs(jobsQuery);
     const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setJobs(jobsList);
+
+    // Fetch all unique applicants for all jobs
+    const allApplicants = new Map();
+    for (const job of jobsList) {
+      const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
+      const applicantsSnapshot = await getDocs(applicantsQuery);
+      for (const applicantDoc of applicantsSnapshot.docs) {
+        const applicantData = applicantDoc.data();
+        if (!allApplicants.has(applicantData.applicantId)) {
+          const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
+          allApplicants.set(applicantData.applicantId, {
+            id: applicantDoc.id,
+            ...applicantData,
+            userData: userData.data(),
+            appliedJobs: [job.id]
+          });
+        } else {
+          allApplicants.get(applicantData.applicantId).appliedJobs.push(job.id);
+        }
+      }
+    }
+    setApplicants(Array.from(allApplicants.values()));
   };
 
-  const handleJobSelect = async (job) => {
+  const handleJobSelect = (job) => {
     setSelectedJob(job);
-    const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
-    const applicantsSnapshot = await getDocs(applicantsQuery);
-    const applicantsList = await Promise.all(applicantsSnapshot.docs.map(async (applicantDoc) => {
-      const userData = await getDoc(doc(db, 'users', applicantDoc.data().applicantId));
-      return { id: applicantDoc.id, ...applicantDoc.data(), userData: userData.data() };
-    }));
-    setApplicants(applicantsList);
   };
 
   const handleSendMessage = (applicantId) => {
@@ -64,7 +79,7 @@ function EmployerChatPage() {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom>
-      עבודות שפרסמתי
+        עבודות שפרסמתי
       </Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
@@ -138,49 +153,51 @@ function EmployerChatPage() {
                 <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
                   מועמדים למשרה
                 </Typography>
-                {applicants.length > 0 ? (
+                {applicants.filter(applicant => applicant.appliedJobs.includes(selectedJob.id)).length > 0 ? (
                   <List>
-                    {applicants.map((applicant) => (
-                      <React.Fragment key={applicant.id}>
-                        <ListItem alignItems="flex-start">
-                          <ListItemAvatar>
-                            <Avatar alt={applicant.name} src={applicant.userData?.avatarUrl} />
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={applicant.name}
-                            secondary={
-                              <>
-                                <Typography component="span" variant="body2" color="text.primary">
-                                  {applicant.userData?.email}
-                                </Typography>
-                                {` — ${applicant.message || 'אין הודעה מהמועמד'}`}
-                              </>
-                            }
-                          />
-                        </ListItem>
-                        <Box sx={{ mt: 2, mb: 2 }}>
-                          <TextField
-                            fullWidth
-                            variant="outlined"
-                            placeholder="הקלד הודעה..."
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                          />
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={() => handleSendMessage(applicant.id)}
-                            sx={{ mt: 1 }}
-                          >
-                            שלח הודעה
-                          </Button>
-                        </Box>
-                        <Divider variant="inset" component="li" />
-                      </React.Fragment>
-                    ))}
+                    {applicants
+                      .filter(applicant => applicant.appliedJobs.includes(selectedJob.id))
+                      .map((applicant) => (
+                        <React.Fragment key={applicant.id}>
+                          <ListItem alignItems="flex-start">
+                            <ListItemAvatar>
+                              <Avatar alt={applicant.name} src={applicant.userData?.avatarUrl} />
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={applicant.name}
+                              secondary={
+                                <>
+                                  <Typography component="span" variant="body2" color="text.primary">
+                                    {applicant.userData?.email}
+                                  </Typography>
+                                  {` — ${applicant.message || 'אין הודעה מהמועמד'}`}
+                                </>
+                              }
+                            />
+                          </ListItem>
+                          <Box sx={{ mt: 2, mb: 2 }}>
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              placeholder="הקלד הודעה..."
+                              value={message}
+                              onChange={(e) => setMessage(e.target.value)}
+                            />
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              onClick={() => handleSendMessage(applicant.id)}
+                              sx={{ mt: 1 }}
+                            >
+                              שלח הודעה
+                            </Button>
+                          </Box>
+                          <Divider variant="inset" component="li" />
+                        </React.Fragment>
+                      ))}
                   </List>
                 ) : (
-                  <Typography>��ין מועמדים למשרה זו עדיין</Typography>
+                  <Typography>אין מועמדים למשרה זו עדיין</Typography>
                 )}
               </>
             ) : (

@@ -12,26 +12,34 @@ import {
 import { Edit } from '@mui/icons-material';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 
-export default function EmployerProfile() {
+function EmployerProfile() {
   const [employer, setEmployer] = useState(null);
   const [editing, setEditing] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
-
-  // בפועל, תרצה לקבל את ה-ID של המעסיק מהאימות
-  const employerId = 'example-employer-id';
+  const navigate = useNavigate();
+  const auth = getAuth();
 
   useEffect(() => {
-    fetchEmployerData();
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchEmployerData(user.uid);
+      } else {
+        navigate('/register');
+      }
+    });
 
-  const fetchEmployerData = async () => {
+    return () => unsubscribe();
+  }, [auth, navigate]);
+
+  const fetchEmployerData = async (employerId) => {
     const employerDoc = await getDoc(doc(db, 'employers', employerId));
     if (employerDoc.exists()) {
       setEmployer(employerDoc.data());
     } else {
-      // אם אין נתונים, ניצור מסמך ריק
-      const emptyEmployer = {
+      const newEmployer = {
         companyName: '',
         industry: '',
         description: '',
@@ -40,9 +48,8 @@ export default function EmployerProfile() {
         address: '',
         avatarUrl: '',
       };
-      await setDoc(doc(db, 'employers', employerId), emptyEmployer);
-      setEmployer(emptyEmployer);
-      console.log('Created new employer document');
+      await setDoc(doc(db, 'employers', employerId), newEmployer);
+      setEmployer(newEmployer);
     }
   };
 
@@ -52,7 +59,7 @@ export default function EmployerProfile() {
 
   const handleSave = async () => {
     try {
-      await setDoc(doc(db, 'employers', employerId), employer);
+      await setDoc(doc(db, 'employers', auth.currentUser.uid), employer);
       setEditing(false);
       setSnackbar({ open: true, message: 'הפרופיל עודכן בהצלחה' });
     } catch (error) {
@@ -187,3 +194,5 @@ export default function EmployerProfile() {
     </Container>
   );
 }
+
+export default EmployerProfile;

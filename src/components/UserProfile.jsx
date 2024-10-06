@@ -2,8 +2,8 @@ import React, { useContext, useEffect } from 'react';
 import { Container, Typography, Paper, Button, Avatar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleProvider } from '../../services/firebase';
-import { AuthContext } from '../../contexts/AuthContext';
+import { auth, googleProvider } from '../services/firebase';
+import { AuthContext } from '../contexts/AuthContext';
 
 
 function UserProfile() {

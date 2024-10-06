@@ -1,0 +1,111 @@
+.account-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .account-page h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+  }
+  
+  .account-page  .user-info {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .account-page  .user-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: block;
+    margin: 0 auto 30px;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .account-page .user-info p {
+    margin: 15px 0;
+    font-size: 1.1em;
+    line-height: 1.5;
+  }
+  
+  .account-page  .user-info strong {
+    font-weight: bold;
+    color: #444;
+    margin-right: 10px;
+  }
+  
+  .account-page  .sign-out-button {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+  }
+  
+  .account-page  .sign-out-button:hover {
+    background-color: #d32f2f;
+    transform: translateY(-2px);
+  }
+  
+  .account-page  .sign-out-button:active {
+    transform: translateY(0);
+  }
+  
+  .account-page  .loading {
+    text-align: center;
+    font-size: 1.2em;
+    margin-top: 50px;
+    color: #666;
+  }
+  
+  .account-page  .error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 1em;
+    text-align: center;
+  }
+  
+  @media (max-width: 600px) {
+    .account-page {
+      padding: 15px;
+    }
+  
+    .account-page h1 {
+      font-size: 2em;
+    }
+  
+    .account-page .user-info {
+      padding: 20px;
+    }
+  
+    .account-page .user-picture {
+      width: 100px;
+      height: 100px;
+    }
+  
+    .account-page .user-info p {
+      font-size: 1em;
+    }
+  
+    .account-page .sign-out-button {
+      padding: 12px;
+      font-size: 1em;
+    }
+  }

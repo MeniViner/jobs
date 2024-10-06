@@ -11,8 +11,10 @@ import HomePage from './pages/HomePage';
 import JobListPage from './pages/JobListPage';
 import ProfileComponents from './components/ProfileComponents';
 import EmployerProfile from './pages/EmployerProfile';
-import RegisterPage from './pages/profile/registerPage';
 import ManageUsers from './pages/Management/ManageUsers';
+import AccountPage from './pages/profile/AccountPage'
+import LoginPage from './pages/profile/loginPage'
+
 
 
 
@@ -30,7 +32,8 @@ function App() {
             <Route path="/post-job" element={<PostJob />} />
             <Route path="/admin/messages" element={<AdminMessagesDashboard />} />
             <Route path="/ManageUsers" element={<ManageUsers />} />
-            <Route path="/RegisterPage" element={<RegisterPage />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/employer-profile" element={<EmployerProfile />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -41,3 +44,11 @@ function App() {
 }
 
 export default App;
+
+
+
+
+
+
+
+

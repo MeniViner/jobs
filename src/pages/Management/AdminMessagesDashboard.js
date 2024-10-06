@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Typography,
   Paper,
   Table,
@@ -22,7 +21,7 @@ import {
 } from '@mui/material';
 import { Delete, Edit, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import { collection, getDocs, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db } from '../../services/firebase';
 
 export default function AdminJobsDashboard() {
   const [jobs, setJobs] = useState([]);
@@ -104,10 +103,7 @@ export default function AdminJobsDashboard() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        ניהול משרות
-      </Typography>
+    <>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -295,9 +291,11 @@ export default function AdminJobsDashboard() {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        on
+
+Close={() => setSnackbar({ ...snackbar, open: false })}
         message={snackbar.message}
       />
-    </Container>
+    </>
   );
 }

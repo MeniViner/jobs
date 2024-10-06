@@ -1,8 +1,18 @@
+// ManageUsers.js
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase';
-import '../../styles/ManagePage.css';
-
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
+  Paper, 
+  CircularProgress, 
+  Typography 
+} from '@mui/material';
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
@@ -28,42 +38,42 @@ const ManageUsers = () => {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <CircularProgress />;
   }
 
   if (error) {
-    return <div className="error-message">{error}</div>;
+    return <Typography color="error">{error}</Typography>;
   }
 
   return (
-    <div className="manage-page">
-      <h1>User Management</h1>
-      <table className="user-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Location</th>
-            <th>Age</th>
-            <th>Experience</th>
-            <th>Expertise</th>
-          </tr>
-        </thead>
-        <tbody>
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>שם</TableCell>
+            <TableCell>אימייל</TableCell>
+            <TableCell>מיקום</TableCell>
+            <TableCell>גיל</TableCell>
+            <TableCell>ניסיון</TableCell>
+            <TableCell>התמחות</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
           {users.map(user => (
-            <tr key={user.id}>
-              <td>{user.name}</td>
-              <td>{user.email}</td>
-              <td>{user.location}</td>
-              <td>{user.age}</td>
-              <td>{user.experience}</td>
-              <td>{user.expertise}</td>
-            </tr>
+            <TableRow key={user.id}>
+              <TableCell>{user.name}</TableCell>
+              <TableCell>{user.email}</TableCell>
+              <TableCell>{user.location}</TableCell>
+              <TableCell>{user.age}</TableCell>
+              <TableCell>{user.experience}</TableCell>
+              <TableCell>{user.expertise}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 };
 
 export default ManageUsers;
+

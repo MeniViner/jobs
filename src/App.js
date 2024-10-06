@@ -11,11 +11,10 @@ import AdminMessagesDashboard from './pages/Management/AdminMessagesDashboard';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import JobListPage from './pages/JobListPage';
-import ProfileComponents from './components/ProfileComponents';
 import EmployerProfile from './pages/EmployerProfile';
 import ManageUsers from './pages/Management/ManageUsers';
 import AccountPage from './pages/profile/AccountPage';
-import JobChat from './pages/JobChat'; // ייבוא דף הצ'אט
+import JobChat from './pages/JobChat'; // Import for the chat page
 import LoginPage from './pages/profile/loginPage';
 import AdminPage from './pages/Management/AdminPage';
 
@@ -42,7 +41,6 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/jobs" element={<JobListPage />} />
-              <Route path="/employer-register" element={<ProfileComponents.RegisterPage />} />
               <Route path="/post-job" element={<PostJob />} />
               <Route path="/admin/messages" element={<AdminMessagesDashboard />} />
               <Route path="/ManageUsers" element={<ManageUsers />} />

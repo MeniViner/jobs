@@ -14,6 +14,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import { getAuth } from 'firebase/auth';
 
 const jobTypes = [
   'משרה מלאה',
@@ -75,14 +76,19 @@ export default function PostJob() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Attempting to submit job:", jobData);
-
+  
+    // בדיקת ולידציה - שכל השדות מלאים
     if (!jobData.title || !jobData.company || !jobData.location || !jobData.type || !jobData.salary || !jobData.description || !jobData.startTime || !jobData.endTime || jobData.workDates.some(date => !date)) {
       setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
       return;
     }
-
+  
     try {
-      const docRef = await addDoc(collection(db, 'jobs'), jobData);
+      const currentUser = getAuth().currentUser; // מקבל את המידע על המשתמש הנוכחי
+      const docRef = await addDoc(collection(db, 'jobs'), {
+        ...jobData,
+        postedBy: currentUser.uid // מוסיף את השדה postedBy
+      });
       console.log("Document written with ID: ", docRef.id);
       setSnackbar({ open: true, message: 'המשרה פורסמה בהצלחה!' });
       setJobData({
@@ -101,7 +107,7 @@ export default function PostJob() {
       setSnackbar({ open: true, message: `אירעה שגיאה בפרסום המשרה: ${error.message}` });
     }
   };
-
+  
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };

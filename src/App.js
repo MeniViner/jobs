@@ -65,8 +65,8 @@ function App() {
             </Routes>
           </Router>
         </ThemeProvider>
-      </CacheProvider>
-    </AuthProvider>
+      </CacheProvider>   
+    </AuthProvider> 
   );
 }
 

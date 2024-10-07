@@ -1,337 +1,4 @@
-// import React, { useState, useEffect } from 'react'
-// import { 
-//   Typography, 
-//   List, 
-//   ListItem, 
-//   ListItemText, 
-//   Divider, 
-//   Box, 
-//   TextField, 
-//   Button,
-//   Paper
-// } from '@mui/material'
-// import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy } from 'firebase/firestore'
-// import { db } from '../services/firebase'
-// import { getAuth } from 'firebase/auth'
-
-// export default function JobChat() {
-//   const [jobs, setJobs] = useState([])
-//   const [selectedJob, setSelectedJob] = useState(null)
-//   const [applicants, setApplicants] = useState([])
-//   const [selectedApplicant, setSelectedApplicant] = useState(null)
-//   const [messages, setMessages] = useState([])
-//   const [newMessage, setNewMessage] = useState('')
-//   const currentUser = getAuth().currentUser
-
-//   useEffect(() => {
-//     if (!currentUser) return
-
-//     // שליפת העבודות שפורסמו על ידי המשתמש הנוכחי
-//     const q = query(collection(db, 'jobs'), where('postedBy', '==', currentUser.uid))
-//     const unsubscribe = onSnapshot(q, (snapshot) => {
-//       const jobList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-//       setJobs(jobList)
-//     })
-
-//     return () => unsubscribe()
-//   }, [currentUser])
-
-//   // בחירת עבודה להצגת המועמדים שלה
-//   const handleJobClick = (jobId) => {
-//     setSelectedJob(jobId)
-//     setSelectedApplicant(null)
-
-//     // שליפת המועמדים לעבודה הנבחרת
-//     const q = query(collection(db, 'jobChats', jobId, 'applicants'))
-//     const unsubscribe = onSnapshot(q, (snapshot) => {
-//       const applicantsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-//       setApplicants(applicantsList)
-//     })
-
-//     return () => unsubscribe()
-//   }
-
-//   // בחירת מועמד להצגת השיחה עמו
-//   const handleApplicantClick = (applicantId) => {
-//     setSelectedApplicant(applicantId)
-
-//     // שליפת ההודעות עם המועמד הנבחר
-//     const q = query(
-//       collection(db, 'jobChats', selectedJob, 'applicants', applicantId, 'messages'),
-//       orderBy('timestamp')
-//     )
-//     const unsubscribe = onSnapshot(q, (snapshot) => {
-//       const messageList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-//       setMessages(messageList)
-//     })
-
-//     return () => unsubscribe()
-//   }
-
-//   // שליחת הודעה למועמד
-//   const handleSendMessage = async () => {
-//     if (newMessage.trim() === '') return
-
-//     await addDoc(collection(db, 'jobChats', selectedJob, 'applicants', selectedApplicant, 'messages'), {
-//       text: newMessage,
-//       senderId: currentUser.uid, // מזהה השולח
-//       receiverId: selectedApplicant, // מזהה המקבל
-//       timestamp: serverTimestamp()
-//     })
-
-//     setNewMessage('')
-//   }
-
-//   return (
-//     <Box sx={{ p: 3 }}>
-//       <Typography variant="h4" gutterBottom>
-//         צ'אט עבודות
-//       </Typography>
-//       <Paper elevation={3} sx={{ p: 2, display: 'flex', height: 'calc(100vh - 200px)' }}>
-//         {/* צד שמאל - רשימת העבודות */}
-//         <Box sx={{ width: '30%', borderRight: '1px solid #e0e0e0', pr: 2 }}>
-//           {!selectedJob ? (
-//             <>
-//               <Typography variant="h6" gutterBottom>
-//                 העבודות שלי
-//               </Typography>
-//               <List>
-//                 {jobs.map((job) => (
-//                   <ListItem button key={job.id} onClick={() => handleJobClick(job.id)}>
-//                     <ListItemText primary={job.title} secondary={job.company} />
-//                   </ListItem>
-//                 ))}
-//               </List>
-//             </>
-//           ) : (
-//             <>
-//               <Typography variant="h6" gutterBottom>
-//                 מועמדים לעבודה
-//               </Typography>
-//               <List>
-//                 {applicants.map((applicant) => (
-//                   <ListItem button key={applicant.id} onClick={() => handleApplicantClick(applicant.id)}>
-//                     <ListItemText primary={`מועמד: ${applicant.id}`} />
-//                   </ListItem>
-//                 ))}
-//               </List>
-//               <Button onClick={() => setSelectedJob(null)}>חזרה לרשימת העבודות</Button>
-//             </>
-//           )}
-//         </Box>
-
-//         {/* צד ימין - השיחה עם המועמד הנבחר */}
-//         <Box sx={{ width: '70%', pl: 2 }}>
-//           {selectedApplicant ? (
-//             <>
-//               <Typography variant="h6" gutterBottom>
-//                 שיחה עם מועמד {selectedApplicant}
-//               </Typography>
-//               <Box sx={{ height: 'calc(100% - 100px)', overflowY: 'auto', mb: 2 }}>
-//                 {messages.map((message) => (
-//                   <Box key={message.id} sx={{ mb: 1, textAlign: message.senderId === currentUser.uid ? 'right' : 'left' }}>
-//                     <Typography variant="body2" sx={{ backgroundColor: message.senderId === currentUser.uid ? '#e3f2fd' : '#f5f5f5', p: 1, borderRadius: 1, display: 'inline-block' }}>
-//                       {message.text}
-//                     </Typography>
-//                     <Typography variant="caption" display="block" color="text.secondary">
-//                       {message.timestamp?.toDate().toLocaleString()}
-//                     </Typography>
-//                   </Box>
-//                 ))}
-//               </Box>
-//               <Divider />
-//               <Box sx={{ mt: 2, display: 'flex' }}>
-//                 <TextField
-//                   fullWidth
-//                   variant="outlined"
-//                   size="small"
-//                   value={newMessage}
-//                   onChange={(e) => setNewMessage(e.target.value)}
-//                   placeholder="הקלד הודעה..."
-//                   onKeyPress={(e) => {
-//                     if (e.key === 'Enter') {
-//                       handleSendMessage()
-//                     }
-//                   }}
-//                 />
-//                 <Button variant="contained" onClick={handleSendMessage} sx={{ ml: 1 }}>
-//                   שלח
-//                 </Button>
-//               </Box>
-//             </>
-//           ) : (
-//             <Typography variant="body1" sx={{ textAlign: 'center', mt: 10 }}>
-//               בחר עבודה ומועמד כדי להתחיל שיחה
-//             </Typography>
-//           )}
-//         </Box>
-//       </Paper>
-//     </Box>
-//   )
-// }
-
-
-
-
-
-
-
-
-// import React, { useState, useEffect, useContext } from 'react'
-// import { 
-//   Typography, 
-//   List, 
-//   ListItem, 
-//   ListItemText, 
-//   Divider, 
-//   Box, 
-//   TextField, 
-//   Button,
-//   Paper
-// } from '@mui/material'
-// import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy } from 'firebase/firestore'
-// import { db } from '../services/firebase'
-// import { getAuth } from 'firebase/auth'
-// import { AuthContext } from '../contexts/AuthContext'
-
-// export default function JobChat() {
-//   const { user } = useContext(AuthContext)
-//   const [chats, setChats] = useState([])
-//   const [selectedChat, setSelectedChat] = useState(null)
-//   const [messages, setMessages] = useState([])
-//   const [newMessage, setNewMessage] = useState('')
-//   const currentUser = getAuth().currentUser
-
-//   useEffect(() => {
-//     if (!currentUser) return
-
-//     // שליפת הצ'אטים לפי תפקיד המשתמש
-//     const chatsQuery = query(
-//       collection(db, 'jobChats'),
-//       where(user.isEmployer ? 'employerId' : 'applicantId', '==', currentUser.uid) // לפי תפקיד
-//     )
-//     const unsubscribe = onSnapshot(chatsQuery, (snapshot) => {
-//       const chatList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-//       setChats(chatList)
-//     })
-
-//     return () => unsubscribe()
-//   }, [currentUser, user.isEmployer])
-
-//   // בחירת צ'אט להצגת ההודעות
-//   const handleChatClick = (chat) => {
-//     setSelectedChat(chat)
-
-//     const messagesQuery = query(
-//       collection(db, 'jobChats', chat.id, 'messages'),
-//       orderBy('timestamp')
-//     )
-//     const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-//       const messageList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-//       setMessages(messageList)
-//     })
-
-//     return () => unsubscribe()
-//   }
-
-//   // שליחת הודעה בצ'אט
-//   const handleSendMessage = async () => {
-//     if (newMessage.trim() === '') return
-
-//     await addDoc(collection(db, 'jobChats', selectedChat.id, 'messages'), {
-//       text: newMessage,
-//       senderId: currentUser.uid, // מזהה השולח
-//       receiverId: user.isEmployer ? selectedChat.applicantId : selectedChat.employerId, // מזהה המקבל
-//       timestamp: serverTimestamp()
-//     })
-
-//     setNewMessage('')
-//   }
-
-//   return (
-//     <Box sx={{ p: 3 }}>
-//       <Typography variant="h4" gutterBottom>
-//         {user.isEmployer ? 'צ\'אט מעסיק' : 'צ\'אט מועמד'}
-//       </Typography>
-//       <Paper elevation={3} sx={{ p: 2, display: 'flex', height: 'calc(100vh - 200px)' }}>
-//         {/* צד שמאל - רשימת הצ'אטים */}
-//         <Box sx={{ width: '30%', borderRight: '1px solid #e0e0e0', pr: 2 }}>
-//           <Typography variant="h6" gutterBottom>
-//             {user.isEmployer ? 'העבודות שלי' : 'הצ\'אטים שלי'}
-//           </Typography>
-//           <List>
-//             {chats.map((chat) => (
-//               <ListItem button key={chat.id} onClick={() => handleChatClick(chat)}>
-//                 <ListItemText 
-//                   primary={chat.jobTitle} 
-//                   secondary={user.isEmployer ? `מועמד: ${chat.applicantId}` : `מעסיק: ${chat.employerId}`} 
-//                 />
-//               </ListItem>
-//             ))}
-//           </List>
-//         </Box>
-
-//         {/* צד ימין - ההודעות בצ'אט הנבחר */}
-//         <Box sx={{ width: '70%', pl: 2 }}>
-//           {selectedChat ? (
-//             <>
-//               <Typography variant="h6" gutterBottom>
-//                 {user.isEmployer ? `שיחה עם מועמד ${selectedChat.applicantId}` : `שיחה עם מעסיק ${selectedChat.employerId}`}
-//               </Typography>
-//               <Box sx={{ height: 'calc(100% - 100px)', overflowY: 'auto', mb: 2 }}>
-//                 {messages.map((message) => (
-//                   <Box key={message.id} sx={{ mb: 1, textAlign: message.senderId === currentUser.uid ? 'right' : 'left' }}>
-//                     <Typography variant="body2" sx={{ backgroundColor: message.senderId === currentUser.uid ? '#e3f2fd' : '#f5f5f5', p: 1, borderRadius: 1, display: 'inline-block' }}>
-//                       {message.text}
-//                     </Typography>
-//                     <Typography variant="caption" display="block" color="text.secondary">
-//                       {message.timestamp?.toDate().toLocaleString()}
-//                     </Typography>
-//                   </Box>
-//                 ))}
-//               </Box>
-//               <Divider />
-//               <Box sx={{ mt: 2, display: 'flex' }}>
-//                 <TextField
-//                   fullWidth
-//                   variant="outlined"
-//                   size="small"
-//                   value={newMessage}
-//                   onChange={(e) => setNewMessage(e.target.value)}
-//                   placeholder="הקלד הודעה..."
-//                   onKeyPress={(e) => {
-//                     if (e.key === 'Enter') {
-//                       handleSendMessage()
-//                     }
-//                   }}
-//                 />
-//                 <Button variant="contained" onClick={handleSendMessage} sx={{ ml: 1 }}>
-//                   שלח
-//                 </Button>
-//               </Box>
-//             </>
-//           ) : (
-//             <Typography variant="body1" sx={{ textAlign: 'center', mt: 10 }}>
-//               בחר צ'אט כדי להתחיל שיחה
-//             </Typography>
-//           )}
-//         </Box>
-//       </Paper>
-//     </Box>
-//   )
-// }
-
-
-
-
-
-
-
-
-
-
-
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   Typography, 
   List, 
@@ -343,165 +10,328 @@ import {
   Button,
   Paper,
   CircularProgress,
-  Alert
-} from '@mui/material'
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, doc, getDoc } from 'firebase/firestore'
-import { db } from '../services/firebase'
-import { getAuth } from 'firebase/auth'
-import { AuthContext } from '../contexts/AuthContext'
+  Switch,
+  FormControlLabel,
+  Badge,
+  Avatar,
+  Chip
+} from '@mui/material';
+import { Chat as ChatIcon, Send as SendIcon, Person as PersonIcon } from '@mui/icons-material';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, getDocs } from 'firebase/firestore';
+import { db } from '../services/firebase';
+import { AuthContext } from '../contexts/AuthContext';
+import { useParams, useNavigate } from 'react-router-dom';
 
 export default function JobChat() {
-  const { user } = useContext(AuthContext)  // נשתמש בקונטקסט של המשתמש כדי להגדיר את התפקיד שלו
-  const [role, setRole] = useState(null)  // משתנה לשמירת תפקיד המשתמש (מעסיק או עובד)
-  const [chats, setChats] = useState([])
-  const [selectedChat, setSelectedChat] = useState(null)
-  const [messages, setMessages] = useState([])
-  const [newMessage, setNewMessage] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const currentUser = getAuth().currentUser
+  const { user } = useContext(AuthContext);
+  const [jobs, setJobs] = useState([]);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [chats, setChats] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [isEmployerView, setIsEmployerView] = useState(true);
+  const { jobId } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!currentUser) return
+    if (!user) return;
 
-    const fetchUserRole = async () => {
-      try {
-        // שליפת מידע המשתמש מ-Firebase לפי ה-UID
-        const userRef = doc(db, 'users', currentUser.uid)
-        const userSnapshot = await getDoc(userRef)
-        if (userSnapshot.exists()) {
-          const userData = userSnapshot.data()
-          setRole(userData.isEmployer ? 'employer' : 'employee')  // הגדרת תפקיד המשתמש
+    const fetchJobsAndChats = async () => {
+      setLoading(true);
+      if (isEmployerView) {
+        const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', user.uid));
+        const jobsSnapshot = await getDocs(jobsQuery);
+        const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), applicantCount: 0 }));
+        
+        for (let job of jobsList) {
+          const chatsQuery = query(collection(db, 'jobChats'), where('jobId', '==', job.id));
+          const chatsSnapshot = await getDocs(chatsQuery);
+          job.applicantCount = chatsSnapshot.size;
         }
-      } catch (err) {
-        console.error("Error fetching user role:", err)
-        setError("שגיאה בשליפת התפקיד")
+        
+        setJobs(jobsList);
+
+        if (jobId) {
+          const selectedJob = jobsList.find(job => job.id === jobId);
+          if (selectedJob) {
+            setSelectedJob(selectedJob);
+            fetchChatsForJob(selectedJob.id);
+          }
+        }
+      } else {
+        const chatsQuery = query(collection(db, 'jobChats'), where('applicantId', '==', user.uid));
+        const unsubscribe = onSnapshot(chatsQuery, (snapshot) => {
+          const chatList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setChats(chatList);
+          setLoading(false);
+
+          if (jobId) {
+            const selectedChat = chatList.find(chat => chat.jobId === jobId);
+            if (selectedChat) {
+              setSelectedChat(selectedChat);
+              fetchMessages(selectedChat.id);
+            }
+          }
+        });
+
+        return () => unsubscribe();
       }
-    }
+      setLoading(false);
+    };
 
-    fetchUserRole()
-  }, [currentUser])
+    fetchJobsAndChats();
+  }, [user, jobId, isEmployerView]);
 
-  useEffect(() => {
-    if (!currentUser || !role) return
-
-    setLoading(true)
+  const fetchChatsForJob = async (jobId) => {
     const chatsQuery = query(
       collection(db, 'jobChats'),
-      where(role === 'employer' ? 'employerId' : 'applicantId', '==', currentUser.uid)
-    )
+      where('jobId', '==', jobId)
+    );
     const unsubscribe = onSnapshot(chatsQuery, (snapshot) => {
-      const chatList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setChats(chatList)
-      setLoading(false)
-    }, (err) => {
-      console.error("Error fetching chats:", err)
-      setError("אירעה שגיאה בטעינת הצ'אטים")
-      setLoading(false)
-    })
+      const chatList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setChats(chatList);
+    });
 
-    return () => unsubscribe()
-  }, [currentUser, role])
+    return () => unsubscribe();
+  };
+
+  const fetchMessages = async (chatId) => {
+    const messagesQuery = query(
+      collection(db, 'jobChats', chatId, 'messages'),
+      orderBy('timestamp')
+    );
+    
+    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+      const messageList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMessages(messageList);
+    });
+
+    return () => unsubscribe();
+  };
+
+  const handleJobClick = (job) => {
+    setSelectedJob(job);
+    fetchChatsForJob(job.id);
+    setSelectedChat(null);
+    setMessages([]);
+  };
 
   const handleChatClick = (chat) => {
-    setSelectedChat(chat)
-
-    const messagesQuery = query(
-      collection(db, 'jobChats', chat.id, 'messages'),
-      orderBy('timestamp')
-    )
-    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const messageList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-      setMessages(messageList)
-    })
-
-    return () => unsubscribe()
-  }
+    setSelectedChat(chat);
+    fetchMessages(chat.id);
+  };
 
   const handleSendMessage = async () => {
-    if (newMessage.trim() === '' || !selectedChat) return
+    if (newMessage.trim() === '' || !selectedChat) return;
 
     await addDoc(collection(db, 'jobChats', selectedChat.id, 'messages'), {
       text: newMessage,
-      senderId: currentUser.uid,
-      receiverId: role === 'employer' ? selectedChat.applicantId : selectedChat.employerId,  // לפי התפקיד
+      senderId: user.uid,
+      senderName: user.displayName || 'Anonymous',
       timestamp: serverTimestamp()
-    })
+    });
 
-    setNewMessage('')
+    setNewMessage('');
+  };
+
+  const handleNewChat = async (job) => {
+    const newChat = {
+      jobId: job.id,
+      jobTitle: job.title,
+      applicantId: user.uid,
+      applicantName: user.displayName || 'Anonymous',
+      employerId: job.employerId,
+      employerName: job.employerName || 'Anonymous',
+      createdAt: serverTimestamp()
+    };
+
+    const chatRef = await addDoc(collection(db, 'jobChats'), newChat);
+    setSelectedChat({ id: chatRef.id, ...newChat });
+    navigate(`/job-chat/${job.id}`);
+  };
+
+  const toggleView = () => {
+    setIsEmployerView(!isEmployerView);
+    setSelectedJob(null);
+    setSelectedChat(null);
+    setMessages([]);
+  };
+
+  const getUnreadMessagesCount = (chat) => {
+    if (!chat || !messages) return 0;
+    return messages.filter(message => message.senderId !== user.uid && !message.read).length;
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
   }
 
-  if (loading) return <CircularProgress />
-
-  if (error) return <Alert severity="error">{error}</Alert>
-
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        {role === 'employer' ? 'צ\'אט מעסיק' : 'צ\'אט מועמד'}
-      </Typography>
-      <Paper elevation={3} sx={{ p: 2, display: 'flex', height: 'calc(100vh - 200px)' }}>
-        <Box sx={{ width: '30%', borderRight: '1px solid #e0e0e0', pr: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            {role === 'employer' ? 'העבודות שלי' : 'הצ\'אטים שלי'}
+    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
+      <FormControlLabel
+        control={<Switch checked={isEmployerView} onChange={toggleView} />}
+        label={isEmployerView ? "תצוגת מעסיק" : "תצוגת עובד"}
+        sx={{ mb: 2 }}
+      />
+      <Box sx={{ display: 'flex', flexGrow: 1 }}>
+        <Paper elevation={3} sx={{ width: '30%', mr: 2, overflow: 'auto' }}>
+          <Typography variant="h6" sx={{ p: 2 }}>
+            {isEmployerView ? 'עבודות' : 'צ\'אטים'}
           </Typography>
           <List>
-            {chats.map((chat) => (
-              <ListItem button key={chat.id} onClick={() => handleChatClick(chat)}>
-                <ListItemText 
-                  primary={chat.jobTitle} 
-                  secondary={role === 'employer' ? `מועמד: ${chat.applicantId}` : `מעסיק: ${chat.employerId}`} 
-                />
-              </ListItem>
-            ))}
+            {isEmployerView
+              ? jobs.map((job) => (
+                  <ListItem 
+                    button 
+                    key={job.id} 
+                    onClick={() => handleJobClick(job)}
+                    selected={selectedJob && selectedJob.id === job.id}
+                  >
+                    <ListItemText 
+                      primary={job.title} 
+                      secondary={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <PersonIcon fontSize="small" sx={{ mr: 0.5 }} />
+                          <Typography variant="body2" component="span">
+                            {job.applicantCount} מועמדים
+                          </Typography>
+                        </Box>
+                      } 
+                    />
+                    <Chip label={job.applicantCount} color="primary" size="small" />
+                  </ListItem>
+                ))
+              : chats.map((chat) => (
+                  <ListItem 
+                    button 
+                    key={chat.id} 
+                    onClick={() => handleChatClick(chat)}
+                    selected={selectedChat && selectedChat.id === chat.id}
+                  >
+                    <ListItemText 
+                      primary={chat.jobTitle} 
+                      secondary={isEmployerView ? chat.applicantName : chat.employerName} 
+                    />
+                    <Badge badgeContent={getUnreadMessagesCount(chat)} color="primary">
+                      <ChatIcon />
+                    </Badge>
+                  </ListItem>
+                ))
+            }
           </List>
-        </Box>
-
-        <Box sx={{ width: '70%', pl: 2 }}>
-          {selectedChat ? (
-            <>
-              <Typography variant="h6" gutterBottom>
-                {role === 'employer' ? `שיחה עם מועמד ${selectedChat.applicantId}` : `שיחה עם מעסיק ${selectedChat.employerId}`}
+        </Paper>
+        <Paper elevation={3} sx={{ width: '70%', display: 'flex', flexDirection: 'column' }}>
+          {isEmployerView && selectedJob && !selectedChat ? (
+            <Box sx={{ p: 2 }}>
+              <Typography variant="h6">{selectedJob.title}</Typography>
+              <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                {selectedJob.applicantCount} מועמדים
               </Typography>
-              <Box sx={{ height: 'calc(100% - 100px)', overflowY: 'auto', mb: 2 }}>
+              <List>
+                {chats.map((chat) => (
+                  <ListItem 
+                    button 
+                    key={chat.id} 
+                    onClick={() => handleChatClick(chat)}
+                  >
+                    <Avatar sx={{ mr: 2 }}>{chat.applicantName && chat.applicantName[0]}</Avatar>
+                    <ListItemText 
+                      primary={chat.applicantName} 
+                      secondary={`הודעות חדשות: ${getUnreadMessagesCount(chat)}`} 
+                    />
+                    <Badge badgeContent={getUnreadMessagesCount(chat)} color="primary">
+                      <ChatIcon />
+                    </Badge>
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          ) : selectedChat ? (
+            <>
+              <Typography variant="h6" sx={{ p: 2 }}>
+                {selectedChat.jobTitle} - {isEmployerView ? selectedChat.applicantName : selectedChat.employerName}
+              </Typography>
+              <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2, display: 'flex', flexDirection: 'column' }}>
                 {messages.map((message) => (
-                  <Box key={message.id} sx={{ mb: 1, textAlign: message.senderId === currentUser.uid ? 'right' : 'left' }}>
-                    <Typography variant="body2" sx={{ backgroundColor: message.senderId === currentUser.uid ? '#e3f2fd' : '#f5f5f5', p: 1, borderRadius: 1, display: 'inline-block' }}>
-                      {message.text}
-                    </Typography>
-                    <Typography variant="caption" display="block" color="text.secondary">
-                      {message.timestamp?.toDate().toLocaleString()}
-                    </Typography>
+                  <Box 
+                    key={message.id} 
+                    sx={{ 
+                      mb: 1, 
+                      alignSelf: message.senderId === user.uid ? 'flex-end' : 'flex-start',
+                      maxWidth: '70%'
+                    }}
+                  >
+                    <Paper 
+                      elevation={1} 
+                      sx={{ 
+                        p: 1, 
+                        backgroundColor: message.senderId === user.uid ? 'primary.main' : 'grey.300',
+                        color: message.senderId === user.uid ? 'white' : 'black',
+                        borderRadius: message.senderId === user.uid ? '20px 20px 0 20px' : '20px 20px 20px 0'
+                      }}
+                    >
+                      <Typography variant="body2">{message.text}</Typography>
+                      <Typography variant="caption" display="block" color={message.senderId === user.uid ? 'white' : 'text.secondary'}>
+                        {message.senderName} - {message.timestamp?.toDate().toLocaleString()}
+                      </Typography>
+                    </Paper>
                   </Box>
                 ))}
               </Box>
-              <Divider />
-              <Box sx={{ mt: 2, display: 'flex' }}>
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="הקלד הודעה..."
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSendMessage()
-                    }
-                  }}
-                />
-                <Button variant="contained" onClick={handleSendMessage} sx={{ ml: 1 }}>
-                  שלח
-                </Button>
+              <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="הקלד הודעה..."
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSendMessage();
+                      }
+                    }}
+                    sx={{ mr: 1 }}
+                  />
+                  <Button 
+                    variant="contained" 
+                    onClick={handleSendMessage} 
+                    endIcon={<SendIcon />}
+                  >
+                    שלח
+                  </Button>
+                </Box>
               </Box>
             </>
+          ) : !isEmployerView ? (
+            <Box sx={{ p: 2 }}>
+              <Typography variant="h6">בחר צ'אט או התחל צ'אט חדש</Typography>
+              <List>
+                {jobs.map((job) => (
+                  <ListItem 
+                    button 
+                    key={job.id} 
+                    onClick={() => handleNewChat(job)}
+                  >
+                    <ListItemText primary={job.title} secondary={`מעסיק: ${job.employerName}`} />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
           ) : (
-            <Typography variant="body1" sx={{ textAlign: 'center', mt: 10 }}>
-              בחר צ'אט כדי להתחיל שיחה
+            <Typography variant="body1" sx={{ p: 2 }}>
+              בחר עבודה מהרשימה כדי לראות את הצ'אטים הקשורים
             </Typography>
           )}
-        </Box>
-      </Paper>
+        </Paper>
+      </Box>
     </Box>
   )
 }

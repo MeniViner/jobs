@@ -27,12 +27,11 @@ import {
   Collapse,
 } from '@mui/material';
 import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Person, CheckCircle, Group, DoneAll, Delete, Undo, Flag, ExpandMore, ExpandLess, Chat, Edit } from '@mui/icons-material';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { useNavigate, Link } from 'react-router-dom';
 
-// EditJobDialog component (unchanged)
 function EditJobDialog({ open, handleClose, job, handleSave }) {
   const [editedJob, setEditedJob] = useState(job || {});
 
@@ -183,6 +182,8 @@ export default function Myworks() {
   const [jobToDelete, setJobToDelete] = useState(null);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [jobToEdit, setJobToEdit] = useState(null);
+  const [openChatDialog, setOpenChatDialog] = useState(false);
+  const [selectedApplicant, setSelectedApplicant] = useState(null);
   const navigate = useNavigate();
   const auth = getAuth();
 
@@ -198,7 +199,6 @@ export default function Myworks() {
     const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setJobs(jobsList);
 
-    // Fetch all unique applicants for all jobs
     const allApplicants = new Map();
     for (const job of jobsList) {
       const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
@@ -228,10 +228,48 @@ export default function Myworks() {
     setExpandedJob(expandedJob === jobId ? null : jobId);
   };
 
-  const handleSendMessage = (applicantId) => {
-    // Implement the logic to send a message to the applicant
-    console.log(`Sending message to applicant ${applicantId}: ${message}`);
-    setMessage('');
+  const handleSendMessage = async (applicantId, jobId) => {
+    if (!message.trim()) return;
+
+    try {
+      const chatQuery = query(
+        collection(db, 'jobChats'),
+        where('jobId', '==', jobId),
+        where('applicantId', '==', applicantId)
+      );
+      const chatSnapshot = await getDocs(chatQuery);
+
+      let chatId;
+      if (chatSnapshot.empty) {
+        const newChat = {
+          jobId: jobId,
+          jobTitle: jobs.find(job => job.id === jobId).title,
+          applicantId: applicantId,
+          applicantName: applicants.find(app => app.applicantId === applicantId).name,
+          employerId: auth.currentUser.uid,
+          employerName: auth.currentUser.displayName || 'מעסיק',
+          createdAt: serverTimestamp()
+        };
+        const chatRef = await addDoc(collection(db, 'jobChats'), newChat);
+        chatId = chatRef.id;
+      } else {
+        chatId = chatSnapshot.docs[0].id;
+      }
+
+      await addDoc(collection(db, 'jobChats', chatId, 'messages'), {
+        text: message,
+        senderId: auth.currentUser.uid,
+        senderName: auth.currentUser.displayName || 'מעסיק',
+        timestamp: serverTimestamp()
+      });
+
+      setMessage('');
+      setOpenChatDialog(false);
+      alert('ההודעה נשלחה בהצלחה');
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert('אירעה שגיאה בשליחת ההודעה');
+    }
   };
 
   const handleToggleHired = async (jobId, applicantId, currentHiredStatus) => {
@@ -241,7 +279,6 @@ export default function Myworks() {
         hired: !currentHiredStatus
       });
       
-      // Update local state
       setApplicants(applicants.map(applicant => {
         if (applicant.id === applicantId) {
           const updatedAppliedJobs = applicant.appliedJobs.map(job => 
@@ -270,10 +307,9 @@ export default function Myworks() {
 
       await updateDoc(jobRef, {
         isFullyStaffed: !currentStatus,
-        isPublic: currentStatus // If we're un-staffing, make it public again
+        isPublic: currentStatus
       });
 
-      // Update local state
       setJobs(jobs.map(job => 
         job.id === jobId ? { ...job, isFullyStaffed: !currentStatus, isPublic: currentStatus } : job
       ));
@@ -293,7 +329,6 @@ export default function Myworks() {
         isPublic: false
       });
 
-      // Update local state
       setJobs(jobs.map(job => 
         job.id === jobId ? { ...job, isCompleted: true, isPublic: false } : job
       ));
@@ -309,16 +344,10 @@ export default function Myworks() {
     if (!jobToDelete) return;
 
     try {
-      // Delete the job from Firestore
       await deleteDoc(doc(db, 'jobs', jobToDelete.id));
-
-      // Update local state
       setJobs(jobs.filter(job => job.id !== jobToDelete.id));
-
-      // Close the dialog
       setOpenDeleteDialog(false);
       setJobToDelete(null);
-
       alert('העבודה נמחקה בהצלחה');
     } catch (error) {
       console.error("Error deleting job:", error);
@@ -335,18 +364,19 @@ export default function Myworks() {
     try {
       const jobRef = doc(db, 'jobs', editedJob.id);
       await updateDoc(jobRef, editedJob);
-
-      // Update local state
       setJobs(jobs.map(job => job.id === editedJob.id ? editedJob : job));
-
       setOpenEditDialog(false);
       setJobToEdit(null);
-
       alert('פרטי העבודה עודכנו בהצלחה');
     } catch (error) {
       console.error("Error updating job:", error);
       alert('אירעה שגיאה בעת עדכון פרטי העבודה');
     }
+  };
+
+  const handleOpenChatDialog = (applicant, jobId) => {
+    setSelectedApplicant({ ...applicant, jobId });
+    setOpenChatDialog(true);
   };
 
   return (
@@ -544,26 +574,18 @@ export default function Myworks() {
                                     >
                                       {appliedJob.hired ? 'הועסק' : 'סמן כמועסק'}
                                     </Button>
+                                    <Button
+                                      variant="contained"
+                                      color="primary"
+                                      size="small"
+                                      startIcon={<Chat />}
+                                      onClick={() => handleOpenChatDialog(applicant, job.id)}
+                                      sx={{ ml: 1 }}
+                                    >
+                                      צ'אט
+                                    </Button>
                                   </Box>
                                 </ListItem>
-                                <Box sx={{ mt: 2, mb: 2, display: 'flex', alignItems: 'center' }}>
-                                  <TextField
-                                    fullWidth
-                                    variant="outlined"
-                                    placeholder="הקלד הודעה..."
-                                    value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
-                                  />
-                                  <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={() => handleSendMessage(applicant.id)}
-                                    startIcon={<Chat />}
-                                    sx={{ ml: 1 }}
-                                  >
-                                    שלח
-                                  </Button>
-                                </Box>
                                 <Divider variant="inset" component="li" />
                               </React.Fragment>
                             );
@@ -612,6 +634,37 @@ export default function Myworks() {
         job={jobToEdit}
         handleSave={handleSaveEditedJob}
       />
+      <Dialog open={openChatDialog} onClose={() => setOpenChatDialog(false)}>
+        <DialogTitle>שלח הודעה למועמד</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            שלח הודעה ל{selectedApplicant?.name} עבור המשרה: {jobs.find(job => job.id === selectedApplicant?.jobId)?.title}
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="message"
+            label="הודעה"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            multiline
+            rows={4}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenChatDialog(false)}>ביטול</Button>
+          <Button 
+            onClick={() => handleSendMessage(selectedApplicant.applicantId, selectedApplicant.jobId)} 
+            variant="contained" 
+            startIcon={<Chat />}
+          >
+            שלח
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

@@ -13,7 +13,10 @@ import {
   Button,
   Box,
   CircularProgress,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
+import { Search } from '@mui/icons-material';
 import { collection, query, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -21,7 +24,9 @@ import { Navigate, Link } from 'react-router-dom';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -29,6 +34,14 @@ export default function AdminUsersPage() {
       fetchUsers();
     }
   }, [user]);
+
+  useEffect(() => {
+    const filtered = users.filter(user => 
+      user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredUsers(filtered);
+  }, [users, searchTerm]);
 
   const fetchUsers = async () => {
     try {
@@ -43,6 +56,7 @@ export default function AdminUsersPage() {
         };
       });
       setUsers(userList);
+      setFilteredUsers(userList);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -62,6 +76,10 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
   if (!user?.isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -79,6 +97,21 @@ export default function AdminUsersPage() {
       <Typography variant="h4" gutterBottom>
         ניהול משתמשים והרשאות
       </Typography>
+      <TextField
+        fullWidth
+        variant="outlined"
+        placeholder="חיפוש לפי שם או אימייל"
+        value={searchTerm}
+        onChange={handleSearchChange}
+        sx={{ mb: 2 }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search />
+            </InputAdornment>
+          ),
+        }}
+      />
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
         <TableContainer sx={{ maxHeight: 440 }}>
           <Table stickyHeader aria-label="sticky table">
@@ -92,7 +125,7 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>{user.displayName}</TableCell>
                   <TableCell>{user.email}</TableCell>

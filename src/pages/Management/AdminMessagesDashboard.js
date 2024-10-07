@@ -18,21 +18,34 @@ import {
   Snackbar,
   Collapse,
   Box,
+  InputAdornment,
 } from '@mui/material';
-import { Delete, Edit, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+import { Delete, Edit, KeyboardArrowDown, KeyboardArrowUp, Search } from '@mui/icons-material';
 import { collection, getDocs, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
 export default function AdminJobsDashboard() {
   const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [currentJob, setCurrentJob] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
   const [expandedRow, setExpandedRow] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchJobs();
   }, []);
+
+  useEffect(() => {
+    const filtered = jobs.filter(job => 
+      (job.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (job.companyName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (job.location?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (job.type?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    );
+    setFilteredJobs(filtered);
+  }, [jobs, searchTerm]);
 
   const fetchJobs = async () => {
     try {
@@ -55,6 +68,7 @@ export default function AdminJobsDashboard() {
         };
       }));
       setJobs(jobList);
+      setFilteredJobs(jobList);
     } catch (error) {
       console.error("Error fetching jobs: ", error);
       setSnackbar({ open: true, message: 'אירעה שגיאה בטעינת המשרות' });
@@ -102,8 +116,29 @@ export default function AdminJobsDashboard() {
     setExpandedRow(expandedRow === index ? null : index);
   };
 
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
   return (
     <>
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="חיפוש לפי כותרת, חברה, מיקום או סוג משרה"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -118,7 +153,7 @@ export default function AdminJobsDashboard() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {jobs.map((job, index) => (
+            {filteredJobs.map((job, index) => (
               <React.Fragment key={job.id}>
                 <TableRow>
                   <TableCell>
@@ -138,11 +173,11 @@ export default function AdminJobsDashboard() {
                       {expandedRow === index ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
                     </IconButton>
                   </TableCell>
-                  <TableCell>{job.title}</TableCell>
-                  <TableCell>{job.companyName}</TableCell>
-                  <TableCell>{job.location}</TableCell>
-                  <TableCell>{job.type}</TableCell>
-                  <TableCell>₪{job.salary}</TableCell>
+                  <TableCell>{job.title || 'N/A'}</TableCell>
+                  <TableCell>{job.companyName || 'N/A'}</TableCell>
+                  <TableCell>{job.location || 'N/A'}</TableCell>
+                  <TableCell>{job.type || 'N/A'}</TableCell>
+                  <TableCell>{job.salary ? `₪${job.salary}` : 'N/A'}</TableCell>
                   <TableCell>
                     <IconButton onClick={() => handleOpenDialog(job)}>
                       <Edit />
@@ -163,24 +198,24 @@ export default function AdminJobsDashboard() {
                           <TableBody>
                             <TableRow>
                               <TableCell component="th" scope="row">תיאור</TableCell>
-                              <TableCell>{job.description}</TableCell>
+                              <TableCell>{job.description || 'לא צוין'}</TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell component="th" scope="row">שעות עבודה</TableCell>
-                              <TableCell>{job.startTime} - {job.endTime}</TableCell>
+                              <TableCell>{job.startTime && job.endTime ? `${job.startTime} - ${job.endTime}` : 'לא צוין'}</TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell component="th" scope="row">תאריכי עבודה</TableCell>
-                              <TableCell>{job.workDates ? job.workDates.join(', ') : 'לא צוין'}</TableCell>
+                              <TableCell>{job.workDates && job.workDates.length > 0 ? job.workDates.join(', ') : 'לא צוין'}</TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell component="th" scope="row">פרטי מעסיק</TableCell>
                               <TableCell>
                                 {job.employer ? (
                                   <>
-                                    <Typography>שם: {job.employer.name}</Typography>
-                                    <Typography>אימייל: {job.employer.email}</Typography>
-                                    <Typography>טלפון: {job.employer.phone}</Typography>
+                                    <Typography>שם: {job.employer.name || 'לא צוין'}</Typography>
+                                    <Typography>אימייל: {job.employer.email || 'לא צוין'}</Typography>
+                                    <Typography>טלפון: {job.employer.phone || 'לא צוין'}</Typography>
                                   </>
                                 ) : (
                                   'פרטי מעסיק לא זמינים'
@@ -291,9 +326,7 @@ export default function AdminJobsDashboard() {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        on
-
-Close={() => setSnackbar({ ...snackbar, open: false })}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
         message={snackbar.message}
       />
     </>

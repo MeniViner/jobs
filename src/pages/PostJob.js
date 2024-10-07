@@ -8,7 +8,8 @@ import {
   MenuItem, 
   Snackbar,
   Paper,
-  IconButton
+  IconButton,
+  InputAdornment
 } from '@mui/material';
 import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
@@ -34,6 +35,7 @@ export default function PostJob() {
     startTime: '',
     endTime: '',
     workDates: [''],
+    workersNeeded: 1, // New field for number of workers needed
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -54,7 +56,7 @@ export default function PostJob() {
         setBusinessName(companyName);
         setJobData(prevData => ({
           ...prevData,
-          companyName: companyName  // Add this line
+          companyName: companyName
         }));
       }
     }
@@ -64,7 +66,7 @@ export default function PostJob() {
     const { name, value } = e.target;
     setJobData(prevData => ({
       ...prevData,
-      [name]: value
+      [name]: name === 'workersNeeded' ? Math.min(Math.max(1, parseInt(value) || 1), 10) : value
     }));
   };
 
@@ -96,14 +98,13 @@ export default function PostJob() {
     e.preventDefault();
     console.log("Attempting to submit job:", jobData);
   
-    // בדיקת ולידציה - שכל השדות מלאים
     if (!jobData.title || !jobData.location || !jobData.type || !jobData.salary || !jobData.description || !jobData.startTime || !jobData.endTime || jobData.workDates.some(date => !date)) {
       setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
       return;
     }
   
     try {
-      const currentUser = getAuth().currentUser; // מקבל את המידע על המשתמש הנוכחי
+      const currentUser = getAuth().currentUser;
       const user = auth.currentUser;
       if (!user) {
         setSnackbar({ open: true, message: 'יש להתחבר כדי לפרסם משרה' });
@@ -113,14 +114,14 @@ export default function PostJob() {
       const jobToSubmit = {
         ...jobData,
         employerId: user.uid,
-        companyName: businessName,  // Add this line
+        companyName: businessName,
       };
 
       console.log("Job to submit:", jobToSubmit);
 
       const docRef = await addDoc(collection(db, 'jobs'), {
         ...jobToSubmit,
-        postedBy: currentUser.uid // מוסיף את השדה postedBy
+        postedBy: currentUser.uid
       });
       console.log("Document written with ID: ", docRef.id);
       setSnackbar({ open: true, message: 'המשרה פורסמה בהצלחה!' });
@@ -133,6 +134,7 @@ export default function PostJob() {
         startTime: '',
         endTime: '',
         workDates: [''],
+        workersNeeded: 1,
       });
     } catch (error) {
       console.error("Error adding document: ", error);
@@ -201,6 +203,21 @@ export default function PostJob() {
                 type="number"
                 value={jobData.salary}
                 onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                required
+                fullWidth
+                label="מספר עובדים נדרש"
+                name="workersNeeded"
+                type="number"
+                value={jobData.workersNeeded}
+                onChange={handleChange}
+                InputProps={{
+                  inputProps: { min: 1, max: 10 },
+                  endAdornment: <InputAdornment position="end">מקסימום 10</InputAdornment>,
+                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, TextField, Button, Card, CardContent, CardActions, CircularProgress, Box, Chip, Divider } from '@mui/material';
-import { Work, LocationOn, AttachMoney, AccessTime, DateRange } from '@mui/icons-material';
+import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Group } from '@mui/icons-material';
 import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
@@ -51,7 +51,6 @@ function JobListPage() {
         return;
       }
 
-      // יצירת מסמך עבור המועמד בתוך העבודה
       const applicantRef = collection(db, 'jobChats', jobId, 'applicants');
       await addDoc(applicantRef, {
         applicantId: currentUser.uid,
@@ -123,6 +122,9 @@ function JobListPage() {
                       <AccessTime fontSize="small" sx={{ mr: 1 }} /> {job.startTime} - {job.endTime}
                     </Typography>
                   )}
+                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Group fontSize="small" sx={{ mr: 1 }} /> {job.workersNeeded || 1} עובדים נדרשים
+                  </Typography>
                   <Chip label={job.type} size="small" sx={{ mt: 1, mb: 2 }} />
                   <Divider sx={{ my: 1 }} />
                   {job.workDates && job.workDates.length > 0 && (

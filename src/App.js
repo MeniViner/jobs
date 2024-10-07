@@ -14,19 +14,19 @@ import JobListPage from './pages/JobListPage';
 import EmployerProfile from './pages/profile/EmployerProfile';
 import ManageUsers from './pages/Management/ManageUsers';
 import AccountPage from './pages/profile/AccountPage';
-import JobChat from './pages/JobChat';
+import JobChat from './pages/JobChat'; // ייבוא הקומפוננטה של הצ'אט
 import LoginPage from './pages/profile/loginPage';
 import AdminPage from './pages/Management/AdminPage';
 import AdminUsersPage from './pages/Management/AdminUsersPage';
 import EmployerChatPage from './pages/Myworks';
 import MyApplications from './pages/MyApplications.js';
 
-// Create a theme with RTL support
+// יצירת תבנית עם תמיכה ב-RTL
 const theme = createTheme({
-  direction: 'rtl',  // Right-to-left support
+  direction: 'rtl',  // תמיכה בימין לשמאל
 });
 
-// Create RTL cache
+// יצירת cache עם תמיכה ב-RTL
 const cacheRtl = createCache({
   key: 'muirtl',
   stylisPlugins: [rtlPlugin],
@@ -40,8 +40,9 @@ function App() {
           <CssBaseline />
           <Router>
             <Header />
-            <Routes> 
+            <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/job-chat" element={<JobChat />} />  {/* נתיב לדף הצ'אט */}
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/jobs" element={<JobListPage />} />
@@ -51,7 +52,7 @@ function App() {
               <Route path="/account" element={<AccountPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/employer-profile" element={<EmployerProfile />} />
-              <Route path="/chat/:jobId" element={<JobChat />} />
+              <Route path="/chat/:jobId" element={<JobChat />} />  {/* נתיב עם jobId */}
               <Route path="/employer-chat" element={<EmployerChatPage />} />
               <Route path="/my-applications" element={<MyApplications />} />
               <Route path="*" element={<Navigate to="/" replace />} />
@@ -60,7 +61,7 @@ function App() {
         </ThemeProvider>
       </CacheProvider>
     </AuthProvider>
-  ); 
+  );
 }
 
 export default App;

@@ -62,6 +62,7 @@ export default function Header() {
 
   const menuItems = [
     { text: 'דף הבית', icon: <HomeIcon />, link: '/' },
+    { text: 'צ\'אט', icon: <ChatIcon />, link: '/job-chat' }, // נתיב לצ'אט
     { text: 'עבודות', icon: <WorkIcon />, link: '/jobs' },
     { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job', authRequired: true, employerOnly: true },
     { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/employer-chat', authRequired: true, employerOnly: true },
@@ -120,6 +121,7 @@ export default function Header() {
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           פלטפורמת עבודות מזדמנות
         </Typography>
+
         {isMobile ? (
           <>
             <IconButton
@@ -155,6 +157,7 @@ export default function Header() {
                 </Button>
               )
             ))}
+
             {user ? (
               <>
                 <Button

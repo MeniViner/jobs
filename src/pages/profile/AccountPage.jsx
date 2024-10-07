@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { getAuth, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -57,7 +58,7 @@ const AccountPage = () => {
   };
 
   const handleUpgradeToEmployer = () => {
-    navigate('/register-profile');
+    navigate('/employer-registration');
   };
 
   const handleUpdateUserInfo = async (updatedInfo) => {
@@ -153,11 +154,21 @@ const AccountPage = () => {
         <div className="chevron-right">›</div>
       </div>
 
-      <div className="upgrade-section">
-        <h3>{t('Upgrade to Employer')}</h3>
-        <p>{t('Post jobs and find the best candidates for your company.')}</p>
-        <button onClick={handleUpgradeToEmployer} className="upgrade-button">{t('Upgrade Now')}</button>
-      </div>
+      {user.role !== 'employer' && user.role !== 'pending_employer' && (
+        <div className="upgrade-section">
+          <h3>{t('Upgrade to Employer')}</h3>
+          <p>{t('Post jobs and find the best candidates for your company.')}</p>
+          <button onClick={handleUpgradeToEmployer} className="upgrade-button">
+            {t('Upgrade Now')}
+          </button>
+        </div>
+      )}
+
+      {user.role === 'pending_employer' && (
+        <div className="pending-approval">
+          <p>{t('Your employer registration is pending approval.')}</p>
+        </div>
+      )}
 
       <div className="settings-section">
         <h3>{t('Settings')}</h3>

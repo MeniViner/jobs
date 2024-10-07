@@ -3,25 +3,17 @@ import { Container, Typography, Tabs, Tab, Box } from '@mui/material';
 import AdminUsersPage from './AdminUsersPage';
 import ManageUsers from './ManageUsers';
 import AdminJobsDashboard from './AdminMessagesDashboard';
+import EmployerApprovalRequests from './EmployerApprovalRequests';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  value: number;
-  index: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
+function TabPanel({ children, value, index }) {
   return (
     <div
       role="tabpanel"
       hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
-      {...other}
+      id={`admin-tabpanel-${index}`}
+      aria-labelledby={`admin-tab-${index}`}
     >
       {value === index && (
         <Box sx={{ p: 3 }}>
@@ -32,18 +24,18 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-function a11yProps(index: number) {
-  return {
-    id: `simple-tab-${index}`,
-    'aria-controls': `simple-tabpanel-${index}`,
-  };
-}
+const tabComponents = [
+  { label: "ניהול הרשאות", component: AdminUsersPage },
+  { label: "צפייה במשתמשים", component: ManageUsers },
+  { label: "ניהול משרות", component: AdminJobsDashboard },
+  { label: "בקשות מעסיקים", component: EmployerApprovalRequests },
+];
 
 export default function AdminPage() {
   const [value, setValue] = useState(0);
   const { user } = useContext(AuthContext);
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleChange = (event, newValue) => {
     setValue(newValue);
   };
 
@@ -63,20 +55,21 @@ export default function AdminPage() {
           aria-label="admin tabs"
           sx={{ '& .MuiTabs-flexContainer': { flexDirection: 'row-reverse' } }}
         >
-          <Tab label="ניהול הרשאות" {...a11yProps(0)} />
-          <Tab label="צפייה במשתמשים" {...a11yProps(1)} />
-          <Tab label="ניהול משרות" {...a11yProps(2)} />
+          {tabComponents.map((tab, index) => (
+            <Tab 
+              key={index} 
+              label={tab.label} 
+              id={`admin-tab-${index}`} 
+              aria-controls={`admin-tabpanel-${index}`}
+            />
+          ))}
         </Tabs>
       </Box>
-      <TabPanel value={value} index={0}>
-        <AdminUsersPage />
-      </TabPanel>
-      <TabPanel value={value} index={1}>
-        <ManageUsers />
-      </TabPanel>
-      <TabPanel value={value} index={2}>
-        <AdminJobsDashboard />
-      </TabPanel>
+      {tabComponents.map((tab, index) => (
+        <TabPanel key={index} value={value} index={index}>
+          <tab.component />
+        </TabPanel>
+      ))}
     </Container>
   );
 }

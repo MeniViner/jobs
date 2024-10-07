@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase';
-import { User, Briefcase, MapPin, Calendar, Mail } from 'lucide-react';
+import { Briefcase, MapPin, Calendar, Mail } from 'lucide-react';
 import { Button, Avatar, Typography, Paper, Grid, Box, Chip, Divider } from '@mui/material';
+import { useAuth } from '../../contexts/AuthContext';
+import { RatingDisplay, RatingInput } from '../../pages/RatingSystem';
 import { useTranslation } from 'react-i18next';
 
 const UserProfilePage = () => {
   const { userId } = useParams();
+  const { currentUser } = useAuth();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [completedJobs, setCompletedJobs] = useState([]);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -17,7 +21,17 @@ const UserProfilePage = () => {
       try {
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (userDoc.exists()) {
-          setUser({ id: userId, ...userDoc.data() });
+          const userData = { id: userId, ...userDoc.data() };
+          setUser(userData);
+
+          // Fetch completed jobs
+          const jobsQuery = query(
+            collection(db, 'jobs'),
+            where('isCompleted', '==', true),
+            where(userData.isEmployer ? 'employerId' : 'hiredWorkers', 'array-contains', userId)
+          );
+          const jobsSnapshot = await getDocs(jobsQuery);
+          setCompletedJobs(jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         } else {
           console.error('No user document found');
         }
@@ -30,6 +44,7 @@ const UserProfilePage = () => {
 
     fetchUserData();
   }, [userId]);
+
 
   if (loading) {
     return <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -92,16 +107,34 @@ const UserProfilePage = () => {
           </Grid>
         </Grid>
       </Paper>
+
+      <Paper elevation={3} sx={{ padding: 3, marginTop: 3 }}>
+        <RatingDisplay userId={userId} />
+      </Paper>
       
-      {user.isEmployer && (
+      {completedJobs.length > 0 && currentUser && currentUser.uid !== userId && (
+        <Paper elevation={3} sx={{ padding: 3, marginTop: 3 }}>
+          <Typography variant="h6" gutterBottom>{t('Rate this user')}</Typography>
+          {completedJobs.map(job => (
+            <Box key={job.id} mb={2}>
+              <Typography variant="subtitle1">{job.title}</Typography>
+              <RatingInput 
+                jobId={job.id} 
+                targetUserId={userId} 
+                isEmployerRating={currentUser.uid === job.employerId}
+              />
+            </Box>
+          ))}
+        </Paper>
+      )}
+      
+      {user.isEmployer ? (
         <Paper elevation={3} sx={{ padding: 3, marginTop: 3 }}>
           <Typography variant="h6" gutterBottom>{t('Posted Jobs')}</Typography>
           {/* Here you would map through the user's posted jobs */}
           <Typography>{t('No jobs posted yet')}</Typography>
         </Paper>
-      )}
-      
-      {!user.isEmployer && (
+      ) : (
         <Paper elevation={3} sx={{ padding: 3, marginTop: 3 }}>
           <Typography variant="h6" gutterBottom>{t('Skills')}</Typography>
           {user.skills && user.skills.length > 0 ? (

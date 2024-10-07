@@ -22,7 +22,7 @@ import JobChat from './pages/JobChat'; // ייבוא הקומפוננטה של �
 import LoginPage from './pages/profile/loginPage';
 import AdminPage from './pages/Management/AdminPage.jsx';
 import AdminUsersPage from './pages/Management/AdminUsersPage';
-import EmployerChatPage from './pages/Myworks';
+import EmployerChatPage from './pages/MyWorks.js';
 import MyApplications from './pages/MyApplications.js';
 import EmployerRegistration from './pages/profile/EmployerRegistration.jsx';
 import UserProfilePage from './pages/Management/UserProfilePage.js';
@@ -75,7 +75,7 @@ function App() {
               <Route path="/employer-registration" element={<EmployerRegistration />} />
               <Route path="/employer-profile" element={<EmployerProfile />} />
               <Route path="/chat/:jobId" element={<JobChat />} />  {/* נתיב עם jobId */}
-              <Route path="/employer-chat" element={<EmployerChatPage />} />
+              <Route path="/my-published-jobs" element={<EmployerChatPage />} />
               <Route path="/my-applications" element={<MyApplications />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

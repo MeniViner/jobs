@@ -31,6 +31,7 @@ import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import logo from '../logo.png';  // Original blue logo
 import logo1 from '../logo1.png';  // New black logo
 
+
 export default function Header() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ export default function Header() {
 
   const employerMenuItems = [
     { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job' },
-    { text: 'עבודות שפורסמו', icon: <ChatIcon />, link: '/employer-chat' },
+    { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/my-published-jobs' },
   ];
 
   const adminMenuItems = [

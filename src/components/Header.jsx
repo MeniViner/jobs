@@ -5,14 +5,12 @@ import {
   Typography, 
   Button, 
   Box, 
-  Menu, 
-  MenuItem, 
-  ListItemIcon, 
-  ListItemText,
   IconButton,
   Drawer,
   List,
   ListItem,
+  ListItemIcon,
+  ListItemText,
   useMediaQuery,
   useTheme
 } from '@mui/material';
@@ -20,8 +18,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getAuth, signOut } from 'firebase/auth';
 import { AuthContext } from '../contexts/AuthContext';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import BusinessIcon from '@mui/icons-material/Business';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import WorkIcon from '@mui/icons-material/Work';
@@ -34,7 +30,6 @@ export default function Header() {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const auth = getAuth();
-  const [anchorEl, setAnchorEl] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -46,14 +41,6 @@ export default function Header() {
     } catch (error) {
       console.error('Error signing out:', error);
     }
-  };
-
-  const handleMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
   };
 
   const handleDrawerToggle = () => {
@@ -87,18 +74,16 @@ export default function Header() {
             </ListItem>
           )
         ))}
-        {!user ? (
-          <>
-            <ListItem component={Link} to="/login">
-              <ListItemIcon><AccountCircleIcon /></ListItemIcon>
-              <ListItemText primary="התחבר" />
-            </ListItem>
-          </>
+        {user ? (
+          <ListItem component={Link} to="/account">
+            <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+            <ListItemText primary="פרופיל" />
+          </ListItem>
         ) : (
-            <ListItem component={Link} to="/account">
-              <ListItemIcon><AccountCircleIcon /></ListItemIcon>
-              <ListItemText primary="חשבון אישי" />
-            </ListItem>
+          <ListItem component={Link} to="/login">
+            <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+            <ListItemText primary="התחבר" />
+          </ListItem>
         )}
       </List>
     </Box>
@@ -146,52 +131,16 @@ export default function Header() {
               )
             ))}
             {user ? (
-              <>
-                <Button
-                  color="inherit"
-                  onClick={handleMenu}
-                  startIcon={<AccountCircleIcon />}
-                >
-                  {user.displayName || user.email}
-                </Button>
-                <Menu
-                  anchorEl={anchorEl}
-                  anchorOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                  keepMounted
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                  open={Boolean(anchorEl)}
-                  onClose={handleClose}
-                >
-                  <MenuItem onClick={handleClose} component={Link} to="/account">
-                    <ListItemIcon>
-                      <AccountCircleIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>חשבון אישי</ListItemText>
-                  </MenuItem>
-                  <MenuItem onClick={handleClose} component={Link} to="/employer-profile">
-                    <ListItemIcon>
-                      <BusinessIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>פרופיל מעסיק</ListItemText>
-                  </MenuItem>
-                  <MenuItem onClick={handleLogout}>
-                    <ListItemIcon>
-                      <ExitToAppIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>התנתק</ListItemText>
-                  </MenuItem>
-                </Menu>
-              </>
+              <Button
+                color="inherit"
+                component={Link}
+                to="/account"
+                startIcon={<AccountCircleIcon />}
+              >
+                פרופיל
+              </Button>
             ) : (
-              <>
-                <Button color="inherit" component={Link} to="/login">התחבר</Button>
-              </>
+              <Button color="inherit" component={Link} to="/login">התחבר</Button>
             )}
           </Box>
         )}

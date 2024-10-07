@@ -17,6 +17,8 @@ import {
   useMediaQuery,
   useTheme,
   Button,
+  Container,
+  Paper,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -227,9 +229,9 @@ const AccountPage = () => {
     }
   };
 
-  return (
+  const MobileView = () => (
     <Box sx={{ maxWidth: '100%', margin: '0 auto', padding: 2 }}>
-      {isMobile && activeSection ? (
+      {activeSection ? (
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <IconButton onClick={() => setActiveSection(null)} sx={{ mr: 1 }}>
@@ -319,6 +321,95 @@ const AccountPage = () => {
       )}
     </Box>
   );
+
+  const DesktopView = () => (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Paper elevation={0} sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Box
+            component="img"
+            src={user.photoURL}
+            alt={user.name}
+            sx={{ width: theme.spacing(15), height: theme.spacing(15), borderRadius: '50%', mr: 3 }}
+          />
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h5">{user.name}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {user.role === 'employer' ? t('Employer') : t('User')}
+            </Typography>
+          </Box>
+          {activeSection === 'personal_info' && (
+            <Button
+              onClick={() => setEditing(!editing)}
+              startIcon={<EditIcon />}
+              variant={editing ? "contained" : "outlined"}
+              color="primary"
+            >
+              {editing ? t('Cancel') : t('Edit')}
+            </Button>
+          )}
+        </Box>
+
+        {user.role !== 'employer' && user.role !== 'pending_employer' && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              {t('Upgrade to Employer')}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              {t('Post jobs and find the best candidates for your company.')}
+            </Typography>
+            <Button variant="contained" color="primary" onClick={handleUpgradeToEmployer}>
+              {t('Upgrade Now')}
+            </Button>
+          </Box>
+        )}
+
+        {user.role === 'pending_employer' && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body1">
+              {t('Your employer registration is pending approval.')}
+            </Typography>
+          </Box>
+        )}
+
+        <Divider sx={{ my: 3 }} />
+
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={4}>
+            <List>
+              {menuItems.map((item) => (
+                <ListItem
+                  button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  selected={activeSection === item.id}
+                  sx={{ 
+                    py: 2,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    '&:last-child': { borderBottom: 'none' }
+                  }}
+                >
+                  <ListItemText primary={item.label} />
+                </ListItem>
+              ))}
+            </List>
+          </Grid>
+          <Grid item xs={12} md={8}>
+            {renderActiveSection()}
+          </Grid>
+        </Grid>
+
+        <Divider sx={{ my: 3 }} />
+
+        <Button variant="outlined" color="error" onClick={handleSignOut}>
+          {t('Sign Out')}
+        </Button>
+      </Paper>
+    </Container>
+  );
+
+  return isMobile ? <MobileView /> : <DesktopView />;
 };
 
 export default AccountPage;

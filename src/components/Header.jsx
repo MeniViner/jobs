@@ -95,20 +95,10 @@ export default function Header() {
             </ListItem>
           </>
         ) : (
-          <>
             <ListItem component={Link} to="/account">
               <ListItemIcon><AccountCircleIcon /></ListItemIcon>
               <ListItemText primary="חשבון אישי" />
             </ListItem>
-            <ListItem component={Link} to="/employer-profile">
-              <ListItemIcon><BusinessIcon /></ListItemIcon>
-              <ListItemText primary="פרופיל מעסיק" />
-            </ListItem>
-            <ListItem onClick={handleLogout}>
-              <ListItemIcon><ExitToAppIcon /></ListItemIcon>
-              <ListItemText primary="התנתק" />
-            </ListItem>
-          </>
         )}
       </List>
     </Box>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Card, CardContent, CardActions, Button, CircularProgress, Box, Chip, Divider, IconButton } from '@mui/material';
-import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Group, Bookmark, BookmarkBorder } from '@mui/icons-material';
+import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Group, Bookmark } from '@mui/icons-material';
 import { collection, getDocs, doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
@@ -23,19 +23,25 @@ function SavedJobsPage() {
       
       if (!currentUser) {
         setError("עליך להתחבר כדי לצפות בעבודות השמורות");
+        setLoading(false);
         return;
       }
 
-      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-      if (userDoc.exists()) {
-        const savedJobIds = userDoc.data().savedJobs || [];
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const savedJobIds = userDocSnap.data().savedJobs || [];
         const jobsData = await Promise.all(
           savedJobIds.map(async (jobId) => {
-            const jobDoc = await getDoc(doc(db, 'jobs', jobId));
-            return jobDoc.exists() ? { id: jobDoc.id, ...jobDoc.data() } : null;
+            const jobDocRef = doc(db, 'jobs', jobId);
+            const jobDocSnap = await getDoc(jobDocRef);
+            return jobDocSnap.exists() ? { id: jobDocSnap.id, ...jobDocSnap.data() } : null;
           })
         );
         setSavedJobs(jobsData.filter(job => job !== null));
+      } else {
+        setError("לא נמצא מידע על המשתמש");
       }
     } catch (error) {
       console.error("Error fetching saved jobs: ", error);

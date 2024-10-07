@@ -148,12 +148,6 @@ export default function Header() {
                 >
                   פרופיל
                 </Button>
-                <Button
-                  color="inherit"
-                  onClick={handleLogout}
-                >
-                  התנתק
-                </Button>
               </>
             ) : (
               <Button color="inherit" component={Link} to="/login">התחבר</Button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, TextField, Button, Card, CardContent, CardActions, CircularProgress, Box, Chip, Divider, IconButton } from '@mui/material';
 import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Group, Bookmark, BookmarkBorder } from '@mui/icons-material';
-import { collection, getDocs, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, getDocs, addDoc, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 
@@ -38,10 +38,14 @@ function JobListPage() {
     const auth = getAuth();
     const currentUser = auth.currentUser;
     if (currentUser) {
-      const userDoc = doc(db, 'users', currentUser.uid);
-      const userSnapshot = await getDocs(userDoc);
-      if (userSnapshot.exists()) {
-        setSavedJobs(userSnapshot.data().savedJobs || []);
+      try {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          setSavedJobs(userDocSnap.data().savedJobs || []);
+        }
+      } catch (error) {
+        console.error("Error fetching saved jobs: ", error);
       }
     }
   };
@@ -90,18 +94,23 @@ function JobListPage() {
 
     const userRef = doc(db, 'users', currentUser.uid);
     
-    if (savedJobs.includes(jobId)) {
-      // Remove job from saved jobs
-      await updateDoc(userRef, {
-        savedJobs: arrayRemove(jobId)
-      });
-      setSavedJobs(savedJobs.filter(id => id !== jobId));
-    } else {
-      // Add job to saved jobs
-      await updateDoc(userRef, {
-        savedJobs: arrayUnion(jobId)
-      });
-      setSavedJobs([...savedJobs, jobId]);
+    try {
+      if (savedJobs.includes(jobId)) {
+        // Remove job from saved jobs
+        await updateDoc(userRef, {
+          savedJobs: arrayRemove(jobId)
+        });
+        setSavedJobs(savedJobs.filter(id => id !== jobId));
+      } else {
+        // Add job to saved jobs
+        await updateDoc(userRef, {
+          savedJobs: arrayUnion(jobId)
+        });
+        setSavedJobs([...savedJobs, jobId]);
+      }
+    } catch (error) {
+      console.error('Error updating saved jobs: ', error);
+      alert('אירעה שגיאה בעדכון העבודות השמורות.');
     }
   };
 

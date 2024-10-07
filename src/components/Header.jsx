@@ -15,7 +15,7 @@ import {
   useTheme
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-import { getAuth, signOut } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { AuthContext } from '../contexts/AuthContext';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -33,15 +33,6 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -67,7 +58,7 @@ export default function Header() {
            (item.authRequired && user) || 
            (item.adminRequired && user?.isAdmin) ||
            (item.employerOnly && user?.isEmployer) ||
-           (item.employeeOnly && user?.isEmployee)) && (
+           (item.employeeOnly && !user?.isEmployer)) && (
             <ListItem key={item.text} component={Link} to={item.link}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
@@ -77,7 +68,7 @@ export default function Header() {
         {user ? (
           <ListItem component={Link} to="/account">
             <ListItemIcon><AccountCircleIcon /></ListItemIcon>
-            <ListItemText primary="פרופיל" />
+            <ListItemText primary={user.displayName || user.email} />
           </ListItem>
         ) : (
           <ListItem component={Link} to="/login">
@@ -124,7 +115,7 @@ export default function Header() {
                (item.authRequired && user) || 
                (item.adminRequired && user?.isAdmin) ||
                (item.employerOnly && user?.isEmployer) ||
-               (item.employeeOnly && user?.isEmployee)) && (
+               (item.employeeOnly && !user?.isEmployer)) && (
                 <Button key={item.text} color="inherit" component={Link} to={item.link}>
                   {item.text}
                 </Button>
@@ -137,7 +128,7 @@ export default function Header() {
                 to="/account"
                 startIcon={<AccountCircleIcon />}
               >
-                פרופיל
+                {user.displayName || user.email}
               </Button>
             ) : (
               <Button color="inherit" component={Link} to="/login">התחבר</Button>

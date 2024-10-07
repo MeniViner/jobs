@@ -14,7 +14,7 @@ export default function EmployerApprovalRequests() {
       setLoading(true);
       setError('');
       try {
-        const q = query(collection(db, 'employers'), where('approved', '==', false));
+        const q = query(collection(db, 'users'), where('pendingEmployer', '==', true));
         const querySnapshot = await getDocs(q);
         const employers = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setPendingEmployers(employers);
@@ -31,8 +31,13 @@ export default function EmployerApprovalRequests() {
 
   const handleApproval = async (employerId, approved) => {
     try {
-      await updateDoc(doc(db, 'employers', employerId), { approved });
-      await updateDoc(doc(db, 'users', employerId), { role: approved ? 'employer' : 'employee' });
+      const userRef = doc(db, 'users', employerId);
+      const updates = {
+        isEmployer: approved,
+        pendingEmployer: false,
+        role: approved ? 'employer' : 'user'
+      };
+      await updateDoc(userRef, updates);
       setPendingEmployers(prevState => prevState.filter(employer => employer.id !== employerId));
       alert(approved ? 'המעסיק אושר בהצלחה' : 'בקשת המעסיק נדחתה');
     } catch (error) {
@@ -69,23 +74,23 @@ export default function EmployerApprovalRequests() {
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   <Business sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  {employer.companyName}
+                  {employer.employerDetails.companyName}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   <Category sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  סוג עסק: {employer.businessType}
+                  סוג עסק: {employer.employerDetails.businessType}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   <Description sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  תיאור: {employer.description}
+                  תיאור: {employer.employerDetails.companyDescription}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   <Email sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  אימייל: {employer.email}
+                  אימייל: {employer.employerDetails.contactEmail}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   <Phone sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  טלפון: {employer.phone}
+                  טלפון: {employer.employerDetails.contactPhone}
                 </Typography>
               </CardContent>
               <CardActions>

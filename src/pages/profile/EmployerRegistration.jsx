@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, updateDoc } from 'firebase/firestore';
 import { useTranslation } from 'react-i18next';
 import { Container, Typography, Grid, TextField, Button, Card, CardContent, CircularProgress, Box, MenuItem } from '@mui/material';
 import { Business, Category, Description, Email, Phone } from '@mui/icons-material';
@@ -18,15 +18,15 @@ const jobCategories = [
 const EmployerRegistration = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const auth = getAuth();
   const db = getFirestore();
+  const auth = getAuth();
 
   const [formData, setFormData] = useState({
     companyName: '',
     businessType: '',
-    description: '',
-    email: '',
-    phone: ''
+    companyDescription: '',
+    contactEmail: '',
+    contactPhone: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -43,20 +43,16 @@ const EmployerRegistration = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
     const user = auth.currentUser;
 
     if (user) {
       try {
-        await setDoc(doc(db, 'employers', user.uid), {
-          ...formData,
-          userId: user.uid,
-          approved: false,
-          createdAt: new Date()
+        await updateDoc(doc(db, 'users', user.uid), {
+          pendingEmployer: true,
+          employerDetails: formData,
+          role: 'pending_employer' // Add this line
         });
-
-        await setDoc(doc(db, 'users', user.uid), {
-          role: 'pending_employer'
-        }, { merge: true });
 
         alert(t('Registration submitted for approval'));
         navigate('/account');
@@ -72,6 +68,8 @@ const EmployerRegistration = () => {
       navigate('/login');
     }
   };
+
+
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
@@ -119,8 +117,8 @@ const EmployerRegistration = () => {
                   multiline
                   rows={4}
                   label={t('Company Description')}
-                  name="description"
-                  value={formData.description}
+                  name="companyDescription"
+                  value={formData.companyDescription}
                   onChange={handleChange}
                   required
                   InputProps={{
@@ -131,10 +129,10 @@ const EmployerRegistration = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={t('Email')}
-                  name="email"
+                  label={t('Contact Email')}
+                  name="contactEmail"
                   type="email"
-                  value={formData.email}
+                  value={formData.contactEmail}
                   onChange={handleChange}
                   required
                   InputProps={{
@@ -145,9 +143,9 @@ const EmployerRegistration = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={t('Phone')}
-                  name="phone"
-                  value={formData.phone}
+                  label={t('Contact Phone')}
+                  name="contactPhone"
+                  value={formData.contactPhone}
                   onChange={handleChange}
                   required
                   InputProps={{

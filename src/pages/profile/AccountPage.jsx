@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useTranslation } from 'react-i18next';
+import { AuthContext } from '../../contexts/AuthContext';
+import { EmployerDetails, EmployerUpgradeSection, PendingEmployerMessage } from '../../components/EmployerDetails';
 import {
   Typography,
   Box,
@@ -29,10 +31,17 @@ import {
 
 const AccountPage = () => {
   const { t } = useTranslation();
-  const [user, setUser] = useState(null);
+  const { user, setUser } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState(null);
   const [editing, setEditing] = useState(false);
+  const [employerDetails, setEmployerDetails] = useState({
+    companyName: '',
+    companyDescription: '',
+    businessType: '',
+    contactEmail: '',
+    contactPhone: '',
+  });
   const navigate = useNavigate();
   const auth = getAuth();
   const theme = useTheme();
@@ -46,27 +55,32 @@ const AccountPage = () => {
     { id: 'taxes', label: t('Taxes') },
   ];
 
+  if (user?.isEmployer) {
+    menuItems.push({ id: 'employer_details', label: t('Employer Details') });
+  }
+
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
-      if (authUser) {
+    const fetchUserData = async () => {
+      if (user) {
         try {
-          const userDoc = await getDoc(doc(db, 'users', authUser.uid));
+          const userDoc = await getDoc(doc(db, 'users', user.id));
           if (userDoc.exists()) {
-            setUser({ id: authUser.uid, ...userDoc.data(), photoURL: authUser.photoURL });
-          } else {
-            console.error('No user document found');
+            const userData = userDoc.data();
+            setUser({ ...user, ...userData });
+            if (userData.isEmployer || userData.pendingEmployer) {
+              setEmployerDetails(userData.employerDetails || {});
+            }
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
         }
-      } else {
-        navigate('/login');
       }
       setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
-  }, [navigate]);
+    fetchUserData();
+  }, [user, setUser]);
+
 
   const handleSignOut = async () => {
     try {
@@ -89,6 +103,19 @@ const AccountPage = () => {
       setEditing(false);
     } catch (error) {
       console.error('Error updating user info:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleUpdateEmployerDetails = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await updateDoc(doc(db, 'users', user.id), { employerDetails });
+      setUser({ ...user, employerDetails });
+      setEditing(false);
+    } catch (error) {
+      console.error('Error updating employer details:', error);
     }
     setLoading(false);
   };
@@ -172,7 +199,6 @@ const AccountPage = () => {
       <Typography variant="body1">
         {t('Change your password or set up two-factor authentication.')}
       </Typography>
-      {/* Add more security settings here */}
     </Box>
   );
 
@@ -184,7 +210,6 @@ const AccountPage = () => {
       <Typography variant="body1">
         {t('Manage your payment methods and payout preferences.')}
       </Typography>
-      {/* Add payment and payout options here */}
     </Box>
   );
 
@@ -196,7 +221,6 @@ const AccountPage = () => {
       <Typography variant="body1">
         {t('Adjust accessibility settings for a better experience.')}
       </Typography>
-      {/* Add accessibility settings here */}
     </Box>
   );
 
@@ -208,7 +232,6 @@ const AccountPage = () => {
       <Typography variant="body1">
         {t('Manage your tax information and documents.')}
       </Typography>
-      {/* Add tax information management here */}
     </Box>
   );
 
@@ -224,8 +247,27 @@ const AccountPage = () => {
         return <AccessibilitySettings />;
       case 'taxes':
         return <TaxInformation />;
+      case 'employer_details':
+        return (
+          <EmployerDetails
+            employerDetails={employerDetails}
+            setEmployerDetails={setEmployerDetails}
+            editing={editing}
+            handleUpdateEmployerDetails={handleUpdateEmployerDetails}
+          />
+        );
       default:
         return null;
+    }
+  };
+
+  const renderUserStatus = () => {
+    if (user.isEmployer) {
+      return t('Employer');
+    } else if (user.pendingEmployer) {
+      return t('Pending Employer Approval');
+    } else {
+      return t('User');
     }
   };
 
@@ -240,7 +282,7 @@ const AccountPage = () => {
             <Typography variant="h6">
               {menuItems.find(item => item.id === activeSection)?.label}
             </Typography>
-            {activeSection === 'personal_info' && (
+            {(activeSection === 'personal_info' || activeSection === 'employer_details') && (
               <IconButton 
                 onClick={() => setEditing(!editing)} 
                 sx={{ ml: 'auto', color: editing ? 'primary.main' : 'inherit' }}
@@ -263,32 +305,16 @@ const AccountPage = () => {
             <Box>
               <Typography variant="h5">{user.name}</Typography>
               <Typography variant="body2" color="text.secondary">
-                {user.role === 'employer' ? t('Employer') : t('User')}
+                {renderUserStatus()}
               </Typography>
             </Box>
           </Box>
 
-          {user.role !== 'employer' && user.role !== 'pending_employer' && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                {t('Upgrade to Employer')}
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                {t('Post jobs and find the best candidates for your company.')}
-              </Typography>
-              <Button variant="contained" color="primary" onClick={handleUpgradeToEmployer} fullWidth>
-                {t('Upgrade Now')}
-              </Button>
-            </Box>
+          {!user.isEmployer && !user.pendingEmployer && (
+            <EmployerUpgradeSection handleUpgradeToEmployer={handleUpgradeToEmployer} />
           )}
 
-          {user.role === 'pending_employer' && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body1">
-                {t('Your employer registration is pending approval.')}
-              </Typography>
-            </Box>
-          )}
+          {user.pendingEmployer && <PendingEmployerMessage />}
 
           <Divider sx={{ my: 3 }} />
 
@@ -335,10 +361,10 @@ const AccountPage = () => {
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h5">{user.name}</Typography>
             <Typography variant="body2" color="text.secondary">
-              {user.role === 'employer' ? t('Employer') : t('User')}
+              {user.isEmployer ? t('Employer') : user.pendingEmployer ? t('Pending Employer') : t('User')}
             </Typography>
           </Box>
-          {activeSection === 'personal_info' && (
+          {(activeSection === 'personal_info' || activeSection === 'employer_details') && (
             <Button
               onClick={() => setEditing(!editing)}
               startIcon={<EditIcon />}
@@ -350,27 +376,11 @@ const AccountPage = () => {
           )}
         </Box>
 
-        {user.role !== 'employer' && user.role !== 'pending_employer' && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              {t('Upgrade to Employer')}
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              {t('Post jobs and find the best candidates for your company.')}
-            </Typography>
-            <Button variant="contained" color="primary" onClick={handleUpgradeToEmployer}>
-              {t('Upgrade Now')}
-            </Button>
-          </Box>
+        {!user.isEmployer && !user.pendingEmployer && (
+          <EmployerUpgradeSection handleUpgradeToEmployer={handleUpgradeToEmployer} />
         )}
 
-        {user.role === 'pending_employer' && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body1">
-              {t('Your employer registration is pending approval.')}
-            </Typography>
-          </Box>
-        )}
+        {user.pendingEmployer && <PendingEmployerMessage />}
 
         <Divider sx={{ my: 3 }} />
 

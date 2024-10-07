@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db } from '../../services/firebase';
 import { User, Briefcase, MapPin, Calendar, Mail } from 'lucide-react';
 import { Button, Avatar, Typography, Paper, Grid, Box, Chip, Divider } from '@mui/material';
 import { useTranslation } from 'react-i18next';

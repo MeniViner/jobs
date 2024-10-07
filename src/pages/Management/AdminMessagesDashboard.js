@@ -44,7 +44,8 @@ export default function AdminJobsDashboard() {
       (job.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (job.companyName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (job.location?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (job.type?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+      (job.type?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (job.employerName?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
     setFilteredJobs(filtered);
   }, [jobs, searchTerm]);
@@ -58,7 +59,7 @@ export default function AdminJobsDashboard() {
         const jobData = docSnapshot.data();
         let employerData = null;
         if (jobData.employerId) {
-          const employerDocRef = doc(db, 'employers', jobData.employerId);
+          const employerDocRef = doc(db, 'users', jobData.employerId);
           const employerDocSnapshot = await getDoc(employerDocRef);
           if (employerDocSnapshot.exists()) {
             employerData = employerDocSnapshot.data();
@@ -67,7 +68,9 @@ export default function AdminJobsDashboard() {
         return {
           id: docSnapshot.id,
           ...jobData,
-          employer: employerData
+          employerName: employerData?.displayName || employerData?.name || 'לא צוין',
+          employerEmail: employerData?.email || 'לא צוין',
+          employerPhone: employerData?.phone || 'לא צוין',
         };
       }));
       setJobs(jobList);
@@ -139,7 +142,7 @@ export default function AdminJobsDashboard() {
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="חיפוש לפי כותרת, חברה, מיקום או סוג משרה"
+          placeholder="חיפוש לפי כותרת, חברה, מיקום, סוג משרה או שם המפרסם"
           value={searchTerm}
           onChange={handleSearchChange}
           InputProps={{
@@ -162,6 +165,7 @@ export default function AdminJobsDashboard() {
               <TableCell>מיקום</TableCell>
               <TableCell>סוג משרה</TableCell>
               <TableCell>שכר</TableCell>
+              <TableCell>מפרסם</TableCell>
               <TableCell>פעולות</TableCell>
             </TableRow>
           </TableHead>
@@ -191,6 +195,7 @@ export default function AdminJobsDashboard() {
                   <TableCell>{job.location || 'N/A'}</TableCell>
                   <TableCell>{job.type || 'N/A'}</TableCell>
                   <TableCell>{job.salary ? `₪${job.salary}` : 'N/A'}</TableCell>
+                  <TableCell>{job.employerName || 'N/A'}</TableCell>
                   <TableCell>
                     <IconButton onClick={() => handleOpenDialog(job)}>
                       <Edit />
@@ -201,7 +206,7 @@ export default function AdminJobsDashboard() {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+                  <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
                     <Collapse in={expandedRow === index} timeout="auto" unmountOnExit>
                       <Box margin={1}>
                         <Typography variant="h6" gutterBottom component="div">
@@ -224,15 +229,9 @@ export default function AdminJobsDashboard() {
                             <TableRow>
                               <TableCell component="th" scope="row">פרטי מעסיק</TableCell>
                               <TableCell>
-                                {job.employer ? (
-                                  <>
-                                    <Typography>שם: {job.employer.name || 'לא צוין'}</Typography>
-                                    <Typography>אימייל: {job.employer.email || 'לא צוין'}</Typography>
-                                    <Typography>טלפון: {job.employer.phone || 'לא צוין'}</Typography>
-                                  </>
-                                ) : (
-                                  'פרטי מעסיק לא זמינים'
-                                )}
+                                <Typography>שם: {job.employerName}</Typography>
+                                <Typography>אימייל: {job.employerEmail}</Typography>
+                                <Typography>טלפון: {job.employerPhone}</Typography>
                               </TableCell>
                             </TableRow>
                           </TableBody>

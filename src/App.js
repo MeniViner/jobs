@@ -24,7 +24,7 @@ import EmployerRegistration from './pages/profile/EmployerRegistration.jsx';
 
 
 
-import UserProfilePage from './pages/UserProfilePage.js';
+import UserProfilePage from './pages/Management/UserProfilePage.js';
 
 // Create a theme with RTL support
 const theme = createTheme({

@@ -12,7 +12,8 @@ import {
   ListItemIcon,
   ListItemText,
   useMediaQuery,
-  useTheme
+  useTheme,
+  Divider,
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { getAuth, signOut } from 'firebase/auth';
@@ -26,6 +27,8 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ChatIcon from '@mui/icons-material/Chat';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
+import BusinessIcon from '@mui/icons-material/Business';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 
 export default function Header() {
   const { user } = useContext(AuthContext);
@@ -48,45 +51,65 @@ export default function Header() {
     setMobileOpen(!mobileOpen);
   };
 
-  const menuItems = [
+  const regularMenuItems = [
     { text: 'דף הבית', icon: <HomeIcon />, link: '/' },
     { text: 'עבודות', icon: <WorkIcon />, link: '/jobs' },
     { text: 'עבודות שמורות', icon: <BookmarkIcon />, link: '/saved-jobs', authRequired: true },
-    { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job', authRequired: true, employerOnly: true },
-    { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/employer-chat', authRequired: true, employerOnly: true },
-    { text: 'אינטרקציה- מעמדות ועבודות', icon: <AssignmentIcon />, link: '/my-applications', authRequired: true, employeeOnly: true },
+    { text: 'המועמדויות שלי', icon: <AssignmentIcon />, link: '/my-applications', authRequired: true },
+  ];
+
+  const employerMenuItems = [
+    { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job' },
+    { text: 'עבודות שפורסמו', icon: <ChatIcon />, link: '/employer-chat' },
+  ];
+
+  const adminMenuItems = [
     { text: 'דף ניהול', icon: <AdminPanelSettingsIcon />, link: '/admin', adminRequired: true },
   ];
+
+  const renderMenuItems = (items) => {
+    return items.map((item) => (
+      (!item.adminRequired || (item.adminRequired && user?.isAdmin)) && (
+        <ListItem key={item.text} component={Link} to={item.link}>
+          <ListItemIcon>{item.icon}</ListItemIcon>
+          <ListItemText primary={item.text} />
+        </ListItem>
+      )
+    ));
+  };
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
       <Typography variant="h6" sx={{ my: 2 }}>
         פלטפורמת עבודות מזדמנות
       </Typography>
+      <Divider />
       <List>
-        {menuItems.map((item) => (
-          ((!item.authRequired && !item.adminRequired && !item.employerOnly && !item.employeeOnly) || 
-           (item.authRequired && user) || 
-           (item.adminRequired && user?.isAdmin) ||
-           (item.employerOnly && user?.isEmployer) ||
-           (item.employeeOnly && user?.isEmployee)) && (
-            <ListItem key={item.text} component={Link} to={item.link}>
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItem>
-          )
-        ))}
-        {user ? (
+        {renderMenuItems(regularMenuItems)}
+        <Divider />
+        <ListItem>
+          <ListItemIcon><BusinessIcon /></ListItemIcon>
+          <ListItemText primary="אזור מעסיק" />
+        </ListItem>
+        {renderMenuItems(employerMenuItems)}
+        {user?.isAdmin && (
           <>
-            <ListItem component={Link} to="/account">
-              <ListItemIcon><AccountCircleIcon /></ListItemIcon>
-              <ListItemText primary="פרופיל" />
+            <Divider />
+            <ListItem>
+              <ListItemIcon><SupervisorAccountIcon /></ListItemIcon>
+              <ListItemText primary="ניהול" />
             </ListItem>
-            <ListItem button onClick={handleLogout}>
-              <ListItemIcon><AccountCircleIcon /></ListItemIcon>
-              <ListItemText primary="התנתק" />
-            </ListItem>
+            {renderMenuItems(adminMenuItems)}
           </>
+        )}
+      </List>
+      <Divider />
+      <List>
+        {user ? (
+          <ListItem component={Link} to="/account">
+            <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+            <ListItemText primary="פרופיל" />
+          </ListItem>
         ) : (
           <ListItem component={Link} to="/login">
             <ListItemIcon><AccountCircleIcon /></ListItemIcon>
@@ -126,31 +149,37 @@ export default function Header() {
             </Drawer>
           </>
         ) : (
-          <Box>
-            {menuItems.map((item) => (
-              ((!item.authRequired && !item.adminRequired && !item.employerOnly && !item.employeeOnly) || 
-               (item.authRequired && user) || 
-               (item.adminRequired && user?.isAdmin) ||
-               (item.employerOnly && user?.isEmployer) ||
-               (item.employeeOnly && user?.isEmployee)) && (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {regularMenuItems.map((item) => (
+              (!item.authRequired || (item.authRequired && user)) && (
                 <Button key={item.text} color="inherit" component={Link} to={item.link}>
                   {item.text}
                 </Button>
               )
             ))}
+            {employerMenuItems.map((item) => (
+              <Button key={item.text} color="inherit" component={Link} to={item.link} startIcon={<BusinessIcon />}>
+                {item.text}
+              </Button>
+            ))}
+            {user?.isAdmin && (
+              <Button color="inherit" component={Link} to="/admin" startIcon={<SupervisorAccountIcon />}>
+                ניהול
+              </Button>
+            )}
             {user ? (
-              <>
-                <Button
-                  color="inherit"
-                  component={Link}
-                  to="/account"
-                  startIcon={<AccountCircleIcon />}
-                >
-                  פרופיל
-                </Button>
-              </>
+              <Button
+                color="inherit"
+                component={Link}
+                to="/account"
+                startIcon={<AccountCircleIcon />}
+              >
+                פרופיל
+              </Button>
             ) : (
-              <Button color="inherit" component={Link} to="/login">התחבר</Button>
+              <Button color="inherit" component={Link} to="/login" startIcon={<AccountCircleIcon />}>
+                התחבר
+              </Button>
             )}
           </Box>
         )}

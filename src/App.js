@@ -19,6 +19,7 @@ import LoginPage from './pages/profile/loginPage';
 import AdminPage from './pages/Management/AdminPage';
 import AdminUsersPage from './pages/Management/AdminUsersPage';
 import EmployerChatPage from './pages/Myworks';
+import MyApplications from './pages/MyApplications.js';
 
 // Create a theme with RTL support
 const theme = createTheme({
@@ -52,6 +53,7 @@ function App() {
               <Route path="/employer-profile" element={<EmployerProfile />} />
               <Route path="/chat/:jobId" element={<JobChat />} />
               <Route path="/employer-chat" element={<EmployerChatPage />} />
+              <Route path="/my-applications" element={<MyApplications />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Router>

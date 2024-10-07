@@ -28,6 +28,7 @@ import WorkIcon from '@mui/icons-material/Work';
 import AddIcon from '@mui/icons-material/Add';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ChatIcon from '@mui/icons-material/Chat';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 export default function Header() {
   const { user } = useContext(AuthContext);
@@ -62,10 +63,10 @@ export default function Header() {
   const menuItems = [
     { text: 'דף הבית', icon: <HomeIcon />, link: '/' },
     { text: 'עבודות', icon: <WorkIcon />, link: '/jobs' },
-    { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job', authRequired: true },
-    { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/employer-chat', authRequired: true },
+    { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job', authRequired: true, employerOnly: true },
+    { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/employer-chat', authRequired: true, employerOnly: true },
+    { text: 'המועמדויות שלי', icon: <AssignmentIcon />, link: '/my-applications', authRequired: true, employeeOnly: true },
     { text: 'דף ניהול', icon: <AdminPanelSettingsIcon />, link: '/admin', adminRequired: true },
-
   ];
 
   const drawer = (
@@ -75,9 +76,11 @@ export default function Header() {
       </Typography>
       <List>
         {menuItems.map((item) => (
-          ((!item.authRequired && !item.adminRequired) || 
+          ((!item.authRequired && !item.adminRequired && !item.employerOnly && !item.employeeOnly) || 
            (item.authRequired && user) || 
-           (item.adminRequired && user?.isAdmin)) && (
+           (item.adminRequired && user?.isAdmin) ||
+           (item.employerOnly && user?.isEmployer) ||
+           (item.employeeOnly && user?.isEmployee)) && (
             <ListItem key={item.text} component={Link} to={item.link}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
@@ -142,9 +145,11 @@ export default function Header() {
         ) : (
           <Box>
             {menuItems.map((item) => (
-              ((!item.authRequired && !item.adminRequired) || 
+              ((!item.authRequired && !item.adminRequired && !item.employerOnly && !item.employeeOnly) || 
                (item.authRequired && user) || 
-               (item.adminRequired && user?.isAdmin)) && (
+               (item.adminRequired && user?.isAdmin) ||
+               (item.employerOnly && user?.isEmployer) ||
+               (item.employeeOnly && user?.isEmployee)) && (
                 <Button key={item.text} color="inherit" component={Link} to={item.link}>
                   {item.text}
                 </Button>

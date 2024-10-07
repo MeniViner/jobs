@@ -25,11 +25,12 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  TextField,
 } from '@mui/material';
-import { collection, query, where, getDocs, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, deleteDoc, getDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Chat as ChatIcon, 
   Work as WorkIcon, 
@@ -43,6 +44,7 @@ import {
   Description as DescriptionIcon,
   AccessTime,
   DateRange,
+  Send as SendIcon,
 } from '@mui/icons-material';
 
 function TabPanel(props) {
@@ -74,9 +76,12 @@ export default function MyApplications() {
   const [applicationToDelete, setApplicationToDelete] = useState(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [chatDialogOpen, setChatDialogOpen] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
   const { user } = useContext(AuthContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
@@ -167,13 +172,53 @@ export default function MyApplications() {
     setSelectedJob(null);
   };
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const handleStartChat = (job) => {
+    setSelectedJob(job);
+    setChatDialogOpen(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (newMessage.trim() === '' || !selectedJob) return;
+
+    try {
+      const chatQuery = query(
+        collection(db, 'jobChats'),
+        where('jobId', '==', selectedJob.id),
+        where('applicantId', '==', user.uid)
+      );
+      const chatSnapshot = await getDocs(chatQuery);
+
+      let chatId;
+      if (chatSnapshot.empty) {
+        const newChat = {
+          jobId: selectedJob.id,
+          jobTitle: selectedJob.title,
+          applicantId: user.uid,
+          applicantName: user.displayName || 'Anonymous',
+          employerId: selectedJob.employerId,
+          employerName: selectedJob.employerName || 'Anonymous',
+          createdAt: serverTimestamp()
+        };
+        const chatRef = await addDoc(collection(db, 'jobChats'), newChat);
+        chatId = chatRef.id;
+      } else {
+        chatId = chatSnapshot.docs[0].id;
+      }
+
+      await addDoc(collection(db, 'jobChats', chatId, 'messages'), {
+        text: newMessage,
+        senderId: user.uid,
+        senderName: user.displayName || 'Anonymous',
+        timestamp: serverTimestamp()
+      });
+
+      setChatDialogOpen(false);
+      setNewMessage('');
+      navigate(`/job-chat/${selectedJob.id}`);
+    } catch (error) {
+      console.error("Error starting chat:", error);
+    }
+  };
 
   const renderJobList = (jobs, isHired = false) => {
     if (jobs.length === 0) {
@@ -211,14 +256,13 @@ export default function MyApplications() {
                 </CardContent>
                 <CardActions>
                   <Button
-                    component={Link}
-                    to={`/chat/${job.jobId}`}
                     variant="contained"
                     color="primary"
                     size="small"
                     startIcon={<ChatIcon />}
+                    onClick={() => handleStartChat(job)}
                   >
-                    צ'אט
+                    התחל צ'אט
                   </Button>
                   <Button
                     variant="outlined"
@@ -271,15 +315,14 @@ export default function MyApplications() {
                 <TableCell>{job.status}</TableCell>
                 <TableCell>
                   <Button
-                    component={Link}
-                    to={`/chat/${job.jobId}`}
                     variant="contained"
                     color="primary"
                     size="small"
                     startIcon={<ChatIcon />}
+                    onClick={() => handleStartChat(job)}
                     sx={{ mr: 1 }}
                   >
-                    צ'אט
+                    התחל צ'אט
                   </Button>
                   <Button
                     variant="outlined"
@@ -310,6 +353,14 @@ export default function MyApplications() {
       </TableContainer>
     );
   };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -418,6 +469,33 @@ export default function MyApplications() {
         <DialogActions>
           <Button onClick={handleCloseDetails} color="primary">
             סגור
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={chatDialogOpen} onClose={() => setChatDialogOpen(false)}>
+        <DialogTitle>שלח הודעה למעסיק</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            התחל שיחה עם המעסיק עבור המשרה: {selectedJob?.title}
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="message"
+            label="הודעה"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            multiline
+            rows={4}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setChatDialogOpen(false)}>ביטול</Button>
+          <Button onClick={handleSendMessage} variant="contained" startIcon={<SendIcon />}>
+            שלח
           </Button>
         </DialogActions>
       </Dialog>

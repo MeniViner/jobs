@@ -12,15 +12,19 @@ import {
   CircularProgress, 
   Typography,
   Button,
-  Box
+  Box,
+  TextField,
+  InputAdornment
 } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { Person } from '@mui/icons-material';
+import { Person, Search } from '@mui/icons-material';
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -29,6 +33,7 @@ const ManageUsers = () => {
         const userSnapshot = await getDocs(usersCollection);
         const userList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setUsers(userList);
+        setFilteredUsers(userList);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching users: ", err);
@@ -39,6 +44,20 @@ const ManageUsers = () => {
 
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    const filtered = users.filter(user => 
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.expertise?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredUsers(filtered);
+  }, [users, searchTerm]);
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
 
   if (loading) {
     return (
@@ -61,6 +80,21 @@ const ManageUsers = () => {
       <Typography variant="h4" gutterBottom align="center">
         ניהול משתמשים
       </Typography>
+      <TextField
+        fullWidth
+        variant="outlined"
+        placeholder="חיפוש לפי שם, אימייל, מיקום או התמחות"
+        value={searchTerm}
+        onChange={handleSearchChange}
+        sx={{ mb: 2 }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search />
+            </InputAdornment>
+          ),
+        }}
+      />
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -75,7 +109,7 @@ const ManageUsers = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map(user => (
+            {filteredUsers.map(user => (
               <TableRow key={user.id}>
                 <TableCell>
                   <Link to={`/user/${user.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>

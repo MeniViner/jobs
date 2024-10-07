@@ -11,14 +11,17 @@ import {
   TableRow,
   Switch,
   Button,
+  Box,
+  CircularProgress,
 } from '@mui/material';
 import { collection, query, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { AuthContext } from '../../contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -28,17 +31,23 @@ export default function AdminUsersPage() {
   }, [user]);
 
   const fetchUsers = async () => {
-    const usersCollection = collection(db, 'users');
-    const userSnapshot = await getDocs(usersCollection);
-    const userList = userSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        displayName: data.displayName || data.name || 'לא צוין'
-      };
-    });
-    setUsers(userList);
+    try {
+      const usersCollection = collection(db, 'users');
+      const userSnapshot = await getDocs(usersCollection);
+      const userList = userSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          displayName: data.displayName || data.name || 'לא צוין'
+        };
+      });
+      setUsers(userList);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePermissionToggle = async (userId, permission, currentValue) => {
@@ -57,6 +66,14 @@ export default function AdminUsersPage() {
     return <Navigate to="/" replace />;
   }
 
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom>
@@ -71,7 +88,6 @@ export default function AdminUsersPage() {
                 <TableCell>אימייל</TableCell>
                 <TableCell>מנהל</TableCell>
                 <TableCell>מעסיק</TableCell>
-                <TableCell>עובד</TableCell>
                 <TableCell>פעולות</TableCell>
               </TableRow>
             </TableHead>
@@ -95,14 +111,12 @@ export default function AdminUsersPage() {
                     />
                   </TableCell>
                   <TableCell>
-                    <Switch
-                      checked={user.isEmployee || false}
-                      onChange={() => handlePermissionToggle(user.id, 'isEmployee', user.isEmployee)}
-                      inputProps={{ 'aria-label': 'employee status' }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="outlined" size="small">
+                    <Button
+                      component={Link}
+                      to={`/user/${user.id}`}
+                      variant="outlined"
+                      size="small"
+                    >
                       צפייה בפרופיל
                     </Button>
                   </TableCell>

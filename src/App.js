@@ -16,10 +16,11 @@ import ManageUsers from './pages/Management/ManageUsers';
 import AccountPage from './pages/profile/AccountPage';
 import JobChat from './pages/JobChat';
 import LoginPage from './pages/profile/loginPage';
-import AdminPage from './pages/Management/AdminPage';
+import AdminPage from './pages/Management/AdminPage.jsx';
 import AdminUsersPage from './pages/Management/AdminUsersPage';
 import EmployerChatPage from './pages/Myworks';
 import MyApplications from './pages/MyApplications.js';
+import UserProfilePage from './pages/UserProfilePage.js';
 
 // Create a theme with RTL support
 const theme = createTheme({
@@ -42,6 +43,7 @@ function App() {
             <Header />
             <Routes> 
               <Route path="/" element={<HomePage />} />
+              <Route path="/user/:userId" element={<UserProfilePage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/jobs" element={<JobListPage />} />

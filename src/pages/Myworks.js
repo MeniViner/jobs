@@ -17,13 +17,13 @@ import {
   CardContent,
   Chip,
 } from '@mui/material';
-import { Work, LocationOn, AttachMoney, AccessTime, DateRange } from '@mui/icons-material';
+import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Person } from '@mui/icons-material';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
-function EmployerChatPage() {
+export default function EmployerChatPage() {
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [applicants, setApplicants] = useState([]);
@@ -164,7 +164,11 @@ function EmployerChatPage() {
                               <Avatar alt={applicant.name} src={applicant.userData?.avatarUrl} />
                             </ListItemAvatar>
                             <ListItemText
-                              primary={applicant.name}
+                              primary={
+                                <Link to={`/user/${applicant.applicantId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                  {applicant.name}
+                                </Link>
+                              }
                               secondary={
                                 <>
                                   <Typography component="span" variant="body2" color="text.primary">
@@ -174,6 +178,16 @@ function EmployerChatPage() {
                                 </>
                               }
                             />
+                            <Button
+                              component={Link}
+                              to={`/user/${applicant.applicantId}`}
+                              startIcon={<Person />}
+                              variant="outlined"
+                              size="small"
+                              sx={{ ml: 2 }}
+                            >
+                              צפה בפרופיל
+                            </Button>
                           </ListItem>
                           <Box sx={{ mt: 2, mb: 2 }}>
                             <TextField
@@ -209,5 +223,3 @@ function EmployerChatPage() {
     </Container>
   );
 }
-
-export default EmployerChatPage;

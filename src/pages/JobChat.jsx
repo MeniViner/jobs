@@ -14,10 +14,16 @@ import {
   FormControlLabel,
   Badge,
   Avatar,
-  Chip
+  Chip,
+  IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle
 } from '@mui/material';
-import { Chat as ChatIcon, Send as SendIcon, Person as PersonIcon } from '@mui/icons-material';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, getDocs } from 'firebase/firestore';
+import { Chat as ChatIcon, Send as SendIcon, Person as PersonIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -32,6 +38,8 @@ export default function JobChat() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [isEmployerView, setIsEmployerView] = useState(true);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState(null);
   const { jobId } = useParams();
   const navigate = useNavigate();
 
@@ -164,6 +172,32 @@ export default function JobChat() {
     return messages.filter(message => message.senderId !== user.uid && !message.read).length;
   };
 
+  const handleDeleteChat = async () => {
+    if (!chatToDelete) return;
+
+    try {
+      // Delete all messages in the chat
+      const messagesQuery = query(collection(db, 'jobChats', chatToDelete.id, 'messages'));
+      const messagesSnapshot = await getDocs(messagesQuery);
+      const deletePromises = messagesSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+
+      // Delete the chat document
+      await deleteDoc(doc(db, 'jobChats', chatToDelete.id));
+
+      setChats(chats.filter(chat => chat.id !== chatToDelete.id));
+      if (selectedChat && selectedChat.id === chatToDelete.id) {
+        setSelectedChat(null);
+        setMessages([]);
+      }
+      setChatToDelete(null);
+      setOpenDeleteDialog(false);
+    } catch (error) {
+      console.error("Error deleting chat:", error);
+      alert('אירעה שגיאה במחיקת השיחה');
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -221,6 +255,17 @@ export default function JobChat() {
                     <Badge badgeContent={getUnreadMessagesCount(chat)} color="primary">
                       <ChatIcon />
                     </Badge>
+                    <IconButton 
+                      edge="end" 
+                      aria-label="delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setChatToDelete(chat);
+                        setOpenDeleteDialog(true);
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
                   </ListItem>
                 ))
             }
@@ -248,6 +293,17 @@ export default function JobChat() {
                     <Badge badgeContent={getUnreadMessagesCount(chat)} color="primary">
                       <ChatIcon />
                     </Badge>
+                    <IconButton 
+                      edge="end" 
+                      aria-label="delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setChatToDelete(chat);
+                        setOpenDeleteDialog(true);
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
                   </ListItem>
                 ))}
               </List>
@@ -332,6 +388,25 @@ export default function JobChat() {
           )}
         </Paper>
       </Box>
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">{"מחיקת שיחה"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            האם אתה בטוח שברצונך למחוק את השיחה הזו? פעולה זו אינה ניתנת לביטול.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)}>ביטול</Button>
+          <Button onClick={handleDeleteChat} color="error" autoFocus>
+            מחק
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

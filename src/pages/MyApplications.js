@@ -26,7 +26,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -37,7 +37,12 @@ import {
   AccessTime as TimeIcon, 
   DateRange as DateIcon,
   CheckCircle as CheckCircleIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
+  AttachMoney as AttachMoneyIcon,
+  Description as DescriptionIcon,
+  AccessTime,
+  DateRange,
 } from '@mui/icons-material';
 
 function TabPanel(props) {
@@ -67,6 +72,8 @@ export default function MyApplications() {
   const [tabValue, setTabValue] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [applicationToDelete, setApplicationToDelete] = useState(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
   const { user } = useContext(AuthContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -100,14 +107,10 @@ export default function MyApplications() {
           const applicationData = {
             id: latestApplication.id,
             jobId: job.id,
-            jobTitle: job.title,
-            companyName: job.companyName,
+            ...job,
             appliedAt: latestApplication.data().timestamp,
             status: latestApplication.data().hired ? 'התקבלת' : 'ממתין',
             applicationCount: applicantsSnapshot.size,
-            location: job.location,
-            startTime: job.startTime,
-            workDates: job.workDates,
           };
 
           if (latestApplication.data().hired) {
@@ -154,6 +157,16 @@ export default function MyApplications() {
     setApplicationToDelete(null);
   };
 
+  const handleViewDetails = (job) => {
+    setSelectedJob(job);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsDialogOpen(false);
+    setSelectedJob(null);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -162,11 +175,11 @@ export default function MyApplications() {
     );
   }
 
-  const renderApplications = () => {
-    if (applications.length === 0) {
+  const renderJobList = (jobs, isHired = false) => {
+    if (jobs.length === 0) {
       return (
         <Typography variant="h6" align="center">
-          לא הגשת עדיין מועמדות לאף משרה
+          {isHired ? 'טרם התקבלת לאף עבודה' : 'לא הגשת עדיין מועמדות לאף משרה'}
         </Typography>
       );
     }
@@ -174,30 +187,32 @@ export default function MyApplications() {
     if (isMobile) {
       return (
         <Grid container spacing={2}>
-          {applications.map((application) => (
-            <Grid item xs={12} key={application.jobId}>
+          {jobs.map((job) => (
+            <Grid item xs={12} key={job.jobId}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" component="div">
-                    {application.jobTitle}
+                    {job.title}
                   </Typography>
                   <Typography color="text.secondary">
-                    {application.companyName}
+                    {job.companyName}
                   </Typography>
                   <Typography variant="body2">
-                    תאריך הגשה: {application.appliedAt ? new Date(application.appliedAt.toDate()).toLocaleDateString('he-IL') : 'לא זמין'}
+                    תאריך הגשה: {job.appliedAt ? new Date(job.appliedAt.toDate()).toLocaleDateString('he-IL') : 'לא זמין'}
                   </Typography>
+                  {!isHired && (
+                    <Typography variant="body2">
+                      מספר הגשות: {job.applicationCount}
+                    </Typography>
+                  )}
                   <Typography variant="body2">
-                    מספר הגשות: {application.applicationCount}
-                  </Typography>
-                  <Typography variant="body2">
-                    סטטוס: {application.status}
+                    סטטוס: {job.status}
                   </Typography>
                 </CardContent>
                 <CardActions>
                   <Button
                     component={Link}
-                    to={`/chat/${application.jobId}`}
+                    to={`/chat/${job.jobId}`}
                     variant="contained"
                     color="primary"
                     size="small"
@@ -207,13 +222,24 @@ export default function MyApplications() {
                   </Button>
                   <Button
                     variant="outlined"
-                    color="error"
+                    color="primary"
                     size="small"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => handleDeleteClick(application)}
+                    startIcon={<VisibilityIcon />}
+                    onClick={() => handleViewDetails(job)}
                   >
-                    מחק מועמדות
+                    פרטים
                   </Button>
+                  {!isHired && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDeleteClick(job)}
+                    >
+                      מחק מועמדות
+                    </Button>
+                  )}
                 </CardActions>
               </Card>
             </Grid>
@@ -229,24 +255,24 @@ export default function MyApplications() {
             <TableRow>
               <TableCell>כותרת המשרה</TableCell>
               <TableCell>שם החברה</TableCell>
-              <TableCell>תאריך הגשה אחרון</TableCell>
-              <TableCell>מספר הגשות</TableCell>
+              <TableCell>תאריך הגשה</TableCell>
+              {!isHired && <TableCell>מספר הגשות</TableCell>}
               <TableCell>סטטוס</TableCell>
               <TableCell>פעולות</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {applications.map((application) => (
-              <TableRow key={application.jobId}>
-                <TableCell>{application.jobTitle}</TableCell>
-                <TableCell>{application.companyName}</TableCell>
-                <TableCell>{application.appliedAt ? new Date(application.appliedAt.toDate()).toLocaleDateString('he-IL') : 'לא זמין'}</TableCell>
-                <TableCell>{application.applicationCount}</TableCell>
-                <TableCell>{application.status}</TableCell>
+            {jobs.map((job) => (
+              <TableRow key={job.jobId}>
+                <TableCell>{job.title}</TableCell>
+                <TableCell>{job.companyName}</TableCell>
+                <TableCell>{job.appliedAt ? new Date(job.appliedAt.toDate()).toLocaleDateString('he-IL') : 'לא זמין'}</TableCell>
+                {!isHired && <TableCell>{job.applicationCount}</TableCell>}
+                <TableCell>{job.status}</TableCell>
                 <TableCell>
                   <Button
                     component={Link}
-                    to={`/chat/${application.jobId}`}
+                    to={`/chat/${job.jobId}`}
                     variant="contained"
                     color="primary"
                     size="small"
@@ -257,126 +283,25 @@ export default function MyApplications() {
                   </Button>
                   <Button
                     variant="outlined"
-                    color="error"
-                    size="small"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => handleDeleteClick(application)}
-                  >
-                    מחק מועמדות
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    );
-  };
-
-  const renderHiredJobs = () => {
-    if (hiredJobs.length === 0) {
-      return (
-        <Typography variant="h6" align="center">
-          טרם התקבלת לאף עבודה
-        </Typography>
-      );
-    }
-
-    if (isMobile) {
-      return (
-        <Grid container spacing={2}>
-          {hiredJobs.map((job) => (
-            <Grid item xs={12} key={job.jobId}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" component="div">
-                    {job.jobTitle}
-                  </Typography>
-                  <Typography color="text.secondary">
-                    {job.companyName}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                    <LocationIcon fontSize="small" sx={{ mr: 1 }} />
-                    <Typography variant="body2" fontWeight="bold">
-                      {job.location}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                    <DateIcon fontSize="small" sx={{ mr: 1 }} />
-                    <Typography variant="body2" fontWeight="bold">
-                      {job.workDates ? job.workDates.join(', ') : 'לא זמין'}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                    <TimeIcon fontSize="small" sx={{ mr: 1 }} />
-                    <Typography variant="body2" fontWeight="bold">
-                      {job.startTime || 'לא זמין'}
-                    </Typography>
-                  </Box>
-                </CardContent>
-                <CardActions>
-                  <Button
-                    component={Link}
-                    to={`/chat/${job.jobId}`}
-                    variant="contained"
                     color="primary"
                     size="small"
-                    startIcon={<ChatIcon />}
+                    startIcon={<VisibilityIcon />}
+                    onClick={() => handleViewDetails(job)}
+                    sx={{ mr: 1 }}
                   >
-                    צ'אט
+                    פרטים
                   </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      );
-    }
-
-    return (
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>כותרת המשרה</TableCell>
-              <TableCell>שם החברה</TableCell>
-              <TableCell>מיקום</TableCell>
-              <TableCell>תאריכי עבודה</TableCell>
-              <TableCell>שעת התחלה</TableCell>
-              <TableCell>פעולות</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {hiredJobs.map((job) => (
-              <TableRow key={job.jobId}>
-                <TableCell>{job.jobTitle}</TableCell>
-                <TableCell>{job.companyName}</TableCell>
-                <TableCell>
-                  <Typography variant="body2" fontWeight="bold">
-                    {job.location}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" fontWeight="bold">
-                    {job.workDates ? job.workDates.join(', ') : 'לא זמין'}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" fontWeight="bold">
-                    {job.startTime || 'לא זמין'}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    component={Link}
-                    to={`/chat/${job.jobId}`}
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    startIcon={<ChatIcon />}
-                  >
-                    צ'אט
-                  </Button>
+                  {!isHired && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDeleteClick(job)}
+                    >
+                      מחק מועמדות
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -403,10 +328,10 @@ export default function MyApplications() {
         </Tabs>
       </Box>
       <TabPanel value={tabValue} index={0}>
-        {renderApplications()}
+        {renderJobList(applications)}
       </TabPanel>
       <TabPanel value={tabValue} index={1}>
-        {renderHiredJobs()}
+        {renderJobList(hiredJobs, true)}
       </TabPanel>
       <Dialog
         open={deleteDialogOpen}
@@ -428,6 +353,71 @@ export default function MyApplications() {
           </Button>
           <Button onClick={handleDeleteConfirm} color="error" autoFocus>
             מחק מועמדות
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={detailsDialogOpen}
+        onClose={handleCloseDetails}
+        aria-labelledby="job-details-dialog-title"
+        aria-describedby="job-details-dialog-description"
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle id="job-details-dialog-title">
+          {selectedJob?.title}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              פרטי העבודה
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body1">
+                  <WorkIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  חברה: {selectedJob?.companyName}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body1">
+                  <LocationIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  מיקום: {selectedJob?.location}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body1">
+                  <AttachMoneyIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  שכר: ₪{selectedJob?.salary} לשעה
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body1">
+                  <AccessTime fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  שעות: {selectedJob?.startTime} - {selectedJob?.endTime}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="body1">
+                  <DateRange fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  תאריכי עבודה: {selectedJob?.workDates ? selectedJob.workDates.join(', ') : 'לא זמין'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="body1">
+                  <DescriptionIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  תיאור העבודה:
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {selectedJob?.description}
+                </Typography>
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDetails} color="primary">
+            סגור
           </Button>
         </DialogActions>
       </Dialog>

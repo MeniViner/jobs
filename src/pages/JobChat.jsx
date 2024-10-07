@@ -23,7 +23,7 @@ import {
   DialogTitle
 } from '@mui/material';
 import { Chat as ChatIcon, Send as SendIcon, Person as PersonIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -119,6 +119,21 @@ export default function JobChat() {
     return () => unsubscribe();
   };
 
+  const markMessagesAsRead = async (chatId) => {
+    const messagesQuery = query(
+      collection(db, 'jobChats', chatId, 'messages'),
+      where('unread', '==', true),
+      where('senderId', '!=', user.uid) // רק הודעות של אחרים
+    );
+
+    const messagesSnapshot = await getDocs(messagesQuery);
+    const updatePromises = messagesSnapshot.docs.map(doc =>
+      updateDoc(doc.ref, { unread: false })
+    );
+
+    await Promise.all(updatePromises);
+  };
+
   const handleJobClick = (job) => {
     setSelectedJob(job);
     fetchChatsForJob(job.id);
@@ -126,8 +141,9 @@ export default function JobChat() {
     setMessages([]);
   };
 
-  const handleChatClick = (chat) => {
+  const handleChatClick = async (chat) => {
     setSelectedChat(chat);
+    await markMessagesAsRead(chat.id); // סימון ההודעות כנקראו
     fetchMessages(chat.id);
   };
 
@@ -138,7 +154,8 @@ export default function JobChat() {
       text: newMessage,
       senderId: user.uid,
       senderName: user.displayName || 'Anonymous',
-      timestamp: serverTimestamp()
+      timestamp: serverTimestamp(),
+      unread: true  // שדה שמסמן שההודעה לא נקראה
     });
 
     setNewMessage('');
@@ -167,9 +184,10 @@ export default function JobChat() {
     setMessages([]);
   };
 
-  const getUnreadMessagesCount = (chat) => {
-    if (!chat || !messages) return 0;
-    return messages.filter(message => message.senderId !== user.uid && !message.read).length;
+  const getUnreadMessagesCount = (job) => {
+    return messages.filter(
+      message => message.jobId === job.id && message.unread && message.senderId !== user.uid
+    ).length;
   };
 
   const handleDeleteChat = async () => {
@@ -238,7 +256,11 @@ export default function JobChat() {
                         </Box>
                       } 
                     />
-                    <Chip label={job.applicantCount} color="primary" size="small" />
+                    {getUnreadMessagesCount(job) > 0 && (
+                      <Badge badgeContent={getUnreadMessagesCount(job)} color="primary">
+                        <ChatIcon />
+                      </Badge>
+                    )}
                   </ListItem>
                 ))
               : chats.map((chat) => (
@@ -252,9 +274,11 @@ export default function JobChat() {
                       primary={chat.jobTitle} 
                       secondary={isEmployerView ? chat.applicantName : chat.employerName} 
                     />
-                    <Badge badgeContent={getUnreadMessagesCount(chat)} color="primary">
-                      <ChatIcon />
-                    </Badge>
+                    {getUnreadMessagesCount(chat) > 0 && (
+                      <Badge badgeContent={getUnreadMessagesCount(chat)} color="primary">
+                        <ChatIcon />
+                      </Badge>
+                    )}
                     <IconButton 
                       edge="end" 
                       aria-label="delete"
@@ -290,9 +314,11 @@ export default function JobChat() {
                       primary={chat.applicantName} 
                       secondary={`הודעות חדשות: ${getUnreadMessagesCount(chat)}`} 
                     />
-                    <Badge badgeContent={getUnreadMessagesCount(chat)} color="primary">
-                      <ChatIcon />
-                    </Badge>
+                    {getUnreadMessagesCount(chat) > 0 && (
+                      <Badge badgeContent={getUnreadMessagesCount(chat)} color="primary">
+                        <ChatIcon />
+                      </Badge>
+                    )}
                     <IconButton 
                       edge="end" 
                       aria-label="delete"
@@ -408,19 +434,5 @@ export default function JobChat() {
         </DialogActions>
       </Dialog>
     </Box>
-  )
+  );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

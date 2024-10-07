@@ -3,26 +3,47 @@ import { useNavigate } from 'react-router-dom';
 import { getAuth, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
-import { Bell, User, Lock, CreditCard, Settings, FileText } from 'lucide-react';
-import '../../styles/accountPage.css';
-
-// Assuming you're using a translation library like react-i18next
 import { useTranslation } from 'react-i18next';
+import {
+  Typography,
+  Box,
+  List,
+  ListItem,
+  ListItemText,
+  TextField,
+  Grid,
+  Divider,
+  IconButton,
+  useMediaQuery,
+  useTheme,
+  Button,
+  Container,
+  Paper,
+} from '@mui/material';
+import {
+  ArrowBack as ArrowBackIcon,
+  ChevronRight as ChevronRightIcon,
+  Edit as EditIcon,
+  Save as SaveIcon,
+} from '@mui/icons-material';
 
 const AccountPage = () => {
   const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState('Personal information');
+  const [activeSection, setActiveSection] = useState(null);
+  const [editing, setEditing] = useState(false);
   const navigate = useNavigate();
   const auth = getAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const menuItems = [
-    { id: 'Personal information', label: t('Personal information'), icon: User },
-    { id: 'Login & security', label: t('Login & security'), icon: Lock },
-    { id: 'Payments and payouts', label: t('Payments and payouts'), icon: CreditCard },
-    { id: 'Accessibility', label: t('Accessibility'), icon: Settings },
-    { id: 'Taxes', label: t('Taxes'), icon: FileText },
+    { id: 'personal_info', label: t('Personal Information') },
+    { id: 'login_security', label: t('Login & Security') },
+    { id: 'payments_payouts', label: t('Payments and Payouts') },
+    { id: 'accessibility', label: t('Accessibility') },
+    { id: 'taxes', label: t('Taxes') },
   ];
 
   useEffect(() => {
@@ -57,7 +78,7 @@ const AccountPage = () => {
   };
 
   const handleUpgradeToEmployer = () => {
-    navigate('/register-profile');
+    navigate('/employer-registration');
   };
 
   const handleUpdateUserInfo = async (updatedInfo) => {
@@ -65,6 +86,7 @@ const AccountPage = () => {
     try {
       await updateDoc(doc(db, 'users', user.id), updatedInfo);
       setUser({ ...user, ...updatedInfo });
+      setEditing(false);
     } catch (error) {
       console.error('Error updating user info:', error);
     }
@@ -72,120 +94,322 @@ const AccountPage = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return <Typography>Loading...</Typography>;
   }
 
   if (!user) {
     return null;
   }
 
-  const PersonalInformation = ({ loading, setLoading }) => (
-    <div className="section-content">
-      <h2>{t('Personal Information')}</h2>
+  const PersonalInformation = () => (
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        {t('Personal Information')}
+      </Typography>
       <form onSubmit={(e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const updatedInfo = Object.fromEntries(formData);
         handleUpdateUserInfo(updatedInfo);
       }}>
-        <div className="form-group">
-          <label htmlFor="name">{t('Name')}</label>
-          <input type="text" id="name" name="name" defaultValue={user.name} required />
-        </div>
-        <div className="form-group">
-          <label htmlFor="email">{t('Email')}</label>
-          <input type="email" id="email" name="email" defaultValue={user.email} required />
-        </div>
-        <div className="form-group">
-          <label htmlFor="phone">{t('Phone')}</label>
-          <input type="tel" id="phone" name="phone" defaultValue={user.phone} />
-        </div>
-        <button type="submit" disabled={loading}>{t('Save Changes')}</button>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label={t('Name')}
+              name="name"
+              defaultValue={user.name}
+              required
+              disabled={!editing}
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label={t('Email')}
+              name="email"
+              type="email"
+              defaultValue={user.email}
+              required
+              disabled={!editing}
+              variant="outlined"
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label={t('Phone')}
+              name="phone"
+              type="tel"
+              defaultValue={user.phone}
+              disabled={!editing}
+              variant="outlined"
+            />
+          </Grid>
+        </Grid>
+        {editing && (
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            startIcon={<SaveIcon />}
+            fullWidth
+            sx={{ mt: 2 }}
+          >
+            {t('Save Changes')}
+          </Button>
+        )}
       </form>
-    </div>
+    </Box>
   );
 
   const LoginSecurity = () => (
-    <div className="section-content">
-      <h2>{t('Login & Security')}</h2>
-      <p>{t('Change your password or set up two-factor authentication.')}</p>
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        {t('Login & Security')}
+      </Typography>
+      <Typography variant="body1">
+        {t('Change your password or set up two-factor authentication.')}
+      </Typography>
       {/* Add more security settings here */}
-    </div>
+    </Box>
   );
 
   const PaymentsPayouts = () => (
-    <div className="section-content">
-      <h2>{t('Payments and Payouts')}</h2>
-      <p>{t('Manage your payment methods and payout preferences.')}</p>
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        {t('Payments and Payouts')}
+      </Typography>
+      <Typography variant="body1">
+        {t('Manage your payment methods and payout preferences.')}
+      </Typography>
       {/* Add payment and payout options here */}
-    </div>
+    </Box>
   );
 
   const AccessibilitySettings = () => (
-    <div className="section-content">
-      <h2>{t('Accessibility')}</h2>
-      <p>{t('Adjust accessibility settings for a better experience.')}</p>
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        {t('Accessibility')}
+      </Typography>
+      <Typography variant="body1">
+        {t('Adjust accessibility settings for a better experience.')}
+      </Typography>
       {/* Add accessibility settings here */}
-    </div>
+    </Box>
   );
 
   const TaxInformation = () => (
-    <div className="section-content">
-      <h2>{t('Taxes')}</h2>
-      <p>{t('Manage your tax information and documents.')}</p>
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        {t('Taxes')}
+      </Typography>
+      <Typography variant="body1">
+        {t('Manage your tax information and documents.')}
+      </Typography>
       {/* Add tax information management here */}
-    </div>
+    </Box>
   );
 
-  return (
-    <div className="account-page">
-      <div className="header">
-        <h1>{t('Profile')}</h1>
-        <Bell className="notification-icon" />
-      </div>
+  const renderActiveSection = () => {
+    switch (activeSection) {
+      case 'personal_info':
+        return <PersonalInformation />;
+      case 'login_security':
+        return <LoginSecurity />;
+      case 'payments_payouts':
+        return <PaymentsPayouts />;
+      case 'accessibility':
+        return <AccessibilitySettings />;
+      case 'taxes':
+        return <TaxInformation />;
+      default:
+        return null;
+    }
+  };
 
-      <div className="user-profile">
-        <img src={user.photoURL} alt={user.name} className="user-picture" />
-        <div className="user-info">
-          <h2>{user.name}</h2>
-          <p>{t('Show profile')}</p>
-        </div>
-        <div className="chevron-right">›</div>
-      </div>
+  const MobileView = () => (
+    <Box sx={{ maxWidth: '100%', margin: '0 auto', padding: 2 }}>
+      {activeSection ? (
+        <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <IconButton onClick={() => setActiveSection(null)} sx={{ mr: 1 }}>
+              <ArrowBackIcon />
+            </IconButton>
+            <Typography variant="h6">
+              {menuItems.find(item => item.id === activeSection)?.label}
+            </Typography>
+            {activeSection === 'personal_info' && (
+              <IconButton 
+                onClick={() => setEditing(!editing)} 
+                sx={{ ml: 'auto', color: editing ? 'primary.main' : 'inherit' }}
+              >
+                <EditIcon />
+              </IconButton>
+            )}
+          </Box>
+          {renderActiveSection()}
+        </Box>
+      ) : (
+        <>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <Box
+              component="img"
+              src={user.photoURL}
+              alt={user.name}
+              sx={{ width: 80, height: 80, borderRadius: '50%', mr: 2 }}
+            />
+            <Box>
+              <Typography variant="h5">{user.name}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {user.role === 'employer' ? t('Employer') : t('User')}
+              </Typography>
+            </Box>
+          </Box>
 
-      <div className="upgrade-section">
-        <h3>{t('Upgrade to Employer')}</h3>
-        <p>{t('Post jobs and find the best candidates for your company.')}</p>
-        <button onClick={handleUpgradeToEmployer} className="upgrade-button">{t('Upgrade Now')}</button>
-      </div>
+          {user.role !== 'employer' && user.role !== 'pending_employer' && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                {t('Upgrade to Employer')}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                {t('Post jobs and find the best candidates for your company.')}
+              </Typography>
+              <Button variant="contained" color="primary" onClick={handleUpgradeToEmployer} fullWidth>
+                {t('Upgrade Now')}
+              </Button>
+            </Box>
+          )}
 
-      <div className="settings-section">
-        <h3>{t('Settings')}</h3>
-        <ul>
-          {menuItems.map((item) => (
-            <li 
-              key={item.id} 
-              onClick={() => setActiveSection(item.id)}
-              className={activeSection === item.id ? 'active' : ''}
+          {user.role === 'pending_employer' && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body1">
+                {t('Your employer registration is pending approval.')}
+              </Typography>
+            </Box>
+          )}
+
+          <Divider sx={{ my: 3 }} />
+
+          <List>
+            {menuItems.map((item) => (
+              <React.Fragment key={item.id}>
+                <ListItem
+                  button
+                  onClick={() => setActiveSection(item.id)}
+                  sx={{ py: 2 }}
+                >
+                  <ListItemText primary={item.label} />
+                  <ChevronRightIcon />
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
+          </List>
+
+          <Button 
+            variant="outlined" 
+            color="error" 
+            onClick={handleSignOut} 
+            fullWidth 
+            sx={{ mt: 3 }}
+          >
+            {t('Sign Out')}
+          </Button>
+        </>
+      )}
+    </Box>
+  );
+
+  const DesktopView = () => (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Paper elevation={0} sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Box
+            component="img"
+            src={user.photoURL}
+            alt={user.name}
+            sx={{ width: theme.spacing(15), height: theme.spacing(15), borderRadius: '50%', mr: 3 }}
+          />
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography variant="h5">{user.name}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {user.role === 'employer' ? t('Employer') : t('User')}
+            </Typography>
+          </Box>
+          {activeSection === 'personal_info' && (
+            <Button
+              onClick={() => setEditing(!editing)}
+              startIcon={<EditIcon />}
+              variant={editing ? "contained" : "outlined"}
+              color="primary"
             >
-              <item.icon className="settings-icon" />
-              <span>{item.label}</span>
-              <span className="chevron-right">›</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+              {editing ? t('Cancel') : t('Edit')}
+            </Button>
+          )}
+        </Box>
 
-      {activeSection === 'Personal information' && <PersonalInformation loading={loading} setLoading={setLoading} />}
-      {activeSection === 'Login & security' && <LoginSecurity />}
-      {activeSection === 'Payments and payouts' && <PaymentsPayouts />}
-      {activeSection === 'Accessibility' && <AccessibilitySettings />}
-      {activeSection === 'Taxes' && <TaxInformation />}
+        {user.role !== 'employer' && user.role !== 'pending_employer' && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              {t('Upgrade to Employer')}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              {t('Post jobs and find the best candidates for your company.')}
+            </Typography>
+            <Button variant="contained" color="primary" onClick={handleUpgradeToEmployer}>
+              {t('Upgrade Now')}
+            </Button>
+          </Box>
+        )}
 
-      <button onClick={handleSignOut} className="sign-out-button">{t('Sign Out')}</button>
+        {user.role === 'pending_employer' && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body1">
+              {t('Your employer registration is pending approval.')}
+            </Typography>
+          </Box>
+        )}
 
-    </div>
+        <Divider sx={{ my: 3 }} />
+
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={4}>
+            <List>
+              {menuItems.map((item) => (
+                <ListItem
+                  button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  selected={activeSection === item.id}
+                  sx={{ 
+                    py: 2,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    '&:last-child': { borderBottom: 'none' }
+                  }}
+                >
+                  <ListItemText primary={item.label} />
+                </ListItem>
+              ))}
+            </List>
+          </Grid>
+          <Grid item xs={12} md={8}>
+            {renderActiveSection()}
+          </Grid>
+        </Grid>
+
+        <Divider sx={{ my: 3 }} />
+
+        <Button variant="outlined" color="error" onClick={handleSignOut}>
+          {t('Sign Out')}
+        </Button>
+      </Paper>
+    </Container>
   );
+
+  return isMobile ? <MobileView /> : <DesktopView />;
 };
 
 export default AccountPage;

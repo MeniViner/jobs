@@ -12,24 +12,79 @@ import {
   Button,
   CircularProgress,
   Box,
+  Tabs,
+  Tab,
+  useMediaQuery,
+  useTheme,
+  Card,
+  CardContent,
+  CardActions,
+  Grid,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { 
+  Chat as ChatIcon, 
+  Work as WorkIcon, 
+  LocationOn as LocationIcon, 
+  AccessTime as TimeIcon, 
+  DateRange as DateIcon,
+  CheckCircle as CheckCircleIcon,
+  Delete as DeleteIcon,
+  Visibility as VisibilityIcon,
+  AttachMoney as AttachMoneyIcon,
+  Description as DescriptionIcon,
+  AccessTime,
+  DateRange,
+} from '@mui/icons-material';
+
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
 
 export default function MyApplications() {
   const [applications, setApplications] = useState([]);
+  const [hiredJobs, setHiredJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tabValue, setTabValue] = useState(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] = useState(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
   const { user } = useContext(AuthContext);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     if (user) {
-      fetchApplications();
+      fetchApplicationsAndHiredJobs();
     }
   }, [user]);
 
-  const fetchApplications = async () => {
+  const fetchApplicationsAndHiredJobs = async () => {
     setLoading(true);
     try {
       const jobsCollection = collection(db, 'jobs');
@@ -37,6 +92,7 @@ export default function MyApplications() {
       const jobsData = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
       const applicationsMap = new Map();
+      const hiredJobsMap = new Map();
 
       for (const job of jobsData) {
         const applicantsCollection = collection(db, 'jobChats', job.id, 'applicants');
@@ -48,24 +104,67 @@ export default function MyApplications() {
             return latest.data().timestamp > current.data().timestamp ? latest : current;
           });
 
-          applicationsMap.set(job.id, {
+          const applicationData = {
             id: latestApplication.id,
             jobId: job.id,
-            jobTitle: job.title,
-            companyName: job.companyName,
+            ...job,
             appliedAt: latestApplication.data().timestamp,
-            status: 'Pending', // You might want to add a status field to your applicants documents
-            applicationCount: applicantsSnapshot.size
-          });
+            status: latestApplication.data().hired ? 'התקבלת' : 'ממתין',
+            applicationCount: applicantsSnapshot.size,
+          };
+
+          if (latestApplication.data().hired) {
+            hiredJobsMap.set(job.id, applicationData);
+          } else {
+            applicationsMap.set(job.id, applicationData);
+          }
         }
       }
 
       setApplications(Array.from(applicationsMap.values()));
+      setHiredJobs(Array.from(hiredJobsMap.values()));
     } catch (error) {
-      console.error("Error fetching applications:", error);
+      console.error("Error fetching applications and hired jobs:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const handleDeleteClick = (application) => {
+    setApplicationToDelete(application);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (applicationToDelete) {
+      try {
+        await deleteDoc(doc(db, 'jobChats', applicationToDelete.jobId, 'applicants', applicationToDelete.id));
+        setApplications(applications.filter(app => app.id !== applicationToDelete.id));
+        setDeleteDialogOpen(false);
+        setApplicationToDelete(null);
+      } catch (error) {
+        console.error("Error deleting application:", error);
+      }
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setApplicationToDelete(null);
+  };
+
+  const handleViewDetails = (job) => {
+    setSelectedJob(job);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsDialogOpen(false);
+    setSelectedJob(null);
   };
 
   if (loading) {
@@ -76,53 +175,252 @@ export default function MyApplications() {
     );
   }
 
+  const renderJobList = (jobs, isHired = false) => {
+    if (jobs.length === 0) {
+      return (
+        <Typography variant="h6" align="center">
+          {isHired ? 'טרם התקבלת לאף עבודה' : 'לא הגשת עדיין מועמדות לאף משרה'}
+        </Typography>
+      );
+    }
+
+    if (isMobile) {
+      return (
+        <Grid container spacing={2}>
+          {jobs.map((job) => (
+            <Grid item xs={12} key={job.jobId}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" component="div">
+                    {job.title}
+                  </Typography>
+                  <Typography color="text.secondary">
+                    {job.companyName}
+                  </Typography>
+                  <Typography variant="body2">
+                    תאריך הגשה: {job.appliedAt ? new Date(job.appliedAt.toDate()).toLocaleDateString('he-IL') : 'לא זמין'}
+                  </Typography>
+                  {!isHired && (
+                    <Typography variant="body2">
+                      מספר הגשות: {job.applicationCount}
+                    </Typography>
+                  )}
+                  <Typography variant="body2">
+                    סטטוס: {job.status}
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button
+                    component={Link}
+                    to={`/chat/${job.jobId}`}
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    startIcon={<ChatIcon />}
+                  >
+                    צ'אט
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    startIcon={<VisibilityIcon />}
+                    onClick={() => handleViewDetails(job)}
+                  >
+                    פרטים
+                  </Button>
+                  {!isHired && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDeleteClick(job)}
+                    >
+                      מחק מועמדות
+                    </Button>
+                  )}
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      );
+    }
+
+    return (
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>כותרת המשרה</TableCell>
+              <TableCell>שם החברה</TableCell>
+              <TableCell>תאריך הגשה</TableCell>
+              {!isHired && <TableCell>מספר הגשות</TableCell>}
+              <TableCell>סטטוס</TableCell>
+              <TableCell>פעולות</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {jobs.map((job) => (
+              <TableRow key={job.jobId}>
+                <TableCell>{job.title}</TableCell>
+                <TableCell>{job.companyName}</TableCell>
+                <TableCell>{job.appliedAt ? new Date(job.appliedAt.toDate()).toLocaleDateString('he-IL') : 'לא זמין'}</TableCell>
+                {!isHired && <TableCell>{job.applicationCount}</TableCell>}
+                <TableCell>{job.status}</TableCell>
+                <TableCell>
+                  <Button
+                    component={Link}
+                    to={`/chat/${job.jobId}`}
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    startIcon={<ChatIcon />}
+                    sx={{ mr: 1 }}
+                  >
+                    צ'אט
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    startIcon={<VisibilityIcon />}
+                    onClick={() => handleViewDetails(job)}
+                    sx={{ mr: 1 }}
+                  >
+                    פרטים
+                  </Button>
+                  {!isHired && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDeleteClick(job)}
+                    >
+                      מחק מועמדות
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom align="center">
-        המועמדויות שלי
+        המועמדויות והעבודות שלי
       </Typography>
-      {applications.length === 0 ? (
-        <Typography variant="h6" align="center">
-          לא הגשת עדיין מועמדות לאף משרה
-        </Typography>
-      ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>כותרת המשרה</TableCell>
-                <TableCell>שם החברה</TableCell>
-                <TableCell>תאריך הגשה אחרון</TableCell>
-                <TableCell>מספר הגשות</TableCell>
-                <TableCell>סטטוס</TableCell>
-                <TableCell>פעולות</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {applications.map((application) => (
-                <TableRow key={application.jobId}>
-                  <TableCell>{application.jobTitle}</TableCell>
-                  <TableCell>{application.companyName}</TableCell>
-                  <TableCell>{application.appliedAt ? new Date(application.appliedAt.toDate()).toLocaleDateString('he-IL') : 'לא זמין'}</TableCell>
-                  <TableCell>{application.applicationCount}</TableCell>
-                  <TableCell>{application.status}</TableCell>
-                  <TableCell>
-                    <Button
-                      component={Link}
-                      to={`/chat/${application.jobId}`}
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                    >
-                      צ'אט
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange} 
+          aria-label="application tabs"
+          variant={isMobile ? "fullWidth" : "standard"}
+        >
+          <Tab label="מועמדויות שהגשתי" icon={<WorkIcon />} iconPosition="start" />
+          <Tab label="עבודות שהתקבלתי" icon={<CheckCircleIcon />} iconPosition="start" />
+        </Tabs>
+      </Box>
+      <TabPanel value={tabValue} index={0}>
+        {renderJobList(applications)}
+      </TabPanel>
+      <TabPanel value={tabValue} index={1}>
+        {renderJobList(hiredJobs, true)}
+      </TabPanel>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"האם אתה בטוח שברצונך למחוק את המועמדות?"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            פעולה זו תמחק את המועמדות שלך לעבודה זו. לא ניתן לבטל פעולה זו.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} color="primary">
+            ביטול
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            מחק מועמדות
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={detailsDialogOpen}
+        onClose={handleCloseDetails}
+        aria-labelledby="job-details-dialog-title"
+        aria-describedby="job-details-dialog-description"
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle id="job-details-dialog-title">
+          {selectedJob?.title}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              פרטי העבודה
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body1">
+                  <WorkIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  חברה: {selectedJob?.companyName}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body1">
+                  <LocationIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  מיקום: {selectedJob?.location}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body1">
+                  <AttachMoneyIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  שכר: ₪{selectedJob?.salary} לשעה
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body1">
+                  <AccessTime fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  שעות: {selectedJob?.startTime} - {selectedJob?.endTime}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="body1">
+                  <DateRange fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  תאריכי עבודה: {selectedJob?.workDates ? selectedJob.workDates.join(', ') : 'לא זמין'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="body1">
+                  <DescriptionIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 1 }} />
+                  תיאור העבודה:
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {selectedJob?.description}
+                </Typography>
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDetails} color="primary">
+            סגור
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Grid, TextField, Button, Card, CardContent, CardActions, CircularProgress, Box, Chip, Divider } from '@mui/material';
-import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Group } from '@mui/icons-material';
-import { collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Container, Typography, Grid, TextField, Button, Card, CardContent, CardActions, CircularProgress, Box, Chip, Divider, IconButton } from '@mui/material';
+import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Group, Bookmark, BookmarkBorder } from '@mui/icons-material';
+import { collection, getDocs, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 
@@ -10,9 +10,11 @@ function JobListPage() {
   const [filter, setFilter] = useState({ title: '', location: '' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [savedJobs, setSavedJobs] = useState([]);
 
   useEffect(() => {
     fetchJobs();
+    fetchSavedJobs();
   }, []);
 
   const fetchJobs = async () => {
@@ -29,6 +31,18 @@ function JobListPage() {
       setError("אירעה שגיאה בטעינת העבודות. אנא נסה שוב מאוחר יותר.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSavedJobs = async () => {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      const userDoc = doc(db, 'users', currentUser.uid);
+      const userSnapshot = await getDocs(userDoc);
+      if (userSnapshot.exists()) {
+        setSavedJobs(userSnapshot.data().savedJobs || []);
+      }
     }
   };
 
@@ -62,6 +76,32 @@ function JobListPage() {
     } catch (error) {
       console.error('Error submitting application: ', error);
       alert('אירעה שגיאה בשליחת המועמדות.');
+    }
+  };
+
+  const handleSaveJob = async (jobId) => {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+      alert("עליך להתחבר כדי לשמור עבודות");
+      return;
+    }
+
+    const userRef = doc(db, 'users', currentUser.uid);
+    
+    if (savedJobs.includes(jobId)) {
+      // Remove job from saved jobs
+      await updateDoc(userRef, {
+        savedJobs: arrayRemove(jobId)
+      });
+      setSavedJobs(savedJobs.filter(id => id !== jobId));
+    } else {
+      // Add job to saved jobs
+      await updateDoc(userRef, {
+        savedJobs: arrayUnion(jobId)
+      });
+      setSavedJobs([...savedJobs, jobId]);
     }
   };
 
@@ -105,9 +145,20 @@ function JobListPage() {
             <Grid item xs={12} sm={6} md={4} key={job.id}>
               <Card elevation={3}>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {job.title}
-                  </Typography>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="h6" gutterBottom>
+                      {job.title}
+                    </Typography>
+                    <IconButton onClick={() => handleSaveJob(job.id)}>
+                      {savedJobs.includes(job.id) ? <Bookmark color="primary" /> : <BookmarkBorder />}
+                    </IconButton>
+                  </Box>
+                  {job.isDeleted && (
+                    <Chip label="עבודה זו נמחקה" color="error" sx={{ mb: 1 }} />
+                  )}
+                  {job.isFilled && (
+                    <Chip label="עבודה זו מלאה" color="warning" sx={{ mb: 1 }} />
+                  )}
                   <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <Work fontSize="small" sx={{ mr: 1 }} /> {job.companyName || 'שם העסק לא זמין'}
                   </Typography>
@@ -155,7 +206,9 @@ function JobListPage() {
                     size="small" 
                     variant="contained" 
                     color="primary" 
-                    onClick={() => handleApplyForJob(job.id)}>
+                    onClick={() => handleApplyForJob(job.id)}
+                    disabled={job.isDeleted || job.isFilled}
+                  >
                     הגשת מועמדות
                   </Button>
                 </CardActions>

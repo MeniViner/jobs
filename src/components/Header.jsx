@@ -25,6 +25,7 @@ import AddIcon from '@mui/icons-material/Add';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ChatIcon from '@mui/icons-material/Chat';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
 
 export default function Header() {
   const { user } = useContext(AuthContext);
@@ -50,6 +51,7 @@ export default function Header() {
   const menuItems = [
     { text: 'דף הבית', icon: <HomeIcon />, link: '/' },
     { text: 'עבודות', icon: <WorkIcon />, link: '/jobs' },
+    { text: 'עבודות שמורות', icon: <BookmarkIcon />, link: '/saved-jobs', authRequired: true },
     { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job', authRequired: true, employerOnly: true },
     { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/employer-chat', authRequired: true, employerOnly: true },
     { text: 'אינטרקציה- מעמדות ועבודות', icon: <AssignmentIcon />, link: '/my-applications', authRequired: true, employeeOnly: true },
@@ -75,10 +77,16 @@ export default function Header() {
           )
         ))}
         {user ? (
-          <ListItem component={Link} to="/account">
-            <ListItemIcon><AccountCircleIcon /></ListItemIcon>
-            <ListItemText primary="פרופיל" />
-          </ListItem>
+          <>
+            <ListItem component={Link} to="/account">
+              <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+              <ListItemText primary="פרופיל" />
+            </ListItem>
+            <ListItem button onClick={handleLogout}>
+              <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+              <ListItemText primary="התנתק" />
+            </ListItem>
+          </>
         ) : (
           <ListItem component={Link} to="/login">
             <ListItemIcon><AccountCircleIcon /></ListItemIcon>
@@ -131,14 +139,22 @@ export default function Header() {
               )
             ))}
             {user ? (
-              <Button
-                color="inherit"
-                component={Link}
-                to="/account"
-                startIcon={<AccountCircleIcon />}
-              >
-                פרופיל
-              </Button>
+              <>
+                <Button
+                  color="inherit"
+                  component={Link}
+                  to="/account"
+                  startIcon={<AccountCircleIcon />}
+                >
+                  פרופיל
+                </Button>
+                <Button
+                  color="inherit"
+                  onClick={handleLogout}
+                >
+                  התנתק
+                </Button>
+              </>
             ) : (
               <Button color="inherit" component={Link} to="/login">התחבר</Button>
             )}

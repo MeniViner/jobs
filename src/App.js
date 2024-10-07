@@ -11,6 +11,7 @@ import AdminMessagesDashboard from './pages/Management/AdminMessagesDashboard';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
 import JobListPage from './pages/JobListPage';
+import SavedJobsPage from './pages/SavedJobsPage';
 import EmployerProfile from './pages/profile/EmployerProfile';
 import ManageUsers from './pages/Management/ManageUsers';
 import AccountPage from './pages/profile/AccountPage';
@@ -21,9 +22,6 @@ import AdminUsersPage from './pages/Management/AdminUsersPage';
 import EmployerChatPage from './pages/Myworks';
 import MyApplications from './pages/MyApplications.js';
 import EmployerRegistration from './pages/profile/EmployerRegistration.jsx';
-
-
-
 import UserProfilePage from './pages/Management/UserProfilePage.js';
 
 // Create a theme with RTL support
@@ -51,6 +49,7 @@ function App() {
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/jobs" element={<JobListPage />} />
+              <Route path="/saved-jobs" element={<SavedJobsPage />} />
               <Route path="/post-job" element={<PostJob />} />
               <Route path="/admin/messages" element={<AdminMessagesDashboard />} />
               <Route path="/ManageUsers" element={<ManageUsers />} />

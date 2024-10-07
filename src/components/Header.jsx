@@ -52,7 +52,7 @@ export default function Header() {
     { text: 'עבודות', icon: <WorkIcon />, link: '/jobs' },
     { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job', authRequired: true, employerOnly: true },
     { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/employer-chat', authRequired: true, employerOnly: true },
-    { text: 'אינטרקציה- מעמדות ועבודות שהתקבלתי', icon: <AssignmentIcon />, link: '/my-applications', authRequired: true, employeeOnly: true },
+    { text: 'אינטרקציה- מעמדות ועבודות', icon: <AssignmentIcon />, link: '/my-applications', authRequired: true, employeeOnly: true },
     { text: 'דף ניהול', icon: <AdminPanelSettingsIcon />, link: '/admin', adminRequired: true },
   ];
 

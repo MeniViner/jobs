@@ -19,6 +19,7 @@ import {
   Collapse,
   Box,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 import { Delete, Edit, KeyboardArrowDown, KeyboardArrowUp, Search } from '@mui/icons-material';
 import { collection, getDocs, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
@@ -32,6 +33,7 @@ export default function AdminJobsDashboard() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
   const [expandedRow, setExpandedRow] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchJobs();
@@ -48,6 +50,7 @@ export default function AdminJobsDashboard() {
   }, [jobs, searchTerm]);
 
   const fetchJobs = async () => {
+    setLoading(true);
     try {
       const jobsCollection = collection(db, 'jobs');
       const jobSnapshot = await getDocs(jobsCollection);
@@ -72,6 +75,8 @@ export default function AdminJobsDashboard() {
     } catch (error) {
       console.error("Error fetching jobs: ", error);
       setSnackbar({ open: true, message: 'אירעה שגיאה בטעינת המשרות' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -119,6 +124,14 @@ export default function AdminJobsDashboard() {
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
   };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress size={60} thickness={4} />
+      </Box>
+    );
+  }
 
   return (
     <>

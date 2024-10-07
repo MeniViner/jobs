@@ -20,8 +20,13 @@ import {
   CardContent,
   CardActions,
   Grid,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -31,7 +36,8 @@ import {
   LocationOn as LocationIcon, 
   AccessTime as TimeIcon, 
   DateRange as DateIcon,
-  CheckCircle as CheckCircleIcon 
+  CheckCircle as CheckCircleIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 
 function TabPanel(props) {
@@ -59,6 +65,8 @@ export default function MyApplications() {
   const [hiredJobs, setHiredJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] = useState(null);
   const { user } = useContext(AuthContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -123,6 +131,29 @@ export default function MyApplications() {
     setTabValue(newValue);
   };
 
+  const handleDeleteClick = (application) => {
+    setApplicationToDelete(application);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (applicationToDelete) {
+      try {
+        await deleteDoc(doc(db, 'jobChats', applicationToDelete.jobId, 'applicants', applicationToDelete.id));
+        setApplications(applications.filter(app => app.id !== applicationToDelete.id));
+        setDeleteDialogOpen(false);
+        setApplicationToDelete(null);
+      } catch (error) {
+        console.error("Error deleting application:", error);
+      }
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setApplicationToDelete(null);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -174,6 +205,15 @@ export default function MyApplications() {
                   >
                     צ'אט
                   </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => handleDeleteClick(application)}
+                  >
+                    מחק מועמדות
+                  </Button>
                 </CardActions>
               </Card>
             </Grid>
@@ -211,8 +251,18 @@ export default function MyApplications() {
                     color="primary"
                     size="small"
                     startIcon={<ChatIcon />}
+                    sx={{ mr: 1 }}
                   >
                     צ'אט
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => handleDeleteClick(application)}
+                  >
+                    מחק מועמדות
                   </Button>
                 </TableCell>
               </TableRow>
@@ -358,6 +408,29 @@ export default function MyApplications() {
       <TabPanel value={tabValue} index={1}>
         {renderHiredJobs()}
       </TabPanel>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"האם אתה בטוח שברצונך למחוק את המועמדות?"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            פעולה זו תמחק את המועמדות שלך לעבודה זו. לא ניתן לבטל פעולה זו.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} color="primary">
+            ביטול
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+            מחק מועמדות
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

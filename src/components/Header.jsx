@@ -2,7 +2,6 @@ import React, { useContext, useState } from 'react';
 import { 
   AppBar, 
   Toolbar, 
-  Typography, 
   Button, 
   Box, 
   IconButton,
@@ -29,6 +28,8 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import BusinessIcon from '@mui/icons-material/Business';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import logo from '../logo.png';  // Original blue logo
+import logo1 from '../logo1.png';  // New black logo
 
 export default function Header() {
   const { user } = useContext(AuthContext);
@@ -80,9 +81,9 @@ export default function Header() {
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
-      <Typography variant="h6" sx={{ my: 2 }}>
-        פלטפורמת עבודות מזדמנות
-      </Typography>
+      <Box sx={{ my: 2 }}>
+        <img src={logo} alt="Logo" style={{ height: '50px' }} />
+      </Box>
       <Divider />
       <List>
         {renderMenuItems(regularMenuItems)}
@@ -123,9 +124,10 @@ export default function Header() {
   return (
     <AppBar position="static">
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          פלטפורמת עבודות מזדמנות
-        </Typography>
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+          {/* <img src={logo1} alt="Logo" style={{ height: '40px', marginRight: '10px' }} /> */}
+          WorkMatch
+        </Box>
         {isMobile ? (
           <>
             <IconButton

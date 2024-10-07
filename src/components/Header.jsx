@@ -46,7 +46,7 @@ export default function Header() {
 
   const regularMenuItems = [
     { text: 'דף הבית', icon: <HomeIcon />, link: '/' },
-    { text: 'צ\'אט', icon: <ChatIcon />, link: '/job-chat' }, // נתיב לצ'אט
+    { text: 'צ\'אט', icon: <ChatIcon />, link: '/job-chat' },
     { text: 'עבודות', icon: <WorkIcon />, link: '/jobs' },
     { text: 'עבודות שמורות', icon: <BookmarkIcon />, link: '/saved-jobs', authRequired: true },
     { text: 'המועמדויות שלי', icon: <AssignmentIcon />, link: '/my-applications', authRequired: true },
@@ -115,15 +115,14 @@ export default function Header() {
   );
 
   return (
-    <AppBar position="static">
-      <Toolbar>
-        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-          {/* <img src={logo1} alt="Logo" style={{ height: '40px', marginRight: '10px' }} /> */}
-          WorkMatch
-        </Box>
+    <>
+      <AppBar position="fixed">
+        <Toolbar>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+            WorkMatch
+          </Box>
 
-        {isMobile ? (
-          <>
+          {isMobile ? (
             <IconButton
               color="inherit"
               aria-label="open drawer"
@@ -132,55 +131,56 @@ export default function Header() {
             >
               <MenuIcon />
             </IconButton>
-            <Drawer
-              variant="temporary"
-              anchor="right"
-              open={mobileOpen}
-              onClose={handleDrawerToggle}
-              ModalProps={{
-                keepMounted: true, // Better open performance on mobile.
-              }}
-            >
-              {drawer}
-            </Drawer>
-          </>
-        ) : (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {regularMenuItems.map((item) => (
-              (!item.authRequired || (item.authRequired && user)) && (
-                <Button key={item.text} color="inherit" component={Link} to={item.link}>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              {regularMenuItems.map((item) => (
+                (!item.authRequired || (item.authRequired && user)) && (
+                  <Button key={item.text} color="inherit" component={Link} to={item.link}>
+                    {item.text}
+                  </Button>
+                )
+              ))}
+
+              {employerMenuItems.map((item) => (
+                <Button key={item.text} color="inherit" component={Link} to={item.link} startIcon={<BusinessIcon />}>
                   {item.text}
                 </Button>
-              )
-            ))}
-
-            {employerMenuItems.map((item) => (
-              <Button key={item.text} color="inherit" component={Link} to={item.link} startIcon={<BusinessIcon />}>
-                {item.text}
-              </Button>
-            ))}
-            {user?.isAdmin && (
-              <Button color="inherit" component={Link} to="/admin" startIcon={<SupervisorAccountIcon />}>
-                ניהול
-              </Button>
-            )}
-            {user ? (
-              <Button
-                color="inherit"
-                component={Link}
-                to="/account"
-                startIcon={<AccountCircleIcon />}
-              >
-                {user.displayName || user.email}
-              </Button>
-            ) : (
-              <Button color="inherit" component={Link} to="/login" startIcon={<AccountCircleIcon />}>
-                התחבר
-              </Button>
-            )}
-          </Box>
-        )}
-      </Toolbar>
-    </AppBar>
+              ))}
+              {user?.isAdmin && (
+                <Button color="inherit" component={Link} to="/admin" startIcon={<SupervisorAccountIcon />}>
+                  ניהול
+                </Button>
+              )}
+              {user ? (
+                <Button
+                  color="inherit"
+                  component={Link}
+                  to="/account"
+                  startIcon={<AccountCircleIcon />}
+                >
+                  {user.displayName || user.email}
+                </Button>
+              ) : (
+                <Button color="inherit" component={Link} to="/login" startIcon={<AccountCircleIcon />}>
+                  התחבר
+                </Button>
+              )}
+            </Box>
+          )}
+        </Toolbar>
+      </AppBar>
+      <Toolbar /> {/* This empty Toolbar acts as a spacer */}
+      <Drawer
+        variant="temporary"
+        anchor="right"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile.
+        }}
+      >
+        {drawer}
+      </Drawer>
+    </>
   );
 }

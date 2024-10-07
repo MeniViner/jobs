@@ -88,7 +88,6 @@ export default function AdminUsersPage() {
     }
   };
 
-
   const handleEmployerApproval = async (userId, approved) => {
     try {
       const userRef = doc(db, 'users', userId);
@@ -108,7 +107,6 @@ export default function AdminUsersPage() {
       alert('שגיאה בעדכון סטטוס המעסיק');
     }
   };
-  
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
@@ -192,6 +190,16 @@ export default function AdminUsersPage() {
                     >
                       צפייה בפרופיל
                     </Button>
+                    {user.pendingEmployer && (
+                      <Button
+                        onClick={() => setSelectedUser(user)}
+                        variant="contained"
+                        size="small"
+                        color="primary"
+                      >
+                        אישור בקשת מעסיק
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -207,32 +215,38 @@ export default function AdminUsersPage() {
             <>
               <Typography variant="h6" gutterBottom>
                 <Business sx={{ mr: 1, verticalAlign: 'middle' }} />
-                {selectedUser.companyName}
+                {selectedUser.employerDetails?.companyName}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 <Category sx={{ mr: 1, verticalAlign: 'middle' }} />
-                סוג עסק: {selectedUser.businessType}
+                סוג עסק: {selectedUser.employerDetails?.businessType}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 <Description sx={{ mr: 1, verticalAlign: 'middle' }} />
-                תיאור: {selectedUser.description}
+                תיאור: {selectedUser.employerDetails?.companyDescription}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 <Email sx={{ mr: 1, verticalAlign: 'middle' }} />
-                אימייל: {selectedUser.email}
+                אימייל: {selectedUser.employerDetails?.contactEmail}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 <Phone sx={{ mr: 1, verticalAlign: 'middle' }} />
-                טלפון: {selectedUser.phone}
+                טלפון: {selectedUser.employerDetails?.contactPhone}
               </Typography>
             </>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => handleEmployerApproval(selectedUser.id, true)} color="primary">
+          <Button onClick={() => {
+            handleEmployerApproval(selectedUser.id, true);
+            setSelectedUser(null);
+          }} color="primary">
             אישור
           </Button>
-          <Button onClick={() => handleEmployerApproval(selectedUser.id, false)} color="secondary">
+          <Button onClick={() => {
+            handleEmployerApproval(selectedUser.id, false);
+            setSelectedUser(null);
+          }} color="secondary">
             דחייה
           </Button>
         </DialogActions>

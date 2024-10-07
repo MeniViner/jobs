@@ -30,7 +30,14 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     const usersCollection = collection(db, 'users');
     const userSnapshot = await getDocs(usersCollection);
-    const userList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const userList = userSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        displayName: data.displayName || data.name || 'לא צוין'
+      };
+    });
     setUsers(userList);
   };
 
@@ -71,7 +78,7 @@ export default function AdminUsersPage() {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>{user.displayName || 'לא צוין'}</TableCell>
+                  <TableCell>{user.displayName}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Switch

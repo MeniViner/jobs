@@ -51,7 +51,7 @@ const EmployerRegistration = () => {
         await updateDoc(doc(db, 'users', user.uid), {
           pendingEmployer: true,
           employerDetails: formData,
-          role: 'pending_employer' // Add this line
+          role: 'pending_employer'
         });
 
         alert(t('Registration submitted for approval'));
@@ -68,8 +68,6 @@ const EmployerRegistration = () => {
       navigate('/login');
     }
   };
-
-
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>

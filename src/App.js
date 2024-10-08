@@ -6,7 +6,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './contexts/AuthContext';
 import rtlPlugin from 'stylis-plugin-rtl';
-import { CacheProvider } from '@emotion/react';
+import { CacheProvider } from '@emotion/react'; 
 import createCache from '@emotion/cache';
 
 import PostJob from './pages/PostJob';

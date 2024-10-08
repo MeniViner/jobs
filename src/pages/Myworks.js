@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -30,8 +26,36 @@ import {
   Tab,
   Tabs,
 } from '@mui/material';
-import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Person, CheckCircle, Group, DoneAll, Delete, Undo, Flag, ExpandMore, ExpandLess, Chat, Edit } from '@mui/icons-material';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  Work,
+  LocationOn,
+  AttachMoney,
+  AccessTime,
+  DateRange,
+  Person,
+  CheckCircle,
+  Group,
+  DoneAll,
+  Delete,
+  Undo,
+  Flag,
+  ExpandMore,
+  ExpandLess,
+  Chat,
+  Edit,
+} from '@mui/icons-material';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { useNavigate, Link } from 'react-router-dom';
@@ -48,7 +72,7 @@ function EditJobDialog({ open, handleClose, job, handleSave }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditedJob(prev => ({ ...prev, [name]: value }));
+    setEditedJob((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
@@ -171,7 +195,9 @@ function EditJobDialog({ open, handleClose, job, handleSave }) {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>ביטול</Button>
-          <Button type="submit" variant="contained" color="primary">שמור שינויים</Button>
+          <Button type="submit" variant="contained" color="primary">
+            שמור שינויים
+          </Button>
         </DialogActions>
       </form>
     </Dialog>
@@ -202,7 +228,7 @@ export default function MyworksPage() {
 
     const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', auth.currentUser.uid));
     const jobsSnapshot = await getDocs(jobsQuery);
-    const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const jobsList = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     setJobs(jobsList);
 
     const allApplicants = new Map();
@@ -217,12 +243,12 @@ export default function MyworksPage() {
             id: applicantDoc.id,
             ...applicantData,
             userData: userData.data(),
-            appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }]
+            appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
           });
         } else {
-          allApplicants.get(applicantData.applicantId).appliedJobs.push({ 
-            jobId: job.id, 
-            hired: applicantData.hired || false 
+          allApplicants.get(applicantData.applicantId).appliedJobs.push({
+            jobId: job.id,
+            hired: applicantData.hired || false,
           });
         }
       }
@@ -249,12 +275,12 @@ export default function MyworksPage() {
       if (chatSnapshot.empty) {
         const newChat = {
           jobId: jobId,
-          jobTitle: jobs.find(job => job.id === jobId).title,
+          jobTitle: jobs.find((job) => job.id === jobId).title,
           applicantId: applicantId,
-          applicantName: applicants.find(app => app.applicantId === applicantId).name,
+          applicantName: applicants.find((app) => app.applicantId === applicantId).name,
           employerId: auth.currentUser.uid,
           employerName: auth.currentUser.displayName || 'מעסיק',
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
         };
         const chatRef = await addDoc(collection(db, 'jobChats'), newChat);
         chatId = chatRef.id;
@@ -266,14 +292,14 @@ export default function MyworksPage() {
         text: message,
         senderId: auth.currentUser.uid,
         senderName: auth.currentUser.displayName || 'מעסיק',
-        timestamp: serverTimestamp()
+        timestamp: serverTimestamp(),
       });
 
       setMessage('');
       setOpenChatDialog(false);
       alert('ההודעה נשלחה בהצלחה');
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error sending message:', error);
       alert('אירעה שגיאה בשליחת ההודעה');
     }
   };
@@ -282,26 +308,28 @@ export default function MyworksPage() {
     try {
       const applicantRef = doc(db, 'jobChats', jobId, 'applicants', applicantId);
       await updateDoc(applicantRef, {
-        hired: !currentHiredStatus
+        hired: !currentHiredStatus,
       });
-      
-      setApplicants(applicants.map(applicant => {
-        if (applicant.id === applicantId) {
-          const updatedAppliedJobs = applicant.appliedJobs.map(job => 
-            job.jobId === jobId ? { ...job, hired: !currentHiredStatus } : job
-          );
-          return { ...applicant, appliedJobs: updatedAppliedJobs };
-        }
-        return applicant;
-      }));
+
+      setApplicants(
+        applicants.map((applicant) => {
+          if (applicant.id === applicantId) {
+            const updatedAppliedJobs = applicant.appliedJobs.map((job) =>
+              job.jobId === jobId ? { ...job, hired: !currentHiredStatus } : job
+            );
+            return { ...applicant, appliedJobs: updatedAppliedJobs };
+          }
+          return applicant;
+        })
+      );
     } catch (error) {
-      console.error("Error updating hired status:", error);
+      console.error('Error updating hired status:', error);
     }
   };
 
   const getHiredCount = (jobId) => {
-    return applicants.filter(applicant => 
-      applicant.appliedJobs.some(job => job.jobId === jobId && job.hired)
+    return applicants.filter((applicant) =>
+      applicant.appliedJobs.some((job) => job.jobId === jobId && job.hired)
     ).length;
   };
 
@@ -310,32 +338,34 @@ export default function MyworksPage() {
       const jobRef = doc(db, 'jobs', jobId);
       const jobDoc = await getDoc(jobRef);
       const currentJob = jobDoc.data();
-    
+
       if (!currentJob) {
         throw new Error('Job not found');
       }
-  
+
       const newIsFullyStaffed = !currentJob.isFullyStaffed;
-  
+
       const updatedFields = {
         isFullyStaffed: newIsFullyStaffed,
       };
-  
+
       if (currentJob.hasOwnProperty('isPublic')) {
         updatedFields.isPublic = !newIsFullyStaffed;
       }
-    
+
       await updateDoc(jobRef, updatedFields);
-  
-      setJobs(jobs.map(job => 
-        job.id === jobId ? { ...job, ...updatedFields } : job
-      ));
-  
-      alert(newIsFullyStaffed 
-        ? 'העבודה סומנה כמאוישת במלואה והוסרה מרשימת העבודות הפומביות' 
-        : 'העבודה סומנה כלא מאוישת במלואה והוחזרה לרשימת העבודות הפומביות');
+
+      setJobs(
+        jobs.map((job) => (job.id === jobId ? { ...job, ...updatedFields } : job))
+      );
+
+      alert(
+        newIsFullyStaffed
+          ? 'העבודה סומנה כמאוישת במלואה והוסרה מרשימת העבודות הפומביות'
+          : 'העבודה סומנה כלא מאוישת במלואה והוחזרה לרשימת העבודות הפומביות'
+      );
     } catch (error) {
-      console.error("Error toggling fully staffed status:", error);
+      console.error('Error toggling fully staffed status:', error);
       alert('אירעה שגיאה בעת עדכון סטטוס האיוש של העבודה');
     }
   };
@@ -345,16 +375,16 @@ export default function MyworksPage() {
       const jobRef = doc(db, 'jobs', jobId);
       await updateDoc(jobRef, {
         isCompleted: true,
-        isPublic: false
+        isPublic: false,
       });
 
-      setJobs(jobs.map(job => 
-        job.id === jobId ? { ...job, isCompleted: true, isPublic: false } : job
-      ));
+      setJobs(
+        jobs.map((job) => (job.id === jobId ? { ...job, isCompleted: true, isPublic: false } : job))
+      );
 
       alert('העבודה סומנה כהושלמה והוסרה מרשימת העבודות הפעילות');
     } catch (error) {
-      console.error("Error marking job as completed:", error);
+      console.error('Error marking job as completed:', error);
       alert('אירעה שגיאה בעת סימון העבודה כהושלמה');
     }
   };
@@ -364,12 +394,12 @@ export default function MyworksPage() {
 
     try {
       await deleteDoc(doc(db, 'jobs', jobToDelete.id));
-      setJobs(jobs.filter(job => job.id !== jobToDelete.id));
+      setJobs(jobs.filter((job) => job.id !== jobToDelete.id));
       setOpenDeleteDialog(false);
       setJobToDelete(null);
       alert('העבודה נמחקה בהצלחה');
     } catch (error) {
-      console.error("Error deleting job:", error);
+      console.error('Error deleting job:', error);
       alert('אירעה שגיאה בעת מחיקת העבודה');
     }
   };
@@ -383,12 +413,12 @@ export default function MyworksPage() {
     try {
       const jobRef = doc(db, 'jobs', editedJob.id);
       await updateDoc(jobRef, editedJob);
-      setJobs(jobs.map(job => job.id === editedJob.id ? editedJob : job));
+      setJobs(jobs.map((job) => (job.id === editedJob.id ? editedJob : job)));
       setOpenEditDialog(false);
       setJobToEdit(null);
       alert('פרטי העבודה עודכנו בהצלחה');
     } catch (error) {
-      console.error("Error updating job:", error);
+      console.error('Error updating job:', error);
       alert('אירעה שגיאה בעת עדכון פרטי העבודה');
     }
   };
@@ -406,259 +436,310 @@ export default function MyworksPage() {
         workerId,
         rating,
         review,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
       });
 
-      setApplicants(prevApplicants => 
-        prevApplicants.map(applicant => 
-          applicant.applicantId === workerId
-            ? { ...applicant, isRated: true }
-            : applicant
+      setApplicants((prevApplicants) =>
+        prevApplicants.map((applicant) =>
+          applicant.applicantId === workerId ? { ...applicant, isRated: true } : applicant
         )
       );
 
-      alert('Rating submitted successfully!');
-    
+      alert('הדירוג נשלח בהצלחה!');
     } catch (error) {
-      console.error("Error submitting rating:", error);
-      alert('Failed to submit rating. Please try again.');
+      console.error('Error submitting rating:', error);
+      alert('אירעה שגיאה בעת שליחת הדירוג. אנא נסה שוב.');
     }
   };
 
-  const activeJobs = jobs.filter(job => !job.isCompleted);
-  const completedJobs = jobs.filter(job => job.isCompleted);
+  const activeJobs = jobs.filter((job) => !job.isCompleted);
+  const completedJobs = jobs.filter((job) => job.isCompleted);
 
-  const renderJobList = (jobList) => (
-    <List>
-      {jobList.map((job) => (
-        <React.Fragment key={job.id}>
-          <ListItem
-            disablePadding
-            sx={{ flexDirection: 'column', alignItems: 'stretch', mb: 2 }}
-          >
-            <ListItemButton onClick={() => handleToggleExpand(job.id)}>
-              <ListItemText 
-                primary={job.title} 
-                secondary={
-                  <>
-                    {job.location}
-                    <br />
-                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                      <Group fontSize="small" sx={{ mr: 1 }} />
-                      <Typography variant="body2">
-                        {getHiredCount(job.id)} / {job.workersNeeded || 1} עובדים
-                      </Typography>
-                    </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={(getHiredCount(job.id) / (job.workersNeeded || 1)) * 100} 
-                      sx={{ mt: 1 }}
-                    />
-                    {job.isFullyStaffed && (
-                      <Chip 
-                        label="מאויש במלואו" 
-                        color="success" 
-                        size="small" 
-                        icon={<DoneAll />} 
+  const renderJobList = (jobList) => {
+    if (jobList.length === 0) {
+      return <Typography>אין עבודות</Typography>;
+    }
+
+    return (
+      <List>
+        {jobList.map((job) => (
+          <React.Fragment key={job.id}>
+            <ListItem disablePadding sx={{ flexDirection: 'column', alignItems: 'stretch', mb: 2 }}>
+              <ListItemButton onClick={() => handleToggleExpand(job.id)}>
+                <ListItemText
+                  primary={job.title}
+                  secondary={
+                    <>
+                      {job.location}
+                      <br />
+                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                        <Group fontSize="small" sx={{ mr: 1 }} />
+                        <Typography variant="body2">
+                          {getHiredCount(job.id)} / {job.workersNeeded || 1} עובדים
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={(getHiredCount(job.id) / (job.workersNeeded || 1)) * 100}
                         sx={{ mt: 1 }}
                       />
-                    )}
-                  </>
-                }
-              />
-              {expandedJob === job.id ? <ExpandLess /> : <ExpandMore />}
-            </ListItemButton>
-            <Collapse in={expandedJob === job.id} timeout="auto" unmountOnExit>
-              <Box sx={{ mt: 2 }}>
-                <Card elevation={3}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Typography variant="h6" component="div">
-                        {job.title}
+                      {job.isFullyStaffed && (
+                        <Chip
+                          label="מאויש במלואו"
+                          color="success"
+                          size="small"
+                          icon={<DoneAll />}
+                          sx={{ mt: 1 }}
+                        />
+                      )}
+                    </>
+                  }
+                />
+                {expandedJob === job.id ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+              <Collapse in={expandedJob === job.id} timeout="auto" unmountOnExit>
+                <Box sx={{ mt: 2 }}>
+                  <Card elevation={3}>
+                    <CardContent>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          mb: 2,
+                        }}
+                      >
+                        <Typography variant="h6" component="div">
+                          {job.title}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          startIcon={<Edit />}
+                          onClick={() => handleEditJob(job)}
+                          size="small"
+                        >
+                          ערוך
+                        </Button>
+                      </Box>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
+                      >
+                        <Work fontSize="small" sx={{ mr: 1 }} /> {job.companyName || 'שם העסק לא זמין'}
                       </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
+                      >
+                        <LocationOn fontSize="small" sx={{ mr: 1 }} /> {job.location}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
+                      >
+                        <AttachMoney fontSize="small" sx={{ mr: 1 }} /> ₪{job.salary} לשעה
+                      </Typography>
+                      {job.startTime && job.endTime && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
+                        >
+                          <AccessTime fontSize="small" sx={{ mr: 1 }} /> {job.startTime} - {job.endTime}
+                        </Typography>
+                      )}
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
+                      >
+                        <Group fontSize="small" sx={{ mr: 1 }} /> {getHiredCount(job.id)} /{' '}
+                        {job.workersNeeded || 1} עובדים
+                      </Typography>
+                      <Chip label={job.type} size="small" sx={{ mt: 1, mb: 2 }} />
+                      {job.workDates && job.workDates.length > 0 && (
+                        <>
+                          <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+                            תאריכי עבודה:
+                          </Typography>
+                          {job.workDates.map((date, index) => (
+                            <Typography
+                              key={index}
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}
+                            >
+                              <DateRange fontSize="small" sx={{ mr: 1 }} /> {date}
+                            </Typography>
+                          ))}
+                        </>
+                      )}
+                      <Typography variant="body2" sx={{ mt: 2 }}>
+                        תיאור המשרה:
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {job.description}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                  {!job.isCompleted && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                      <Button
+                        variant="contained"
+                        color={job.isFullyStaffed ? 'warning' : 'primary'}
+                        startIcon={job.isFullyStaffed ? <Undo /> : <DoneAll />}
+                        onClick={() => handleToggleFullyStaffed(job.id)}
+                      >
+                        {job.isFullyStaffed ? 'בטל איוש מלא' : 'סמן כמאויש'}
+                      </Button>
                       <Button
                         variant="outlined"
-                        color="primary"
-                        startIcon={<Edit />}
-                        onClick={() => handleEditJob(job)}
-                        size="small"
+                        color="error"
+                        startIcon={<Delete />}
+                        onClick={() => {
+                          setJobToDelete(job);
+                          setOpenDeleteDialog(true);
+                        }}
                       >
-                        ערוך
+                        מחק עבודה
                       </Button>
                     </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Work fontSize="small" sx={{ mr: 1 }} /> {job.companyName || 'שם העסק לא זמין'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <LocationOn fontSize="small" sx={{ mr: 1 }} /> {job.location}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <AttachMoney fontSize="small" sx={{ mr: 1 }} /> ₪{job.salary} לשעה
-                    </Typography>
-                    {job.startTime && job.endTime && (
-                      <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <AccessTime fontSize="small" sx={{ mr: 1 }} /> {job.startTime} - {job.endTime}
-                      </Typography>
-                    )}
-                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Group fontSize="small" sx={{ mr: 1 }} /> {getHiredCount(job.id)} / {job.workersNeeded || 1} עובדים
-                    </Typography>
-                    <Chip label={job.type} size="small" sx={{ mt: 1, mb: 2 }} />
-                    {job.workDates && job.workDates.length > 0 && (
-                      <>
-                        <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
-                          תאריכי עבודה:
-                        </Typography>
-                        {job.workDates.map((date, index) => (
-                          <Typography key={index} variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                            <DateRange fontSize="small" sx={{ mr: 1 }} /> {date}
-                          </Typography>
-                        ))}
-                      </>
-                    )}
-                    <Typography variant="body2" sx={{ mt: 2 }}>
-                      תיאור המשרה:
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {job.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
-                {!job.isCompleted && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                  )}
+                  {!job.isCompleted && (
                     <Button
                       variant="contained"
-                      color={job.isFullyStaffed ? "warning" : "primary"}
-                      startIcon={job.isFullyStaffed ? <Undo /> : <DoneAll />}
-                      onClick={() => handleToggleFullyStaffed(job.id)}
+                      color="success"
+                      startIcon={<Flag />}
+                      onClick={() => handleMarkJobCompleted(job.id)}
+                      fullWidth
+                      sx={{ mt: 2 }}
                     >
-                      {job.isFullyStaffed ? 'בטל איוש מלא' : 'סמן כמאויש'}
+                      סמן כהושלם (רק לאחר שהעובדים הגיעו)
                     </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      startIcon={<Delete />}
-                      onClick={() => {
-                        setJobToDelete(job);
-                        setOpenDeleteDialog(true);
-                      }}
-                    >
-                      מחק עבודה
-                    </Button>
-                  </Box>
-                )}
-                {!job.isCompleted && (
-                  <Button
-                    variant="contained"
-                    color="success"
-                    startIcon={<Flag />}
-                    onClick={() => handleMarkJobCompleted(job.id)}
-                    fullWidth
-                    sx={{ mt: 2 }}
-                  >
-                    סמן כהושלם (רק לאחר שהעובדים הגיעו)
-                  </Button>
-                )}
-                {job.isCompleted && (
-                  <Box mt={2}>
-                    <Typography variant="h6">Rate Workers</Typography>
-                    {applicants
-                      .filter(applicant => 
-                        applicant.appliedJobs.some(aj => aj.jobId === job.id && aj.hired) &&
-                        !applicant.isRated
-                      )
-                      .map(worker => (
-                        <Box key={worker.id} mb={2}>
-                          <Typography>{worker.name}</Typography>
-                          <RatingInput 
-                            jobId={job.id}
-                            targetUserId={worker.applicantId}
-                            isEmployerRating={true}
-                            onSubmit={(rating, review) => handleRateWorker(job.id, worker.applicantId, rating, review)}
-                          />
-                        </Box>
-                      ))
-                    }
-                  </Box>
-                )}
-                <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-                  תקשורת עם מועמדים
-                </Typography>
-                {applicants.filter(applicant => applicant.appliedJobs.some(appliedJob => appliedJob.jobId === job.id)).length > 0 ? (
-                  <List>
-                    {applicants
-                      .filter(applicant => applicant.appliedJobs.some(appliedJob => appliedJob.jobId === job.id))
-                      .map((applicant) => {
-                        const appliedJob = applicant.appliedJobs.find(appliedJob => appliedJob.jobId === job.id);
-                        return (
-                          <React.Fragment key={applicant.id}>
-                            <ListItem alignItems="flex-start">
-                              <ListItemAvatar>
-                                <Avatar alt={applicant.name} src={applicant.userData?.avatarUrl} />
-                              </ListItemAvatar>
-                              <ListItemText
-                                primary={
-                                  <Link to={`/user/${applicant.applicantId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                    {applicant.name}
-                                  </Link>
-                                }
-                                secondary={
-                                  <>
-                                    <Typography component="span" variant="body2" color="text.primary">
-                                      {applicant.userData?.email}
-                                    </Typography>
-                                    {` — ${applicant.message || 'אין הודעה מהמועמד'}`}
-                                  </>
-                                }
-                              />
-                              <Box>
-                                <Button
-                                  component={Link}
-                                  to={`/user/${applicant.applicantId}`}
-                                  startIcon={<Person />}
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{ mr: 1 }}
-                                >
-                                  צפה בפרופיל
-                                </Button>
-                                <Button
-                                  variant={appliedJob.hired ? "contained" : "outlined"}
-                                  color={appliedJob.hired ? "success" : "primary"}
-                                  size="small"
-                                  onClick={() => handleToggleHired(job.id, applicant.id, appliedJob.hired)}
-                                  startIcon={appliedJob.hired ? <CheckCircle /> : null}
-                                >
-                                  {appliedJob.hired ? 'הועסק' : 'סמן כמועסק'}
-                                </Button>
-                                <Button
-                                  variant="contained"
-                                  color="primary"
-                                  size="small"
-                                  startIcon={<Chat />}
-                                  onClick={() => handleOpenChatDialog(applicant, job.id)}
-                                  sx={{ ml: 1 }}
-                                >
-                                  צ'אט
-                                </Button>
-                              </Box>
-                            </ListItem>
-                            <Divider variant="inset" component="li" />
-                          </React.Fragment>
-                        );
-                      })}
-                  </List>
-                ) : (
-                  <Typography>אין מועמדים למשרה זו עדיין</Typography>
-                )}
-              </Box>
-            </Collapse>
-          </ListItem>
-          <Divider />
-        </React.Fragment>
-      ))}
-    </List>
-  );
+                  )}
+                  {job.isCompleted && (
+                    <Box mt={2}>
+                      <Typography variant="h6">דרג את העובדים</Typography>
+                      {applicants
+                        .filter(
+                          (applicant) =>
+                            applicant.appliedJobs.some(
+                              (aj) => aj.jobId === job.id && aj.hired
+                            ) && !applicant.isRated
+                        )
+                        .map((worker) => (
+                          <Box key={worker.id} mb={2}>
+                            <Typography>{worker.name}</Typography>
+                            <RatingInput
+                              jobId={job.id}
+                              targetUserId={worker.applicantId}
+                              isEmployerRating={true}
+                              onSubmit={(rating, review) =>
+                                handleRateWorker(job.id, worker.applicantId, rating, review)
+                              }
+                            />
+                          </Box>
+                        ))}
+                    </Box>
+                  )}
+                  <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
+                    תקשורת עם מועמדים
+                  </Typography>
+                  {applicants.filter((applicant) =>
+                    applicant.appliedJobs.some((appliedJob) => appliedJob.jobId === job.id)
+                  ).length > 0 ? (
+                    <List>
+                      {applicants
+                        .filter((applicant) =>
+                          applicant.appliedJobs.some((appliedJob) => appliedJob.jobId === job.id)
+                        )
+                        .map((applicant) => {
+                          const appliedJob = applicant.appliedJobs.find(
+                            (appliedJob) => appliedJob.jobId === job.id
+                          );
+                          return (
+                            <React.Fragment key={applicant.id}>
+                              <ListItem alignItems="flex-start">
+                                <ListItemAvatar>
+                                  <Avatar alt={applicant.name} src={applicant.userData?.avatarUrl} />
+                                </ListItemAvatar>
+                                <ListItemText
+                                  primary={
+                                    <Link
+                                      to={`/user/${applicant.applicantId}`}
+                                      style={{ textDecoration: 'none', color: 'inherit' }}
+                                    >
+                                      {applicant.name}
+                                    </Link>
+                                  }
+                                  secondary={
+                                    <>
+                                      <Typography
+                                        component="span"
+                                        variant="body2"
+                                        color="text.primary"
+                                      >
+                                        {applicant.userData?.email}
+                                      </Typography>
+                                      {` — ${applicant.message || 'אין הודעה מהמועמד'}`}
+                                    </>
+                                  }
+                                />
+                                <Box>
+                                  <Button
+                                    component={Link}
+                                    to={`/user/${applicant.applicantId}`}
+                                    startIcon={<Person />}
+                                    variant="outlined"
+                                    size="small"
+                                    sx={{ mr: 1 }}
+                                  >
+                                    צפה בפרופיל
+                                  </Button>
+                                  <Button
+                                    variant={appliedJob.hired ? 'contained' : 'outlined'}
+                                    color={appliedJob.hired ? 'success' : 'primary'}
+                                    size="small"
+                                    onClick={() =>
+                                      handleToggleHired(job.id, applicant.id, appliedJob.hired)
+                                    }
+                                    startIcon={appliedJob.hired ? <CheckCircle /> : null}
+                                  >
+                                    {appliedJob.hired ? 'הועסק' : 'סמן כמועסק'}
+                                  </Button>
+                                  <Button
+                                    variant="contained"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<Chat />}
+                                    onClick={() => handleOpenChatDialog(applicant, job.id)}
+                                    sx={{ ml: 1 }}
+                                  >
+                                    צ'אט
+                                  </Button>
+                                </Box>
+                              </ListItem>
+                              <Divider variant="inset" component="li" />
+                            </React.Fragment>
+                          );
+                        })}
+                    </List>
+                  ) : (
+                    <Typography>אין מועמדים למשרה זו עדיין</Typography>
+                  )}
+                </Box>
+              </Collapse>
+            </ListItem>
+            <Divider />
+          </React.Fragment>
+        ))}
+      </List>
+    );
+  };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -678,9 +759,7 @@ export default function MyworksPage() {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">
-          {"האם אתה בטוח שברצונך למחוק עבודה זו?"}
-        </DialogTitle>
+        <DialogTitle id="alert-dialog-title">{'האם אתה בטוח שברצונך למחוק עבודה זו?'}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             מחיקת העבודה תסיר אותה לצמיתות מהמערכת. פעולה זו אינה ניתנת לביטול.
@@ -708,7 +787,8 @@ export default function MyworksPage() {
         <DialogTitle>שלח הודעה למועמד</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            שלח הודעה ל{selectedApplicant?.name} עבור המשרה: {jobs.find(job => job.id === selectedApplicant?.jobId)?.title}
+            שלח הודעה ל{selectedApplicant?.name} עבור המשרה:{' '}
+            {jobs.find((job) => job.id === selectedApplicant?.jobId)?.title}
           </DialogContentText>
           <TextField
             autoFocus
@@ -726,9 +806,11 @@ export default function MyworksPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenChatDialog(false)}>ביטול</Button>
-          <Button 
-            onClick={() => handleSendMessage(selectedApplicant.applicantId, selectedApplicant.jobId)} 
-            variant="contained" 
+          <Button
+            onClick={() =>
+              handleSendMessage(selectedApplicant.applicantId, selectedApplicant.jobId)
+            }
+            variant="contained"
             startIcon={<Chat />}
           >
             שלח

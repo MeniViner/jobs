@@ -27,6 +27,7 @@ import EmployerChatPage from './pages/MyWorks.js';
 import MyApplications from './pages/MyApplications.js';
 import EmployerRegistration from './pages/profile/EmployerRegistration.jsx';
 import UserProfilePage from './pages/Management/UserProfilePage.js';
+import TopUsersPage from './pages/Management/TopUsersPage.js';
 
 
 const ProtectedAdminRoute = ({ children }) => {
@@ -58,6 +59,7 @@ function App() {
             <Header />
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/management/top-users" element={<TopUsersPage />} />
               <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
               <Route path="/job-chat" element={<JobChat />} />  {/* נתיב לדף הצ'אט */}
               <Route path="/user/:userId" element={<UserProfilePage />} />

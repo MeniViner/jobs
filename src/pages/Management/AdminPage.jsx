@@ -5,6 +5,7 @@ import ManageUsers from './ManageUsers';
 import AdminJobsDashboard from './AdminMessagesDashboard';
 import ApprovalRequests from './ApprovalRequests';
 import AdminStatisticsPage from './AdminStatisticsPage';
+import TopUsersPage from './TopUsersPage';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 
@@ -37,6 +38,7 @@ const tabComponents = [
   { label: "צפייה במשתמשים", component: ManageUsers },
   { label: "ניהול משרות", component: AdminJobsDashboard },
   { label: "בקשות לאישור", component: ApprovalRequests },
+  { label: "משתמשים מובילים", component: TopUsersPage },
 ];
 
 export default function AdminPage() {

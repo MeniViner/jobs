@@ -17,8 +17,7 @@ import {
   Alert,
   Typography,
   Avatar,
-  Menu,
-  MenuItem,
+  Badge,
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
@@ -33,9 +32,8 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import BusinessIcon from '@mui/icons-material/Business';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
-import logo from '../logo.png'; // Ensure you have a high-resolution company logo
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import Badge from '@mui/material/Badge';
+import logo from '../logo.png';
 
 export default function Header() {
   const { user } = useContext(AuthContext);
@@ -44,8 +42,7 @@ export default function Header() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [anchorEl, setAnchorEl] = useState(null);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -64,14 +61,6 @@ export default function Header() {
     } else {
       navigate('/post-job');
     }
-  };
-
-  const handleMenuClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
   };
 
   const regularMenuItems = [
@@ -120,10 +109,7 @@ export default function Header() {
   };
 
   const drawer = (
-    <Box
-      onClick={handleDrawerToggle}
-      sx={{ textAlign: 'center', width: 250 }}
-    >
+    <Box sx={{ textAlign: 'center', width: 250 }}>
       <Box sx={{ my: 2 }}>
         <img src={logo} alt="Logo" style={{ height: '50px' }} />
       </Box>
@@ -190,6 +176,128 @@ export default function Header() {
     <>
       <AppBar position="fixed" color="primary" elevation={0}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {isMobile ? (
+              <>
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  edge="start"
+                  onClick={handleDrawerToggle}
+                >
+                  <MenuIcon />
+                </IconButton>
+                {user ? (
+                  <IconButton
+                    color="inherit"
+                    component={Link}
+                    to="/account"
+                  >
+                    <Avatar alt={user.displayName || user.email} src={user.photoURL}>
+                      {user.displayName ? user.displayName.charAt(0) : user.email.charAt(0)}
+                    </Avatar>
+                  </IconButton>
+                ) : (
+                  <IconButton
+                    color="inherit"
+                    component={Link}
+                    to="/login"
+                  >
+                    <AccountCircleIcon />
+                  </IconButton>
+                )}
+              </>
+            ) : (
+              <>
+                {user ? (
+                  <IconButton
+                    color="inherit"
+                    component={Link}
+                    to="/account"
+                    sx={{ mr: 1 }}
+                  >
+                    <Avatar alt={user.displayName || user.email} src={user.photoURL}>
+                      {user.displayName ? user.displayName.charAt(0) : user.email.charAt(0)}
+                    </Avatar>
+                  </IconButton>
+                ) : (
+                  <Button
+                    color="inherit"
+                    component={Link}
+                    to="/login"
+                    startIcon={<AccountCircleIcon />}
+                    sx={{ mr: 1 }}
+                  >
+                    התחבר
+                  </Button>
+                )}
+
+                {user && (
+                  <IconButton color="inherit" sx={{ mx: 1 }}>
+                    <Badge badgeContent={4} color="secondary">
+                      <NotificationsIcon />
+                    </Badge>
+                  </IconButton>
+                )}
+
+                {user?.isAdmin && (
+                  <Button
+                    color="inherit"
+                    component={Link}
+                    to="/admin"
+                    startIcon={<AdminPanelSettingsIcon />}
+                    sx={{ mx: 1 }}
+                  >
+                    ניהול
+                  </Button>
+                )}
+
+                {user?.isEmployer ? (
+                  <>
+                    {employerMenuItems.map((item) => (
+                      <Button
+                        key={item.text}
+                        color="inherit"
+                        component={Link}
+                        to={item.link}
+                        startIcon={item.icon}
+                        sx={{ mx: 1 }}
+                        onClick={item.onClick}
+                      >
+                        {item.text}
+                      </Button>
+                    ))}
+                  </>
+                ) : (
+                  <Button
+                    color="inherit"
+                    onClick={handlePostJobClick}
+                    startIcon={<AddIcon />}
+                    sx={{ mx: 1 }}
+                  >
+                    פרסם עבודה
+                  </Button>
+                )}
+
+                {regularMenuItems.map(
+                  (item) =>
+                    (!item.authRequired || (item.authRequired && user)) && (
+                      <Button
+                        key={item.text}
+                        color="inherit"
+                        component={Link}
+                        to={item.link}
+                        startIcon={item.icon}
+                        sx={{ mx: 1 }}
+                      >
+                        {item.text}
+                      </Button>
+                    )
+                )}
+              </>
+            )}
+          </Box>
+
           <Box
             component={Link}
             to="/"
@@ -200,134 +308,17 @@ export default function Header() {
               color: 'inherit',
             }}
           >
-            <img src={logo} alt="Logo" style={{ height: '40px', marginRight: '10px' }} />
             <Typography variant="h6" noWrap>
               WorkMatch
             </Typography>
+            <img src={logo} alt="Logo" style={{ height: '40px', marginLeft: '10px' }} />
           </Box>
-          {isMobile ? (
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="end"
-              onClick={handleDrawerToggle}
-            >
-              <MenuIcon />
-            </IconButton>
-          ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {regularMenuItems.map(
-                (item) =>
-                  (!item.authRequired || (item.authRequired && user)) && (
-                    <Button
-                      key={item.text}
-                      color="inherit"
-                      component={Link}
-                      to={item.link}
-                      startIcon={item.icon}
-                      sx={{ mx: 1 }}
-                    >
-                      {item.text}
-                    </Button>
-                  )
-              )}
-
-              {user?.isEmployer ? (
-                <>
-                  {employerMenuItems.map((item) => (
-                    <Button
-                      key={item.text}
-                      color="inherit"
-                      component={Link}
-                      to={item.link}
-                      startIcon={item.icon}
-                      sx={{ mx: 1 }}
-                      onClick={item.onClick}
-                    >
-                      {item.text}
-                    </Button>
-                  ))}
-                </>
-              ) : (
-                <Button
-                  color="inherit"
-                  onClick={handlePostJobClick}
-                  startIcon={<AddIcon />}
-                  sx={{ mx: 1 }}
-                >
-                  פרסם עבודה
-                </Button>
-              )}
-
-              {user?.isAdmin && (
-                <Button
-                  color="inherit"
-                  component={Link}
-                  to="/admin"
-                  startIcon={<AdminPanelSettingsIcon />}
-                  sx={{ mx: 1 }}
-                >
-                  ניהול
-                </Button>
-              )}
-
-              {/* Notification Icon */}
-              {user && (
-                <IconButton color="inherit" sx={{ mx: 1 }}>
-                  <Badge badgeContent={4} color="secondary">
-                    <NotificationsIcon />
-                  </Badge>
-                </IconButton>
-              )}
-
-              {/* User Avatar */}
-              {user ? (
-                <>
-                  <IconButton
-                    color="inherit"
-                    onClick={handleMenuClick}
-                    sx={{ ml: 1 }}
-                  >
-                    <Avatar alt={user.displayName || user.email} src={user.photoURL}>
-                      {user.displayName ? user.displayName.charAt(0) : user.email.charAt(0)}
-                    </Avatar>
-                  </IconButton>
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={handleMenuClose}
-                    transformOrigin={{
-                      vertical: 'top',
-                      horizontal: 'right',
-                    }}
-                  >
-                    <MenuItem component={Link} to="/account" onClick={handleMenuClose}>
-                      פרופיל
-                    </MenuItem>
-                    <MenuItem onClick={() => { /* Add logout functionality */ }}>
-                      התנתק
-                    </MenuItem>
-                  </Menu>
-                </>
-              ) : (
-                <Button
-                  color="inherit"
-                  component={Link}
-                  to="/login"
-                  startIcon={<AccountCircleIcon />}
-                  sx={{ mx: 1 }}
-                >
-                  התחבר
-                </Button>
-              )}
-            </Box>
-          )}
         </Toolbar>
       </AppBar>
       <Toolbar />
       <Drawer
         variant="temporary"
-        anchor="right"
+        anchor="left" // הגדרת התפריט להיפתח מצד ימין
         open={mobileOpen}
         onClose={handleDrawerToggle}
         ModalProps={{

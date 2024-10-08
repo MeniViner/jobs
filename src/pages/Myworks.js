@@ -1,41 +1,19 @@
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
-  Typography,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemButton,
-  ListItemAvatar,
-  Avatar,
-  Divider,
-  Button,
-  TextField,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  LinearProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Collapse,
-  Tab,
-  Tabs,
+  Container, Typography, Paper, List, ListItem, ListItemText, ListItemButton, ListItemAvatar, Avatar,
+  Divider, Button, TextField, Box, Card, CardContent, Chip, LinearProgress, Dialog, DialogActions,
+  DialogContent, DialogContentText, DialogTitle, Collapse, Tab, Tabs,
 } from '@mui/material';
-import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Person, CheckCircle, Group, DoneAll, Delete, Undo, Flag, ExpandMore, ExpandLess, Chat, Edit } from '@mui/icons-material';
+import { 
+  Work, LocationOn, AttachMoney, AccessTime, DateRange, Person, CheckCircle, Group, DoneAll, 
+  Delete, Undo, Flag, ExpandMore, ExpandLess, Chat, Edit 
+} from '@mui/icons-material';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { useNavigate, Link } from 'react-router-dom';
 import { RatingInput } from './RatingSystem';
+
 
 function EditJobDialog({ open, handleClose, job, handleSave }) {
   const [editedJob, setEditedJob] = useState(job || {});

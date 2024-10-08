@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { RatingDisplay } from '../pages/RatingSystem';
 import { 
   Box, Typography, Button, Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, LinearProgress, Card, CardContent, Paper, Snackbar, Alert 
 } from '@mui/material';
@@ -94,6 +95,10 @@ const EmployerProfile = ({ profileData, onUpdateProfile, onDeleteAccountRequest,
             </IconButton>
           </label>
         </Box>
+
+        {/* Rating Display */}
+        <RatingDisplay userId={profileData.uid} isEmployer={false} />
+
         <CardContent sx={{ pt: 8, pb: 4, px: 3 }}>
           <Typography variant="h5" align="center" gutterBottom fontWeight="bold">
             {profileData.name}

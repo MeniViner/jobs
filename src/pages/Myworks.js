@@ -730,7 +730,7 @@ import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, a
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { useNavigate, Link } from 'react-router-dom';
-import { RatingInput } from '../pages/RatingSystem';
+import { RatingInput } from './RatingSystem';
 
 function EditJobDialog({ open, handleClose, job, handleSave }) {
   const [editedJob, setEditedJob] = useState(job || {});

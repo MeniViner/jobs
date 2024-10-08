@@ -12,10 +12,8 @@ import {
   Divider,
   Box,
   CircularProgress,
-  Tooltip,
-  Stack,
+  Typography,
   Paper,
-  Typography, // הוסף את השורה הזו
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -28,23 +26,12 @@ import {
   DateRange as DateRangeIcon,
   Group as GroupIcon,
 } from '@mui/icons-material';
-
-import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-  addDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
-function JobListPage() {
+export default function JobListPage() {
   const [jobs, setJobs] = useState([]);
   const [filter, setFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
@@ -63,7 +50,6 @@ function JobListPage() {
       const jobsCollection = collection(db, 'jobs');
       const jobSnapshot = await getDocs(jobsCollection);
       const jobList = jobSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      // סינון עבודות שהושלמו או מלאות
       const filteredJobList = jobList.filter((job) => !job.isCompleted && !job.isFullyStaffed);
       setJobs(filteredJobList);
     } catch (error) {
@@ -102,13 +88,11 @@ function JobListPage() {
 
     try {
       if (savedJobs.includes(jobId)) {
-        // הסרת עבודה מהשמורות
         await updateDoc(userRef, {
           savedJobs: arrayRemove(jobId),
         });
         setSavedJobs(savedJobs.filter((id) => id !== jobId));
       } else {
-        // הוספת עבודה לשמורות
         await updateDoc(userRef, {
           savedJobs: arrayUnion(jobId),
         });
@@ -224,7 +208,6 @@ function JobListPage() {
                 }}
                 elevation={3}
               >
-                {/* כפתור השמירה בצד שמאל למעלה */}
                 <IconButton
                   onClick={() => handleSaveJob(job.id)}
                   sx={{ position: 'absolute', top: 8, right: 8 }}
@@ -243,10 +226,10 @@ function JobListPage() {
                   <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                     {job.companyName || 'שם החברה לא זמין'}
                   </Typography>
-                  <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                     <Chip icon={<LocationOnIcon />} label={job.location} variant="outlined" />
                     <Chip icon={<WorkIcon />} label={job.type} variant="outlined" />
-                  </Stack>
+                  </Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     {job.description && job.description.length > 150
                       ? `${job.description.substring(0, 150)}...`
@@ -275,39 +258,49 @@ function JobListPage() {
                     </Grid>
                   </Grid>
                   <Divider sx={{ my: 2 }} />
-                  {/* הצגת שעות העבודה ותאריכי העבודה אחד ליד השני */}
-                  <Grid container spacing={2} >
-                    {job.startTime && job.endTime && (
-                      <Grid item xs={12} sm={6} >
-                        <Typography
-                          variant="subtitle2"
-                          gutterBottom
-                          sx={{ display: 'flex', alignItems: 'center' }}
-                        >
-                          <AccessTimeIcon sx={{ ml: 0.5 }} /> שעות עבודה:
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {job.startTime} - {job.endTime}
-                        </Typography>
-                      </Grid>
-                    )}
-                    {job.workDates && job.workDates.length > 0 && (
-                      <Grid item xs={12} sm={6}>
-                        <Typography
-                          variant="subtitle2"
-                          gutterBottom
-                          sx={{ display: 'flex', alignItems: 'center' }}
-                        >
-                          <DateRangeIcon sx={{ ml: 0.5 }} /> תאריכי עבודה:
-                        </Typography>
-                        {job.workDates.map((date, index) => (
-                          <Typography key={index} variant="body2" color="text.secondary">
-                            {date}
+                  {/* Updated section for date and time */}
+                  <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    width: '100%',
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '50%' }}>
+                      <AccessTimeIcon sx={{ ml: 0.5, mt: 0.5 }} />
+                      <Box>
+                        <Typography variant="subtitle2">שעות עבודה:</Typography>
+                        {Array.isArray(job.workHours) ? (
+                          job.workHours.map((time, index) => (
+                            <Typography key={index} variant="body2" color="text.secondary">
+                              {time}
+                            </Typography>
+                          ))
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            {job.startTime} - {job.endTime}
                           </Typography>
-                        ))}
-                      </Grid>
-                    )}
-                  </Grid>
+                        )}
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '50%' }}>
+                      <DateRangeIcon sx={{ ml: 0.5, mt: 0.5 }} />
+                      <Box>
+                        <Typography variant="subtitle2">תאריכי עבודה:</Typography>
+                        {Array.isArray(job.workDates) ? (
+                          job.workDates.map((date, index) => (
+                            <Typography key={index} variant="body2" color="text.secondary">
+                              {date}
+                            </Typography>
+                          ))
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            {job.workDates}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
                 </CardContent>
                 <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
                   <Button
@@ -334,5 +327,3 @@ function JobListPage() {
     </Container>
   );
 }
-
-export default JobListPage;

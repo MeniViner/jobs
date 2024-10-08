@@ -6,27 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import {
-  Box,
-  Typography,
-  Button,
-  Avatar,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  CircularProgress,
-  LinearProgress,
-  Card,
-  CardContent,
-  Fade,
-  Tooltip,
-  Snackbar,
-  Alert,
-} from '@mui/material';
+import { Box, Typography, Button, Avatar, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, CircularProgress, LinearProgress, Card, CardContent, Paper, Tooltip, Snackbar, Alert } from '@mui/material';
 import {
   Edit as EditIcon,
   PhotoCamera as PhotoCameraIcon,
@@ -39,9 +19,12 @@ import {
   Business as BusinessIcon,
   Add as AddIcon,
   ExitToApp as ExitToAppIcon,
+  ArrowUpward as ArrowUpwardIcon,
 } from '@mui/icons-material';
+import InfoIcon from '@mui/icons-material/Info';
 
-const UserProfile = () => {
+
+const UserProfile = ({ onUpdateProfile, onUpgradeToEmployer, onDeleteAccountRequest }) => {
   const { t } = useTranslation();
   const { user, setUser } = useContext(AuthContext);
   const [editing, setEditing] = useState(false);
@@ -99,40 +82,40 @@ const UserProfile = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
-      let updatedData = { ...profileData };
+  // const handleSubmit = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const userDocRef = doc(db, 'users', auth.currentUser.uid);
+  //     let updatedData = { ...profileData };
 
-      if (newProfilePicture) {
-        const storageRef = ref(storage, `profile_pictures/${auth.currentUser.uid}`);
-        await uploadBytes(storageRef, newProfilePicture);
-        const downloadURL = await getDownloadURL(storageRef);
-        updatedData.photoURL = downloadURL;
-        await updateProfile(auth.currentUser, { photoURL: downloadURL });
-      }
+  //     if (newProfilePicture) {
+  //       const storageRef = ref(storage, `profile_pictures/${auth.currentUser.uid}`);
+  //       await uploadBytes(storageRef, newProfilePicture);
+  //       const downloadURL = await getDownloadURL(storageRef);
+  //       updatedData.photoURL = downloadURL;
+  //       await updateProfile(auth.currentUser, { photoURL: downloadURL });
+  //     }
 
-      await updateDoc(userDocRef, updatedData);
-      setProfileData(updatedData);
-      setNewProfilePicture(null);
-      setEditing(false);
-      calculateCompletionPercentage(updatedData);
-      setSnackbar({
-        open: true,
-        message: t('Profile updated successfully'),
-        severity: 'success'
-      });
-    } catch (error) {
-      console.error("Error updating profile: ", error);
-      setSnackbar({
-        open: true,
-        message: t('Error updating profile'),
-        severity: 'error'
-      });
-    }
-    setLoading(false);
-  };
+  //     await updateDoc(userDocRef, updatedData);
+  //     setProfileData(updatedData);
+  //     setNewProfilePicture(null);
+  //     setEditing(false);
+  //     calculateCompletionPercentage(updatedData);
+  //     setSnackbar({
+  //       open: true,
+  //       message: t('Profile updated successfully'),
+  //       severity: 'success'
+  //     });
+  //   } catch (error) {
+  //     console.error("Error updating profile: ", error);
+  //     setSnackbar({
+  //       open: true,
+  //       message: t('Error updating profile'),
+  //       severity: 'error'
+  //     });
+  //   }
+  //   setLoading(false);
+  // };
 
   const handleUpgradeToEmployer = async () => {
     if (!user || !user.uid) {
@@ -274,6 +257,61 @@ const UserProfile = () => {
             </Typography>
           </Box>
 
+          {!user.isEmployer && !user.pendingEmployer && (
+            <Card sx={{ mt: 4, mb: 4, background: 'linear-gradient(to right, #2196f3, #673ab7)' }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box>
+                    <Typography variant="body1" sx={{ color: 'white', mb: 2 }}>
+                      {t('הפוך למעסיק ופתח הזדמנויות חדשות!')}
+                    </Typography>
+                  </Box>
+                  <ArrowUpwardIcon sx={{ color: 'white', fontSize: 48 }} />
+                </Box>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={onUpgradeToEmployer}
+                  fullWidth
+                  sx={{
+                    mt: 2,
+                    backgroundColor: 'white',
+                    color: '#2196f3',
+                    '&:hover': {
+                      backgroundColor: '#e3f2fd',
+                    },
+                  }}
+                >
+                  {t('שדרג לפרופיל מעסיק')}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+          {(profileData.pendingEmployer || upgradeRequestSent) && (
+            <Paper 
+              elevation={3}
+              sx={{
+                mt: 2,
+                p: 2,
+                bgcolor: 'info.light',
+                borderRadius: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
+              <InfoIcon color="info" />
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold" color="info.dark">
+                  {t('בקשת השדרוג בהמתנה')}
+                </Typography>
+                <Typography variant="body2" color="info.dark">
+                  {t('בקשתך לשדרג לחשבון מעסיק נמצאת כעת בבדיקה.')}
+                </Typography>
+              </Box>
+            </Paper>
+          )}
+
           {!profileData.isEmployer && (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 1, my: 2 }}>
               {profileData.skills.slice(0, 3).map((skill, index) => (
@@ -352,25 +390,6 @@ const UserProfile = () => {
             >
               {t('Edit Profile')}
             </Button>
-            {!profileData.isEmployer && !profileData.pendingEmployer && !upgradeRequestSent && (
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={() => setUpgradeDialogOpen(true)}
-                sx={{ 
-                  borderRadius: 20,
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-                  '&:hover': { boxShadow: '0 6px 12px rgba(0,0,0,0.2)' },
-                }}
-              >
-                {t('Upgrade to Employer')}
-              </Button>
-            )}
-            {(profileData.pendingEmployer || upgradeRequestSent) && (
-              <Typography variant="body2" color="text.secondary">
-                {t('Upgrade request pending approval')}
-              </Typography>
-            )}
           </Box>
 
           <Box sx={{ mt: 4, display: 'flex', justifyContent:  'center' }}>
@@ -388,6 +407,33 @@ const UserProfile = () => {
               {t('Sign Out')}
             </Button>
           </Box>
+
+          <Box sx={{ mt: 4 }}>
+            {user.pendingDeletion ? (
+              <Typography 
+                variant="body1" 
+                align="center" 
+                sx={{ 
+                  p: 2, 
+                  bgcolor: 'warning.light', 
+                  color: 'warning.contrastText',
+                  borderRadius: 1
+                }}
+              >
+                {t('Account deletion request pending approval')}
+              </Typography>
+            ) : (
+              <Button
+                variant="contained"
+                color="error"
+                onClick={onDeleteAccountRequest}
+                fullWidth
+              >
+                {t('Request Account Deletion')}
+              </Button>
+            )}
+          </Box>
+
         </CardContent>
       </Card>
 
@@ -507,7 +553,7 @@ const UserProfile = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditing(false)}>{t('Cancel')}</Button>
-          <Button onClick={handleSubmit} color="primary">{t('Save Changes')}</Button>
+          <Button onClick={() => onUpdateProfile(profileData)} color="primary">{t('Save Changes')}</Button>
         </DialogActions>
       </Dialog>
 

@@ -28,9 +28,6 @@ import EmployerRegistration from './pages/profile/EmployerRegistration.jsx';
 import UserProfilePage from './pages/Management/UserProfilePage.js';
 
 
-
-
-
 const ProtectedAdminRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
   if (!user || !user.isAdmin) {

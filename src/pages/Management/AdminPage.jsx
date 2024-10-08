@@ -3,7 +3,7 @@ import { Container, Typography, Tabs, Tab, Box } from '@mui/material';
 import AdminUsersPage from './AdminUsersPage';
 import ManageUsers from './ManageUsers';
 import AdminJobsDashboard from './AdminMessagesDashboard';
-import EmployerApprovalRequests from './EmployerApprovalRequests';
+import ApprovalRequests from './ApprovalRequests';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 
@@ -28,7 +28,7 @@ const tabComponents = [
   { label: "ניהול הרשאות", component: AdminUsersPage },
   { label: "צפייה במשתמשים", component: ManageUsers },
   { label: "ניהול משרות", component: AdminJobsDashboard },
-  { label: "בקשות מעסיקים", component: EmployerApprovalRequests },
+  { label: "בקשות לאישור", component: ApprovalRequests },
 ];
 
 export default function AdminPage() {

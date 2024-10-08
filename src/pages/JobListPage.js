@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, TextField, Button, Card, CardContent, CardActions, CircularProgress, Box, Chip, Divider, IconButton } from '@mui/material';
-import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Group, Bookmark, BookmarkBorder } from '@mui/icons-material';
+import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Group, Bookmark, BookmarkBorder, Error } from '@mui/icons-material';
 import { collection, getDocs, addDoc, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
@@ -25,7 +25,9 @@ function JobListPage() {
       const jobSnapshot = await getDocs(jobsCollection);
       const jobList = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       console.log('Fetched jobs:', jobList);
-      setJobs(jobList);
+      // Filter out completed and fully staffed jobs
+      const filteredJobList = jobList.filter(job => !job.isCompleted && !job.isFullyStaffed);
+      setJobs(filteredJobList);
     } catch (error) {
       console.error("Error fetching jobs: ", error);
       setError("אירעה שגיאה בטעינת העבודות. אנא נסה שוב מאוחר יותר.");
@@ -117,7 +119,7 @@ function JobListPage() {
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom align="center">
-        רשימת עבודות זמינות
+        רשימת כל העבודות
       </Typography>
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6}>
@@ -163,10 +165,7 @@ function JobListPage() {
                     </IconButton>
                   </Box>
                   {job.isDeleted && (
-                    <Chip label="עבודה זו נמחקה" color="error" sx={{ mb: 1 }} />
-                  )}
-                  {job.isFilled && (
-                    <Chip label="עבודה זו מלאה" color="warning" sx={{ mb: 1 }} />
+                    <Chip icon={<Error />} label="עבודה זו נמחקה" color="error" sx={{ mb: 1 }} />
                   )}
                   <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <Work fontSize="small" sx={{ mr: 1 }} /> {job.companyName || 'שם העסק לא זמין'}
@@ -216,7 +215,7 @@ function JobListPage() {
                     variant="contained" 
                     color="primary" 
                     onClick={() => handleApplyForJob(job.id)}
-                    disabled={job.isDeleted || job.isFilled}
+                    disabled={job.isDeleted}
                   >
                     הגשת מועמדות
                   </Button>

@@ -4,10 +4,17 @@ import AdminUsersPage from './AdminUsersPage';
 import ManageUsers from './ManageUsers';
 import AdminJobsDashboard from './AdminMessagesDashboard';
 import ApprovalRequests from './ApprovalRequests';
+import AdminStatisticsPage from './AdminStatisticsPage';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 
-function TabPanel({ children, value, index }) {
+interface TabPanelProps {
+  children?: React.ReactNode;
+  value: number;
+  index: number;
+}
+
+function TabPanel({ children, value, index }: TabPanelProps) {
   return (
     <div
       role="tabpanel"
@@ -25,6 +32,7 @@ function TabPanel({ children, value, index }) {
 }
 
 const tabComponents = [
+  { label: "סטטיסטיקות", component: AdminStatisticsPage },
   { label: "ניהול הרשאות", component: AdminUsersPage },
   { label: "צפייה במשתמשים", component: ManageUsers },
   { label: "ניהול משרות", component: AdminJobsDashboard },
@@ -35,7 +43,7 @@ export default function AdminPage() {
   const [value, setValue] = useState(0);
   const { user } = useContext(AuthContext);
 
-  const handleChange = (event, newValue) => {
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
 

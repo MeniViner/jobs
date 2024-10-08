@@ -1,9 +1,9 @@
 import React, { useContext, useState } from 'react';
-import { 
-  AppBar, 
-  Toolbar, 
-  Button, 
-  Box, 
+import {
+  AppBar,
+  Toolbar,
+  Button,
+  Box,
   IconButton,
   Drawer,
   List,
@@ -15,6 +15,10 @@ import {
   Divider,
   Snackbar,
   Alert,
+  Typography,
+  Avatar,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
@@ -29,7 +33,9 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import BusinessIcon from '@mui/icons-material/Business';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
-import logo from '../logo.png';
+import logo from '../logo.png'; // Ensure you have a high-resolution company logo
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import Badge from '@mui/material/Badge';
 
 export default function Header() {
   const { user } = useContext(AuthContext);
@@ -38,7 +44,8 @@ export default function Header() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -59,9 +66,17 @@ export default function Header() {
     }
   };
 
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   const regularMenuItems = [
     { text: 'דף הבית', icon: <HomeIcon />, link: '/' },
-    { text: 'צ\'אט', icon: <ChatIcon />, link: '/job-chat' },
+    { text: 'צ\'אט', icon: <ChatIcon />, link: '/job-chat', authRequired: true },
     { text: 'עבודות', icon: <WorkIcon />, link: '/jobs' },
     { text: 'עבודות שמורות', icon: <BookmarkIcon />, link: '/saved-jobs', authRequired: true },
     { text: 'המועמדויות שלי', icon: <AssignmentIcon />, link: '/my-applications', authRequired: true },
@@ -69,7 +84,7 @@ export default function Header() {
 
   const employerMenuItems = [
     { text: 'פרסם עבודה', icon: <AddIcon />, link: '/post-job', onClick: handlePostJobClick },
-    { text: 'עבודות שפרסמתי', icon: <ChatIcon />, link: '/my-published-jobs' },
+    { text: 'עבודות שפרסמתי', icon: <BusinessIcon />, link: '/my-published-jobs' },
   ];
 
   const adminMenuItems = [
@@ -83,11 +98,19 @@ export default function Header() {
       }
 
       return (
-        <ListItem 
-          key={item.text} 
-          component={Link} 
+        <ListItem
+          button
+          key={item.text}
+          component={Link}
           to={item.link}
-          onClick={item.onClick}
+          onClick={(e) => {
+            if (item.onClick) {
+              item.onClick(e);
+            }
+            if (isMobile) {
+              handleDrawerToggle();
+            }
+          }}
         >
           <ListItemIcon>{item.icon}</ListItemIcon>
           <ListItemText primary={item.text} />
@@ -97,7 +120,10 @@ export default function Header() {
   };
 
   const drawer = (
-    <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
+    <Box
+      onClick={handleDrawerToggle}
+      sx={{ textAlign: 'center', width: 250 }}
+    >
       <Box sx={{ my: 2 }}>
         <img src={logo} alt="Logo" style={{ height: '50px' }} />
       </Box>
@@ -108,7 +134,9 @@ export default function Header() {
           <>
             <Divider />
             <ListItem>
-              <ListItemIcon><BusinessIcon /></ListItemIcon>
+              <ListItemIcon>
+                <BusinessIcon />
+              </ListItemIcon>
               <ListItemText primary="אזור מעסיק" />
             </ListItem>
             {renderMenuItems(employerMenuItems)}
@@ -118,7 +146,9 @@ export default function Header() {
           <>
             <Divider />
             <ListItem>
-              <ListItemIcon><SupervisorAccountIcon /></ListItemIcon>
+              <ListItemIcon>
+                <SupervisorAccountIcon />
+              </ListItemIcon>
               <ListItemText primary="ניהול" />
             </ListItem>
             {renderMenuItems(adminMenuItems)}
@@ -128,13 +158,27 @@ export default function Header() {
       <Divider />
       <List>
         {user ? (
-          <ListItem component={Link} to="/account">
-            <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+          <ListItem
+            button
+            component={Link}
+            to="/account"
+            onClick={isMobile ? handleDrawerToggle : undefined}
+          >
+            <ListItemIcon>
+              <AccountCircleIcon />
+            </ListItemIcon>
             <ListItemText primary={user.displayName || user.email} />
           </ListItem>
         ) : (
-          <ListItem component={Link} to="/login">
-            <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+          <ListItem
+            button
+            component={Link}
+            to="/login"
+            onClick={isMobile ? handleDrawerToggle : undefined}
+          >
+            <ListItemIcon>
+              <AccountCircleIcon />
+            </ListItemIcon>
             <ListItemText primary="התחבר" />
           </ListItem>
         )}
@@ -144,76 +188,135 @@ export default function Header() {
 
   return (
     <>
-      <AppBar position="fixed">
-        <Toolbar>
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-            WorkMatch
+      <AppBar position="fixed" color="primary" elevation={0}>
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Box
+            component={Link}
+            to="/"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              textDecoration: 'none',
+              color: 'inherit',
+            }}
+          >
+            <img src={logo} alt="Logo" style={{ height: '40px', marginRight: '10px' }} />
+            <Typography variant="h6" noWrap>
+              WorkMatch
+            </Typography>
           </Box>
-
           {isMobile ? (
             <IconButton
               color="inherit"
               aria-label="open drawer"
-              edge="start"
+              edge="end"
               onClick={handleDrawerToggle}
             >
               <MenuIcon />
             </IconButton>
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {regularMenuItems.map((item) => (
-                (!item.authRequired || (item.authRequired && user)) && (
-                  <Button key={item.text} color="inherit" component={Link} to={item.link}>
-                    {item.text}
-                  </Button>
-                )
-              ))}
+              {regularMenuItems.map(
+                (item) =>
+                  (!item.authRequired || (item.authRequired && user)) && (
+                    <Button
+                      key={item.text}
+                      color="inherit"
+                      component={Link}
+                      to={item.link}
+                      startIcon={item.icon}
+                      sx={{ mx: 1 }}
+                    >
+                      {item.text}
+                    </Button>
+                  )
+              )}
 
               {user?.isEmployer ? (
                 <>
-                  <Button 
-                    color="inherit" 
-                    component={Link}
-                    to="/post-job"
-                    startIcon={<BusinessIcon />}
-                  >
-                    פרסם עבודה
-                  </Button>
-                  <Button 
-                    color="inherit" 
-                    component={Link} 
-                    to="/my-published-jobs" 
-                    startIcon={<ChatIcon />}
-                  >
-                    עבודות שפרסמתי
-                  </Button>
+                  {employerMenuItems.map((item) => (
+                    <Button
+                      key={item.text}
+                      color="inherit"
+                      component={Link}
+                      to={item.link}
+                      startIcon={item.icon}
+                      sx={{ mx: 1 }}
+                      onClick={item.onClick}
+                    >
+                      {item.text}
+                    </Button>
+                  ))}
                 </>
               ) : (
-                <Button 
-                  color="inherit" 
+                <Button
+                  color="inherit"
                   onClick={handlePostJobClick}
-                  startIcon={<BusinessIcon />}
+                  startIcon={<AddIcon />}
+                  sx={{ mx: 1 }}
                 >
                   פרסם עבודה
                 </Button>
               )}
 
               {user?.isAdmin && (
-                <Button color="inherit" component={Link} to="/admin" startIcon={<SupervisorAccountIcon />}>
-                  ניהול
-                </Button>
-              )}
-              {user ? (
                 <Button
                   color="inherit"
                   component={Link}
-                  to="/account"
-                  startIcon={<AccountCircleIcon />}
+                  to="/admin"
+                  startIcon={<AdminPanelSettingsIcon />}
+                  sx={{ mx: 1 }}
                 >
-                  {user.displayName || user.email}
+                  ניהול
                 </Button>
+              )}
+
+              {/* Notification Icon */}
+              {user && (
+                <IconButton color="inherit" sx={{ mx: 1 }}>
+                  <Badge badgeContent={4} color="secondary">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+              )}
+
+              {/* User Avatar */}
+              {user ? (
+                <>
+                  <IconButton
+                    color="inherit"
+                    onClick={handleMenuClick}
+                    sx={{ ml: 1 }}
+                  >
+                    <Avatar alt={user.displayName || user.email} src={user.photoURL}>
+                      {user.displayName ? user.displayName.charAt(0) : user.email.charAt(0)}
+                    </Avatar>
+                  </IconButton>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleMenuClose}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                  >
+                    <MenuItem component={Link} to="/account" onClick={handleMenuClose}>
+                      פרופיל
+                    </MenuItem>
+                    <MenuItem onClick={() => { /* Add logout functionality */ }}>
+                      התנתק
+                    </MenuItem>
+                  </Menu>
+                </>
               ) : (
-                <Button color="inherit" component={Link} to="/login" startIcon={<AccountCircleIcon />}>
+                <Button
+                  color="inherit"
+                  component={Link}
+                  to="/login"
+                  startIcon={<AccountCircleIcon />}
+                  sx={{ mx: 1 }}
+                >
                   התחבר
                 </Button>
               )}
@@ -221,14 +324,17 @@ export default function Header() {
           )}
         </Toolbar>
       </AppBar>
-      <Toolbar /> {/* This empty Toolbar acts as a spacer */}
+      <Toolbar />
       <Drawer
         variant="temporary"
         anchor="right"
         open={mobileOpen}
         onClose={handleDrawerToggle}
         ModalProps={{
-          keepMounted: true, // Better open performance on mobile.
+          keepMounted: true,
+        }}
+        PaperProps={{
+          sx: { width: 250 },
         }}
       >
         {drawer}
@@ -239,7 +345,11 @@ export default function Header() {
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbarOpen(false)} severity="info" sx={{ width: '100%' }}>
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="info"
+          sx={{ width: '100%' }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

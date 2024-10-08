@@ -10,6 +10,7 @@ import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 
 import PostJob from './pages/PostJob';
+import AdminStatisticsPage from './pages/Management/AdminStatisticsPage.js';
 import AdminMessagesDashboard from './pages/Management/AdminMessagesDashboard';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
@@ -57,6 +58,7 @@ function App() {
             <Header />
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
               <Route path="/job-chat" element={<JobChat />} />  {/* נתיב לדף הצ'אט */}
               <Route path="/user/:userId" element={<UserProfilePage />} />
               <Route path="/admin" element={<AdminPage />} />

@@ -23,7 +23,7 @@ import JobChat from './pages/JobChat'; // ייבוא הקומפוננטה של �
 import LoginPage from './pages/profile/loginPage';
 import AdminPage from './pages/Management/AdminPage.jsx';
 import AdminUsersPage from './pages/Management/AdminUsersPage';
-import EmployerChatPage from './pages/MyWorks.js';
+import EmployerChatPage from './pages/Myworks.js';
 import MyApplications from './pages/MyApplications.js';
 import EmployerRegistration from './pages/profile/EmployerRegistration.jsx';
 import UserProfilePage from './pages/Management/UserProfilePage.js';

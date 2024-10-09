@@ -84,21 +84,6 @@ export const RatingDisplay = ({ userId }) => {
   const [ratings, setRatings] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
 
-  // useEffect(() => {
-  //   const fetchRatings = async () => {
-  //     const ratingsQuery = query(collection(db, 'ratings'), where('ratedUser', '==', userId));
-  //     const ratingsSnapshot = await getDocs(ratingsQuery);
-  //     const ratingsData = ratingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  //     setRatings(ratingsData);
-
-  //     if (ratingsData.length > 0) {
-  //       const totalRating = ratingsData.reduce((sum, rating) => sum + rating.rating, 0);
-  //       setAverageRating(totalRating / ratingsData.length);
-  //     }
-  //   };
-
-  //   fetchRatings();
-  // }, [userId]);
 
   useEffect(() => {
     if (!userId) {

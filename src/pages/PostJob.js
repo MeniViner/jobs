@@ -16,6 +16,8 @@ import { db, auth } from '../services/firebase';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { getAuth } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom'; 
+
 
 const jobTypes = [
   'משרה מלאה',
@@ -35,13 +37,15 @@ export default function PostJob() {
     startTime: '',
     endTime: '',
     workDates: [''],
-    workersNeeded: 1, // New field for number of workers needed
+    workersNeeded: 1, 
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: ''
   });
-  const [businessName, setBusinessName] = useState('');
+  const [businessName, setBusinessName] = useState('');  
+  const navigate = useNavigate(); 
+
 
   useEffect(() => {
     fetchBusinessName();
@@ -136,6 +140,7 @@ export default function PostJob() {
         workDates: [''],
         workersNeeded: 1,
       });
+      navigate('/my-published-jobs'); 
     } catch (error) {
       console.error("Error adding document: ", error);
       setSnackbar({ open: true, message: `אירעה שגיאה בפרסום המשרה: ${error.message}` });

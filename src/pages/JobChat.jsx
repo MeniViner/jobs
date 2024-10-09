@@ -73,7 +73,13 @@ export default function JobChat() {
       if (isEmployerView) {
         const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', user.uid));
         const unsubscribe = onSnapshot(jobsQuery, async (snapshot) => {
-          const jobsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), applicantCount: 0, unreadCount: 0, lastMessageTimestamp: null }));
+          const jobsList = snapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data(), 
+            applicantCount: 0, 
+            unreadCount: 0, 
+            lastMessageTimestamp: null 
+          }));
           
           for (let job of jobsList) {
             const chatsQuery = query(collection(db, 'jobChats'), where('jobId', '==', job.id));
@@ -121,7 +127,11 @@ export default function JobChat() {
       } else {
         const chatsQuery = query(collection(db, 'jobChats'), where('applicantId', '==', user.uid));
         const unsubscribe = onSnapshot(chatsQuery, async (snapshot) => {
-          const chatsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), unreadCount: 0 }));
+          const chatsList = snapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data(), 
+            unreadCount: 0 
+          }));
           
           for (let chat of chatsList) {
             const messagesQuery = query(
@@ -164,7 +174,11 @@ export default function JobChat() {
       where('jobId', '==', jobId)
     );
     const unsubscribe = onSnapshot(chatsQuery, async (snapshot) => {
-      let chatList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), unreadCount: 0 }));
+      let chatList = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data(), 
+        unreadCount: 0 
+      }));
 
       for (let chat of chatList) {
         const messagesQuery = query(
@@ -466,7 +480,15 @@ export default function JobChat() {
   );
 
   const renderMessages = () => (
-    <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2, bgcolor: 'grey.100' }} ref={chatContainerRef}>
+    <Box 
+      sx={{ 
+        flexGrow: 1, 
+        overflowY: 'auto', 
+        p: 2, 
+        bgcolor: 'grey.100' 
+      }} 
+      ref={chatContainerRef}
+    >
       {messages.map((message) => (
         <Box
           key={message.id}
@@ -498,7 +520,7 @@ export default function JobChat() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="fixed" color="primary" elevation={0} sx={{ top: 64, zIndex: (theme) => theme.zIndex.drawer + 0 }}>
+      <AppBar position="fixed" color="primary" elevation={0} sx={{ top: 56, zIndex: (theme) => theme.zIndex.drawer + 0 }}>
         <Toolbar>
           {(selectedJob || selectedChat) && (
             <IconButton edge="start" color="inherit" onClick={() => {
@@ -523,59 +545,91 @@ export default function JobChat() {
       </AppBar>
       <Toolbar />
 
-      <Box sx={{ flexGrow: 1, overflow: 'hidden', mt: 8 }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden', mt: 2 }}>
         {!selectedChat ? (
           <Box sx={{ height: '100%', width: '100%' }}>
             {isEmployerView ? (
               selectedJob ? (
-                <Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <Typography variant="h6" sx={{ p: 2, bgcolor: 'background.paper' }}>
                     {selectedJob.title}
                   </Typography>
-                  {renderChatList()}
+                  <Divider />
+                  <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+                    {renderChatList()}
+                  </Box>
                 </Box>
               ) : (
-                renderJobList()
+                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <Typography variant="h6" sx={{ p: 2, bgcolor: 'background.paper' }}>
+                    כל המשרות
+                  </Typography>
+                  <Divider />
+                  <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+                    {renderJobList()}
+                  </Box>
+                </Box>
               )
             ) : (
-              renderChatList()
+              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Typography variant="h6" sx={{ p: 2, bgcolor: 'background.paper' }}>
+                  הצ'אטים שלי
+                </Typography>
+                <Divider />
+                <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+                  {renderChatList()}
+                </Box>
+              </Box>
             )}
           </Box>
         ) : (
           <Box sx={{ 
-            height: 'calc(100% - 64px)',
+            height: '100%', 
             width: '100%', 
             display: 'flex', 
             flexDirection: 'column'
           }}>
+            {/* אזור ההודעות */}
             {renderMessages()}
-            <Box sx={{ p: 2, bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
-              <TextField
-                fullWidth
-                variant="outlined"
-                placeholder="הקלד הודעה..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSendMessage();
-                  }
-                }}
-                sx={{ mr: 1 }}
-              />
-              <IconButton color="primary" onClick={handleSendMessage}>
-                <SendIcon />
-              </IconButton>
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<ExitToAppIcon />}
-                onClick={handleExitChat}
-                sx={{ ml: 1 }}
-              >
-                צא מצ'אט
-              </Button>
-            </Box>
+
+            {/* תיבת ההודעה */}
+            <Box sx={{ 
+  p: 2, 
+  bgcolor: 'background.paper', 
+  display: 'flex', 
+  alignItems: 'center',
+  position: 'fixed',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  mt: 10 // This adds a top margin of 10
+}}>
+  <TextField
+    fullWidth
+    variant="outlined"
+    placeholder="הקלד הודעה..."
+    value={newMessage}
+    onChange={(e) => setNewMessage(e.target.value)}
+    onKeyPress={(e) => {
+      if (e.key === 'Enter') {
+        handleSendMessage();
+      }
+    }}
+    sx={{ mr: 1 }}
+  />
+  <IconButton color="primary" onClick={handleSendMessage}>
+    <SendIcon />
+  </IconButton>
+  <Button
+    variant="outlined"
+    color="primary"
+    startIcon={<ExitToAppIcon />}
+    onClick={handleExitChat}
+    sx={{ ml: 1 }}
+  >
+    צא מצ'אט
+  </Button>
+</Box>
           </Box>
         )}
       </Box>
@@ -591,6 +645,7 @@ export default function JobChat() {
         </Fab>
       )}
 
+      {/* Dialog למחיקת שיחה */}
       <Dialog
         open={openDeleteDialog}
         onClose={() => setOpenDeleteDialog(false)}

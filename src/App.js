@@ -23,7 +23,7 @@ import JobChat from './pages/JobChat'; // ייבוא הקומפוננטה של �
 import LoginPage from './pages/profile/loginPage';
 import AdminPage from './pages/Management/AdminPage.jsx';
 import AdminUsersPage from './pages/Management/AdminUsersPage';
-import EmployerChatPage from './pages/Myworks.js';
+import MyWorksPage from './pages/Myworks.js';
 import MyApplications from './pages/MyApplications.js';
 import EmployerRegistration from './pages/profile/EmployerRegistration.jsx';
 import UserProfilePage from './pages/Management/UserProfilePage.js';
@@ -64,7 +64,6 @@ function App() {
               <Route path="/job-chat" element={<JobChat />} />  {/* נתיב לדף הצ'אט */}
               <Route path="/user/:userId" element={<UserProfilePage />} />
               <Route path="/admin" element={<AdminPage />} />
-              {/* <Route path="/admin/users" element={<AdminUsersPage />} /> */}
               <Route path="/admin/users" element={ <ProtectedAdminRoute> <AdminUsersPage /></ProtectedAdminRoute>} />
               <Route path="/jobs" element={<JobListPage />} />
               <Route path="/saved-jobs" element={<SavedJobsPage />} />
@@ -76,7 +75,7 @@ function App() {
               <Route path="/employer-registration" element={<EmployerRegistration />} />
               <Route path="/employer-profile" element={<EmployerProfile />} />
               <Route path="/chat/:jobId" element={<JobChat />} />  {/* נתיב עם jobId */}
-              <Route path="/my-published-jobs" element={<EmployerChatPage />} />
+              <Route path="/my-published-jobs" element={<MyWorksPage />} />
               <Route path="/my-applications" element={<MyApplications />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

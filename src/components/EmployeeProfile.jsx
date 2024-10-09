@@ -1,23 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { RatingDisplay } from '../pages/RatingSystem';
 import { 
-  Box, Typography, Button, Avatar, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, LinearProgress, Card, CardContent, Paper, Tooltip, Snackbar, Alert 
+  Box, Typography, Button, Avatar, Chip, IconButton, Dialog, DialogTitle, DialogContent, 
+  DialogActions, TextField, LinearProgress, Card, CardContent, Paper, Tooltip, Snackbar, Alert 
 } from '@mui/material';
 import { 
-  Edit as EditIcon,
-  PhotoCamera as PhotoCameraIcon,
-  Work as WorkIcon,
-  School as SchoolIcon,
-  Language as LanguageIcon,
-  LocationOn as LocationIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
-  Add as AddIcon,
-  ExitToApp as ExitToAppIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  Info as InfoIcon,
+  Edit as EditIcon, PhotoCamera as PhotoCameraIcon, Work as WorkIcon, School as SchoolIcon,
+  Language as LanguageIcon, LocationOn as LocationIcon, Phone as PhoneIcon, Email as EmailIcon,
+  Add as AddIcon, ExitToApp as ExitToAppIcon, ArrowUpward as ArrowUpwardIcon, Info as InfoIcon,
 } from '@mui/icons-material';
-
 const EmployeeProfile = ({
   profileData,
   onUpdateProfile,

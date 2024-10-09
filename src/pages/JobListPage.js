@@ -47,7 +47,6 @@ export default function JobListPage() {
   const [locationFilter, setLocationFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [savedJobs, setSavedJobs] = useState([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchJobs();

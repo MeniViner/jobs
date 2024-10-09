@@ -11,7 +11,7 @@ import {
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { RatingInput } from './RatingSystem';
 
 
@@ -170,7 +170,6 @@ export default function MyworksPage() {
   const [openChatDialog, setOpenChatDialog] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
-  const navigate = useNavigate();
   const auth = getAuth();
 
   useEffect(() => {

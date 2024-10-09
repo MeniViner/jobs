@@ -23,7 +23,7 @@ import {
   DateRange as DateRangeIcon,
   Group as GroupIcon,
 } from '@mui/icons-material';
-import { collection, getDocs, doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { Link } from 'react-router-dom';

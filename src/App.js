@@ -24,7 +24,9 @@ import MyWorksPage from './pages/WorksIPublished.js';
 import MyApplications from './pages/NominatedWorks.js';
 import UserProfilePage from './pages/profile/SocialProfile.js';
 import TopUsersPage from './pages/Management/TopUsersPage.js';
-import JobCompletionRating from './pages/rating/JobCompletionRating.tsx'; // ייבוא הדף החדש
+import JobCompletionRating from './pages/rating/JobCompletionRating.tsx';
+import EmployerRegistrationForm from './pages/profile/EmployerRegistrationForm.jsx';
+
 
 const ProtectedAdminRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
@@ -70,7 +72,8 @@ function App() {
               <Route path="/chat/:jobId" element={<JobChat />} />
               <Route path="/my-published-jobs" element={<MyWorksPage />} />
               <Route path="/my-applications" element={<MyApplications />} />
-
+              <Route path="/employer-registration" element={<EmployerRegistrationForm />} />
+              
               {/* נתיב לדף הדירוג החדש */}
               <Route path="/rate-employer/:jobId" element={<JobCompletionRating />} />
 

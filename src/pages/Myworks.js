@@ -158,7 +158,7 @@ function EditJobDialog({ open, handleClose, job, handleSave }) {
   );
 }
 
-export default function MyworksPage() {
+export default function MyWorksPage() {
   const [jobs, setJobs] = useState([]);
   const [expandedJob, setExpandedJob] = useState(null);
   const [applicants, setApplicants] = useState([]);
@@ -178,12 +178,32 @@ export default function MyworksPage() {
 
   const fetchEmployerJobs = async () => {
     if (!auth.currentUser) return;
-
+  
     const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', auth.currentUser.uid));
     const jobsSnapshot = await getDocs(jobsQuery);
-    const jobsList = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const jobsList = [];
+  
+    for (const jobDoc of jobsSnapshot.docs) {
+      const jobData = jobDoc.data();
+  
+      const employerDocRef = doc(db, 'employers', jobData.employerId);
+      const employerDoc = await getDoc(employerDocRef);
+  
+      let companyName = 'Unknown Company'; // Default value in case employer data is not found
+      if (employerDoc.exists()) {
+        const employerData = employerDoc.data();
+        companyName = employerData.companyName || companyName;
+      }
+  
+      jobsList.push({
+        id: jobDoc.id,
+        ...jobData,
+        companyName, // Use the fetched companyName instead of the one from jobs collection
+      });
+    }
+  
     setJobs(jobsList);
-
+  
     const allApplicants = new Map();
     for (const job of jobsList) {
       const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
@@ -208,6 +228,7 @@ export default function MyworksPage() {
     }
     setApplicants(Array.from(allApplicants.values()));
   };
+  
 
   const handleToggleExpand = (jobId) => {
     setExpandedJob(expandedJob === jobId ? null : jobId);

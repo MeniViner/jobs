@@ -1,26 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
-  Snackbar,
-  Collapse,
-  Box,
-  InputAdornment,
-  CircularProgress,
-} from '@mui/material';
+import { 
+  Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead,
+  TableRow, IconButton, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+  TextField, Snackbar, Collapse, Box, InputAdornment, CircularProgress 
+  } from '@mui/material';
 import { Delete, Edit, KeyboardArrowDown, KeyboardArrowUp, Search } from '@mui/icons-material';
 import { collection, getDocs, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -40,41 +23,111 @@ export default function AdminJobsDashboard() {
   }, []);
 
   useEffect(() => {
-    const filtered = jobs.filter(job => 
-      (job.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (job.companyName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (job.location?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (job.type?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      (job.employerName?.toLowerCase() || '').includes(searchTerm.toLowerCase())
-    );
-    setFilteredJobs(filtered);
+    if (!searchTerm) {
+      setFilteredJobs(jobs);
+    } else {
+      const filtered = jobs.map((employer) => {
+        const employerMatches = (employer.employerName?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+  
+        // אם שם המעסיק תואם לחיפוש, מציגים את כל העבודות של אותו מעסיק
+        if (employerMatches) {
+          return employer;
+        }
+  
+        // אם אין התאמה לשם המעסיק, מסננים את העבודות
+        const filteredJobs = employer.jobs.filter(job => 
+          (job.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+          (job.companyName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+          (job.location?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+          (job.type?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+        );
+  
+        if (filteredJobs.length > 0) {
+          return {
+            ...employer,
+            jobs: filteredJobs,
+          };
+        } else {
+          return null;
+        }
+      }).filter(employer => employer !== null);
+      
+      setFilteredJobs(filtered);
+    }
   }, [jobs, searchTerm]);
-
+  
   const fetchJobs = async () => {
     setLoading(true);
     try {
+      // Fetch jobs
       const jobsCollection = collection(db, 'jobs');
       const jobSnapshot = await getDocs(jobsCollection);
-      const jobList = await Promise.all(jobSnapshot.docs.map(async (docSnapshot) => {
-        const jobData = docSnapshot.data();
-        let employerData = null;
-        if (jobData.employerId) {
-          const employerDocRef = doc(db, 'users', jobData.employerId);
-          const employerDocSnapshot = await getDoc(employerDocRef);
-          if (employerDocSnapshot.exists()) {
-            employerData = employerDocSnapshot.data();
-          }
-        }
+      const jobList = jobSnapshot.docs.map((docSnapshot) => {
         return {
           id: docSnapshot.id,
-          ...jobData,
-          employerName: employerData?.displayName || employerData?.name || 'לא צוין',
-          employerEmail: employerData?.email || 'לא צוין',
-          employerPhone: employerData?.phone || 'לא צוין',
+          ...docSnapshot.data(),
         };
-      }));
-      setJobs(jobList);
-      setFilteredJobs(jobList);
+      });
+
+      // Fetch applications
+      const applicationsCollection = collection(db, 'applications'); // או השם המתאים ב-DB שלך
+      const applicationsSnapshot = await getDocs(applicationsCollection);
+      const applicationsList = applicationsSnapshot.docs.map((docSnapshot) => {
+        return docSnapshot.data();
+      });
+
+      // Map jobId to employee count
+      const jobEmployeeCountMap = {};
+      applicationsList.forEach((application) => {
+        const jobId = application.jobId;
+        if (jobEmployeeCountMap[jobId]) {
+          jobEmployeeCountMap[jobId]++;
+        } else {
+          jobEmployeeCountMap[jobId] = 1;
+        }
+      });
+
+      // Process jobList
+      const processedJobList = await Promise.all(
+        jobList.map(async (jobData) => {
+          let employerData = null;
+          if (jobData.employerId) {
+            const employerDocRef = doc(db, 'users', jobData.employerId);
+            const employerDocSnapshot = await getDoc(employerDocRef);
+            if (employerDocSnapshot.exists()) {
+              employerData = employerDocSnapshot.data();
+            }
+          }
+          return {
+            ...jobData,
+            employerName: employerData?.displayName || employerData?.name || 'לא צוין',
+            employerEmail: employerData?.email || 'לא צוין',
+            employerPhone: employerData?.phone || 'לא צוין',
+            employeeCount: jobEmployeeCountMap[jobData.id] || 0,
+          };
+        })
+      );
+
+      // Group jobs by employerId
+      const employerMap = {};
+      processedJobList.forEach((job) => {
+        const employerId = job.employerId || 'unknown';
+        if (!employerMap[employerId]) {
+          employerMap[employerId] = {
+            employerId,
+            employerName: job.employerName,
+            employerEmail: job.employerEmail,
+            employerPhone: job.employerPhone,
+            jobs: [],
+          };
+        }
+        employerMap[employerId].jobs.push(job);
+      });
+
+      const groupedJobs = Object.values(employerMap);
+
+      setJobs(groupedJobs);
+      setFilteredJobs(groupedJobs);
     } catch (error) {
       console.error("Error fetching jobs: ", error);
       setSnackbar({ open: true, message: 'אירעה שגיאה בטעינת המשרות' });
@@ -120,8 +173,8 @@ export default function AdminJobsDashboard() {
     }
   };
 
-  const handleExpandRow = (index) => {
-    setExpandedRow(expandedRow === index ? null : index);
+  const handleExpandRow = (jobId) => {
+    setExpandedRow(expandedRow === jobId ? null : jobId);
   };
 
   const handleSearchChange = (event) => {
@@ -165,86 +218,97 @@ export default function AdminJobsDashboard() {
               <TableCell>מיקום</TableCell>
               <TableCell>סוג משרה</TableCell>
               <TableCell>שכר</TableCell>
-              <TableCell>מפרסם</TableCell>
+              <TableCell>מספר עובדים</TableCell>
               <TableCell>פעולות</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredJobs.map((job, index) => (
-              <React.Fragment key={job.id}>
+            {filteredJobs.map((employer, employerIndex) => (
+              <React.Fragment key={employer.employerId}>
                 <TableRow>
-                  <TableCell>
-                    <IconButton
-                      aria-label="expand row"
-                      size="small"
-                      onClick={() => handleExpandRow(index)}
-                      sx={{
-                        border: '2px solid #1976d2',
-                        borderRadius: '50%',
-                        padding: '8px',
-                        '&:hover': {
-                          backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                        },
-                      }}
-                    >
-                      {expandedRow === index ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                    </IconButton>
-                  </TableCell>
-                  <TableCell>{job.title || 'N/A'}</TableCell>
-                  <TableCell>{job.companyName || 'N/A'}</TableCell>
-                  <TableCell>{job.location || 'N/A'}</TableCell>
-                  <TableCell>{job.type || 'N/A'}</TableCell>
-                  <TableCell>{job.salary ? `₪${job.salary}` : 'N/A'}</TableCell>
-                  <TableCell>{job.employerName || 'N/A'}</TableCell>
-                  <TableCell>
-                    <IconButton onClick={() => handleOpenDialog(job)}>
-                      <Edit />
-                    </IconButton>
-                    <IconButton onClick={() => handleDeleteJob(job.id)}>
-                      <Delete />
-                    </IconButton>
+                  <TableCell colSpan={8} style={{ backgroundColor: '#f5f5f5' }}>
+                    <Typography variant="h6">{employer.employerName || 'לא צוין'}</Typography>
                   </TableCell>
                 </TableRow>
-                <TableRow>
-                  <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
-                    <Collapse in={expandedRow === index} timeout="auto" unmountOnExit>
-                      <Box margin={1}>
-                        <Typography variant="h6" gutterBottom component="div">
-                          פרטי משרה
-                        </Typography>
-                        <Table size="small" aria-label="purchases">
-                          <TableBody>
-                            <TableRow>
-                              <TableCell component="th" scope="row">תיאור</TableCell>
-                              <TableCell>{job.description || 'לא צוין'}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell component="th" scope="row">שעות עבודה</TableCell>
-                              <TableCell>{job.startTime && job.endTime ? `${job.startTime} - ${job.endTime}` : 'לא צוין'}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell component="th" scope="row">תאריכי עבודה</TableCell>
-                              <TableCell>{job.workDates && job.workDates.length > 0 ? job.workDates.join(', ') : 'לא צוין'}</TableCell>
-                            </TableRow>
-                            <TableRow>
-                              <TableCell component="th" scope="row">פרטי מעסיק</TableCell>
-                              <TableCell>
-                                <Typography>שם: {job.employerName}</Typography>
-                                <Typography>אימייל: {job.employerEmail}</Typography>
-                                <Typography>טלפון: {job.employerPhone}</Typography>
-                              </TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </Box>
-                    </Collapse>
-                  </TableCell>
-                </TableRow>
+                {employer.jobs.map((job, index) => (
+                  <React.Fragment key={job.id}>
+                    <TableRow>
+                      <TableCell>
+                        <IconButton
+                          aria-label="expand row"
+                          size="small"
+                          onClick={() => handleExpandRow(job.id)}
+                          sx={{
+                            border: '2px solid #1976d2',
+                            borderRadius: '50%',
+                            padding: '8px',
+                            '&:hover': {
+                              backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                            },
+                          }}
+                        >
+                          {expandedRow === job.id ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                        </IconButton>
+                      </TableCell>
+                      <TableCell>{job.title || 'N/A'}</TableCell>
+                      <TableCell>{job.companyName || 'N/A'}</TableCell>
+                      <TableCell>{job.location || 'N/A'}</TableCell>
+                      <TableCell>{job.type || 'N/A'}</TableCell>
+                      <TableCell>{job.salary ? `₪${job.salary}` : 'N/A'}</TableCell>
+                      <TableCell>{job.employeeCount}</TableCell>
+                      <TableCell>
+                        <IconButton onClick={() => handleOpenDialog(job)}>
+                          <Edit />
+                        </IconButton>
+                        <IconButton onClick={() => handleDeleteJob(job.id)}>
+                          <Delete />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+                        <Collapse in={expandedRow === job.id} timeout="auto" unmountOnExit>
+                          <Box margin={1}>
+                            <Typography variant="h6" gutterBottom component="div">
+                              פרטי משרה
+                            </Typography>
+                            <Table size="small" aria-label="purchases">
+                              <TableBody>
+                                <TableRow>
+                                  <TableCell component="th" scope="row">תיאור</TableCell>
+                                  <TableCell>{job.description || 'לא צוין'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell component="th" scope="row">שעות עבודה</TableCell>
+                                  <TableCell>{job.startTime && job.endTime ? `${job.startTime} - ${job.endTime}` : 'לא צוין'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell component="th" scope="row">תאריכי עבודה</TableCell>
+                                  <TableCell>{job.workDates && job.workDates.length > 0 ? job.workDates.join(', ') : 'לא צוין'}</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell component="th" scope="row">פרטי מעסיק</TableCell>
+                                  <TableCell>
+                                    <Typography>שם: {job.employerName}</Typography>
+                                    <Typography>אימייל: {job.employerEmail}</Typography>
+                                    <Typography>טלפון: {job.employerPhone}</Typography>
+                                  </TableCell>
+                                </TableRow>
+                              </TableBody>
+                            </Table>
+                          </Box>
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+                  </React.Fragment>
+                ))}
               </React.Fragment>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* שאר הקוד נשאר ללא שינוי */}
 
       <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>ערוך משרה</DialogTitle>

@@ -40,7 +40,7 @@ const EmployeeProfile = ({
   const [upgradeRequestSent, setUpgradeRequestSent] = useState(profileData.pendingEmployer || false);
 
   const calculateCompletionPercentage = (data) => {
-    const fields = ['name', 'email', 'phone', 'location', 'skills', 'education', 'experience', 'languages'];
+    const fields = ['name', 'email', 'phone', 'location', 'skills', 'education', 'experience', 'languages', 'bio'];
     const completedFields = fields.filter(field => data[field] && data[field].length > 0);
     return (completedFields.length / fields.length) * 100;
   };
@@ -122,8 +122,7 @@ const EmployeeProfile = ({
           </label>
         </Box>
 
-      {/* Rating Display */}
-      <RatingDisplay userId={profileData.uid} isEmployer={false} />
+        <RatingDisplay userId={profileData.uid} isEmployer={false} />
 
         <CardContent sx={{ pt: 8, pb: 4, px: 3 }}>
           <Typography variant="h5" align="center" gutterBottom fontWeight="bold">
@@ -208,6 +207,13 @@ const EmployeeProfile = ({
               </Box>
             </Paper>
           )}
+
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h6" gutterBottom fontWeight="bold">אודותיי</Typography>
+            <Typography variant="body1" color="text.secondary">
+              {profileData.bio || 'הוסף תיאור קצר על עצמך'}
+            </Typography>
+          </Box>
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 1, my: 2 }}>
             {profileData.skills.slice(0, 3).map((skill, index) => (
@@ -319,7 +325,6 @@ const EmployeeProfile = ({
         </CardContent>
       </Card>
 
-      {/* Edit Profile Dialog */}
       <Dialog open={editing} onClose={() => setEditing(false)} fullWidth maxWidth="sm">
         <DialogTitle>ערוך פרופיל</DialogTitle>
         <DialogContent>
@@ -360,7 +365,9 @@ const EmployeeProfile = ({
             label="השכלה"
             name="education"
             value={editedData.education}
-            onChange={(e) => setEditedData({ ...editedData, education: e.target.value })}
+            onChange={(e) => 
+              setEditedData({ ...editedData, education: e.target.value })
+            }
             margin="normal"
           />
           <TextField
@@ -368,7 +375,9 @@ const EmployeeProfile = ({
             label="ניסיון עבודה"
             name="experience"
             value={editedData.experience}
-            onChange={(e) => setEditedData({ ...editedData, experience: e.target.value })}
+            onChange={(e) =>
+              setEditedData({ ...editedData, experience: e.target.value })
+            }
             margin="normal"
             multiline
             rows={3}
@@ -378,17 +387,33 @@ const EmployeeProfile = ({
             label="שפות (מופרדות בפסיק)"
             name="languages"
             value={editedData.languages.join(', ')}
-            onChange={(e) => setEditedData({ ...editedData, languages: e.target.value.split(',').map(lang => lang.trim()) })}
+            onChange={(e) =>
+              setEditedData({
+                ...editedData,
+                languages: e.target.value.split(',').map((lang) => lang.trim()),
+              })
+            }
             margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="אודותיי"
+            name="bio"
+            value={editedData.bio || ''}
+            onChange={(e) => setEditedData({ ...editedData, bio: e.target.value })}
+            margin="normal"
+            multiline
+            rows={4}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditing(false)}>ביטול</Button>
-          <Button onClick={handleSaveChanges} color="primary">שמור שינויים</Button>
+          <Button onClick={handleSaveChanges} color="primary">
+            שמור שינויים
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Upgrade to Employer Dialog */}
       <Dialog open={upgradeDialogOpen} onClose={() => setUpgradeDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>שדרוג למעסיק</DialogTitle>
         <DialogContent>
@@ -425,7 +450,6 @@ const EmployeeProfile = ({
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

@@ -13,6 +13,10 @@ import {
   Button,
   Stack,
   CircularProgress,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   Email as EmailIcon,
@@ -21,6 +25,9 @@ import {
   CalendarToday as CalendarIcon,
   Person as PersonIcon,
   Work as WorkIcon,
+  Phone as PhoneIcon,
+  School as SchoolIcon,
+  Language as LanguageIcon,
 } from '@mui/icons-material';
 import { RatingDisplay, RatingInput } from '../../pages/RatingSystem';
 import { useAuth } from '../../contexts/AuthContext';
@@ -80,7 +87,6 @@ const UserProfilePage = () => {
   return (
     <Box sx={{ maxWidth: 1000, margin: 'auto', padding: 3 }}>
       <Paper elevation={4} sx={{ overflow: 'hidden', position: 'relative', borderRadius: 4 }}>
-        {/* רקע עליון */}
         <Box
           sx={{
             height: 200,
@@ -89,7 +95,6 @@ const UserProfilePage = () => {
               : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           }}
         >
-          {/* תמונת פרופיל */}
           <Avatar
             src={user.photoURL || '/placeholder.svg'}
             alt={user.name || 'User Name'}
@@ -106,7 +111,6 @@ const UserProfilePage = () => {
         </Box>
 
         <Box sx={{ mt: 12, p: 3 }}>
-          {/* שם ותפקיד */}
           <Typography variant="h4" align="center" sx={{ fontWeight: 'bold' }}>
             {user.name || 'שם משתמש'}
           </Typography>
@@ -114,46 +118,50 @@ const UserProfilePage = () => {
             {user.isEmployer ? 'מעסיק' : 'עובד'}
           </Typography>
 
-          {/* הצגת דירוג */}
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
             <RatingDisplay userId={userId} isEmployer={user.isEmployer} />
           </Box>
 
-          {/* פרטי התקשרות */}
-          <Grid container spacing={2} sx={{ mt: 3 }}>
+          <List sx={{ mt: 3 }}>
             {user.location && (
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <LocationOnIcon color="action" sx={{ ml: 1 }} />
-                  <Typography variant="body1">{user.location}</Typography>
-                </Box>
-              </Grid>
+              <ListItem>
+                <ListItemIcon>
+                  <LocationOnIcon color="action" />
+                </ListItemIcon>
+                <ListItemText primary={user.location} />
+              </ListItem>
             )}
             {user.email && (
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <EmailIcon color="action" sx={{ ml: 1 }} />
-                  <Typography variant="body1">{user.email}</Typography>
-                </Box>
-              </Grid>
+              <ListItem>
+                <ListItemIcon>
+                  <EmailIcon color="action" />
+                </ListItemIcon>
+                <ListItemText primary={user.email} />
+              </ListItem>
+            )}
+            {user.phone && (
+              <ListItem>
+                <ListItemIcon>
+                  <PhoneIcon color="action" />
+                </ListItemIcon>
+                <ListItemText primary={user.phone} />
+              </ListItem>
             )}
             {user.createdAt && (
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <CalendarIcon color="action" sx={{ ml: 1 }} />
-                  <Typography variant="body1">
-                    חבר מאז {new Date(user.createdAt.toDate()).toLocaleDateString('he-IL')}
-                  </Typography>
-                </Box>
-              </Grid>
+              <ListItem>
+                <ListItemIcon>
+                  <CalendarIcon color="action" />
+                </ListItemIcon>
+                <ListItemText 
+                  primary={`חבר מאז ${new Date(user.createdAt.toDate()).toLocaleDateString('he-IL')}`} 
+                />
+              </ListItem>
             )}
-          </Grid>
+          </List>
 
-          {/* מידע נוסף */}
           <Divider sx={{ my: 3 }} />
 
           {user.isEmployer ? (
-            // פרופיל מעסיק
             <>
               <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
                 אודות החברה
@@ -163,31 +171,26 @@ const UserProfilePage = () => {
                   'המעסיק לא סיפק תיאור חברה. צרו קשר למידע נוסף.'}
               </Typography>
 
-              <Grid container spacing={2}>
+              <List>
                 {user.employerDetails?.businessType && (
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <BusinessIcon color="action" sx={{ ml: 1 }} />
-                      <Typography variant="body1">
-                        {user.employerDetails.businessType}
-                      </Typography>
-                    </Box>
-                  </Grid>
+                  <ListItem>
+                    <ListItemIcon>
+                      <BusinessIcon color="action" />
+                    </ListItemIcon>
+                    <ListItemText primary={user.employerDetails.businessType} />
+                  </ListItem>
                 )}
                 {user.employerDetails?.companyName && (
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <WorkIcon color="action" sx={{ ml: 1 }} />
-                      <Typography variant="body1">
-                        {user.employerDetails.companyName}
-                      </Typography>
-                    </Box>
-                  </Grid>
+                  <ListItem>
+                    <ListItemIcon>
+                      <WorkIcon color="action" />
+                    </ListItemIcon>
+                    <ListItemText primary={user.employerDetails.companyName} />
+                  </ListItem>
                 )}
-              </Grid>
+              </List>
             </>
           ) : (
-            // פרופיל עובד
             <>
               <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
                 אודותיי
@@ -208,10 +211,36 @@ const UserProfilePage = () => {
                   </Stack>
                 </>
               )}
+
+              <List>
+                {user.education && (
+                  <ListItem>
+                    <ListItemIcon>
+                      <SchoolIcon color="action" />
+                    </ListItemIcon>
+                    <ListItemText primary="השכלה" secondary={user.education} />
+                  </ListItem>
+                )}
+                {user.experience && (
+                  <ListItem>
+                    <ListItemIcon>
+                      <WorkIcon color="action" />
+                    </ListItemIcon>
+                    <ListItemText primary="ניסיון תעסוקתי" secondary={user.experience} />
+                  </ListItem>
+                )}
+                {user.languages && user.languages.length > 0 && (
+                  <ListItem>
+                    <ListItemIcon>
+                      <LanguageIcon color="action" />
+                    </ListItemIcon>
+                    <ListItemText primary="שפות" secondary={user.languages.join(', ')} />
+                  </ListItem>
+                )}
+              </List>
             </>
           )}
 
-          {/* כפתור יצירת קשר */}
           {currentUser && currentUser.uid !== userId && (
             <Button
               variant="contained"
@@ -227,7 +256,6 @@ const UserProfilePage = () => {
         </Box>
       </Paper>
 
-      {/* הצגת דירוגים והזנת דירוג */}
       <Paper elevation={4} sx={{ mt: 4, p: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
           דירוגים

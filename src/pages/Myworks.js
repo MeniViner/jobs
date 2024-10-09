@@ -173,9 +173,9 @@ export default function MyWorksPage() {
   const [openChatDialog, setOpenChatDialog] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
-  const auth = getAuth();
   const [openRatingDialog, setOpenRatingDialog] = useState(false);
   const [jobToRate, setJobToRate] = useState(null);
+  const auth = getAuth();
 
   useEffect(() => {
     fetchEmployerJobs();
@@ -353,6 +353,7 @@ export default function MyWorksPage() {
     setJobToRate(jobId);
     setOpenRatingDialog(true);
   };
+
   const handleJobCompletionRatingClose = () => {
     setOpenRatingDialog(false);
     setJobToRate(null);

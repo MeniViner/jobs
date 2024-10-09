@@ -1,15 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Grid, TextField, Button, Card, CardContent, CardActions, CircularProgress, Box, Chip, Divider, IconButton } from '@mui/material';
-import { Work, LocationOn, AttachMoney, AccessTime, DateRange, Group, Bookmark, BookmarkBorder } from '@mui/icons-material';
-import { collection, getDocs, addDoc, serverTimestamp, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import {
+  Container,
+  Grid,
+  TextField,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  IconButton,
+  Chip,
+  Divider,
+  Box,
+  CircularProgress,
+  Typography,
+  Paper,
+} from '@mui/material';
+import {
+  Search as SearchIcon,
+  LocationOn as LocationOnIcon,
+  Bookmark as BookmarkIcon,
+  BookmarkBorder as BookmarkBorderIcon,
+  Work as WorkIcon,
+  AttachMoney as AttachMoneyIcon,
+  AccessTime as AccessTimeIcon,
+  DateRange as DateRangeIcon,
+  Group as GroupIcon,
+} from '@mui/icons-material';
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
+import { useNavigate, Link } from 'react-router-dom';
 
-function JobListPage() {
+export default function JobListPage() {
   const [jobs, setJobs] = useState([]);
-  const [filter, setFilter] = useState({ title: '', location: '' });
+  const [filter, setFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [savedJobs, setSavedJobs] = useState([]);
 
   useEffect(() => {
@@ -19,16 +55,14 @@ function JobListPage() {
 
   const fetchJobs = async () => {
     setLoading(true);
-    setError(null);
     try {
       const jobsCollection = collection(db, 'jobs');
       const jobSnapshot = await getDocs(jobsCollection);
-      const jobList = jobSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log('Fetched jobs:', jobList);
-      setJobs(jobList);
+      const jobList = jobSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const filteredJobList = jobList.filter((job) => !job.isCompleted && !job.isFullyStaffed);
+      setJobs(filteredJobList);
     } catch (error) {
-      console.error("Error fetching jobs: ", error);
-      setError("אירעה שגיאה בטעינת העבודות. אנא נסה שוב מאוחר יותר.");
+      console.error('Error fetching jobs: ', error);
     } finally {
       setLoading(false);
     }
@@ -45,66 +79,31 @@ function JobListPage() {
           setSavedJobs(userDocSnap.data().savedJobs || []);
         }
       } catch (error) {
-        console.error("Error fetching saved jobs: ", error);
+        console.error('Error fetching saved jobs: ', error);
       }
-    }
-  };
-
-  const handleFilterChange = (e) => {
-    setFilter({ ...filter, [e.target.name]: e.target.value });
-  };
-
-  const filteredJobs = jobs.filter(job => 
-    job.title.toLowerCase().includes(filter.title.toLowerCase()) &&
-    job.location.toLowerCase().includes(filter.location.toLowerCase())
-  );
-
-  const handleApplyForJob = async (jobId) => {
-    try {
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-      
-      if (!currentUser) {
-        alert("עליך להתחבר כדי להגיש מועמדות");
-        return;
-      }
-
-      const applicantRef = collection(db, 'jobChats', jobId, 'applicants');
-      await addDoc(applicantRef, {
-        applicantId: currentUser.uid,
-        name: currentUser.displayName || "Unknown",
-        timestamp: serverTimestamp(),
-      });
-      console.log('Application submitted successfully');
-      alert('הגשת המועמדות נשלחה בהצלחה!');
-    } catch (error) {
-      console.error('Error submitting application: ', error);
-      alert('אירעה שגיאה בשליחת המועמדות.');
     }
   };
 
   const handleSaveJob = async (jobId) => {
     const auth = getAuth();
     const currentUser = auth.currentUser;
-    
+
     if (!currentUser) {
-      alert("עליך להתחבר כדי לשמור עבודות");
+      alert('עליך להתחבר כדי לשמור עבודות');
       return;
     }
 
     const userRef = doc(db, 'users', currentUser.uid);
-    
+
     try {
       if (savedJobs.includes(jobId)) {
-        // Remove job from saved jobs
         await updateDoc(userRef, {
-          savedJobs: arrayRemove(jobId)
+          savedJobs: arrayRemove(jobId),
         });
-        setSavedJobs(savedJobs.filter(id => id !== jobId));
+        setSavedJobs(savedJobs.filter((id) => id !== jobId));
       } else {
-        // Add job to saved jobs
         await updateDoc(userRef, {
-          savedJobs: arrayUnion(jobId)
+          savedJobs: arrayUnion(jobId),
         });
         setSavedJobs([...savedJobs, jobId]);
       }
@@ -114,124 +113,228 @@ function JobListPage() {
     }
   };
 
+  const handleApplyForJob = async (jobId) => {
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        alert('עליך להתחבר כדי להגיש מועמדות');
+        return;
+      }
+
+      const applicantRef = collection(db, 'jobChats', jobId, 'applicants');
+      await addDoc(applicantRef, {
+        applicantId: currentUser.uid,
+        name: currentUser.displayName || 'אנונימי',
+        timestamp: serverTimestamp(),
+      });
+      alert('הגשת המועמדות נשלחה בהצלחה!');
+    } catch (error) {
+      console.error('Error submitting application: ', error);
+      alert('אירעה שגיאה בשליחת המועמדות.');
+    }
+  };
+
+  const filteredJobs = jobs.filter(
+    (job) =>
+      job.title.toLowerCase().includes(filter.toLowerCase()) &&
+      job.location.toLowerCase().includes(locationFilter.toLowerCase())
+  );
+
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom align="center">
-        רשימת עבודות זמינות
-      </Typography>
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            label="חיפוש לפי כותרת"
-            name="title"
-            value={filter.title}
-            onChange={handleFilterChange}
-            variant="outlined"
-          />
+    <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={5}>
+            <TextField
+              fullWidth
+              placeholder="חיפוש לפי תפקיד, משרה או מילת מפתח"
+              variant="outlined"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <IconButton disabled>
+                    <SearchIcon color="action" />
+                  </IconButton>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={5}>
+            <TextField
+              fullWidth
+              placeholder="מיקום (עיר, אזור)"
+              variant="outlined"
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <IconButton disabled>
+                    <LocationOnIcon color="action" />
+                  </IconButton>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <Button
+              fullWidth
+              variant="contained"
+              color="primary"
+              sx={{ height: '100%' }}
+              onClick={() => {
+                // פעולה לחיפוש (אם נדרש)
+              }}
+            >
+              חפש
+            </Button>
+          </Grid>
         </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            label="חיפוש לפי מיקום"
-            name="location"
-            value={filter.location}
-            onChange={handleFilterChange}
-            variant="outlined"
-          />
-        </Grid>
-      </Grid>
-      
+      </Paper>
+
       {loading ? (
         <Box display="flex" justifyContent="center" my={4}>
-          <CircularProgress />
+          <CircularProgress size={60} />
         </Box>
-      ) : error ? (
-        <Typography color="error" align="center">{error}</Typography>
-      ) : filteredJobs.length > 0 ? (
-        <Grid container spacing={3}>
+      ) : (
+        <Grid container spacing={4}>
           {filteredJobs.map((job) => (
-            <Grid item xs={12} sm={6} md={4} key={job.id}>
-              <Card elevation={3}>
+            <Grid item key={job.id} xs={12} sm={6} md={6}>
+              <Card
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
+                  justifyContent: 'space-between',
+                  transition: 'transform 0.2s',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+                  },
+                  position: 'relative',
+                }}
+                elevation={3}
+              >
+                <IconButton
+                  onClick={() => handleSaveJob(job.id)}
+                  sx={{ position: 'absolute', top: 8, right: 8 }}
+                >
+                  {savedJobs.includes(job.id) ? (
+                    <BookmarkIcon color="primary" />
+                  ) : (
+                    <BookmarkBorderIcon />
+                  )}
+                </IconButton>
+
                 <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="h6" gutterBottom>
-                      {job.title}
-                    </Typography>
-                    <IconButton onClick={() => handleSaveJob(job.id)}>
-                      {savedJobs.includes(job.id) ? <Bookmark color="primary" /> : <BookmarkBorder />}
-                    </IconButton>
+                  <Typography variant="h5" component="h2" gutterBottom>
+                    {job.title}
+                  </Typography>
+                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                    {job.companyName || 'שם החברה לא זמין'}
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                    <Chip icon={<LocationOnIcon />} label={job.location} variant="outlined" />
+                    <Chip icon={<WorkIcon />} label={job.type} variant="outlined" />
                   </Box>
-                  {job.isDeleted && (
-                    <Chip label="עבודה זו נמחקה" color="error" sx={{ mb: 1 }} />
-                  )}
-                  {job.isFilled && (
-                    <Chip label="עבודה זו מלאה" color="warning" sx={{ mb: 1 }} />
-                  )}
-                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Work fontSize="small" sx={{ mr: 1 }} /> {job.companyName || 'שם העסק לא זמין'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <LocationOn fontSize="small" sx={{ mr: 1 }} /> {job.location}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <AttachMoney fontSize="small" sx={{ mr: 1 }} /> ₪{job.salary} לשעה
-                  </Typography>
-                  {job.startTime && job.endTime && (
-                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <AccessTime fontSize="small" sx={{ mr: 1 }} /> {job.startTime} - {job.endTime}
-                    </Typography>
-                  )}
-                  <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Group fontSize="small" sx={{ mr: 1 }} /> {job.workersNeeded || 1} עובדים נדרשים
-                  </Typography>
-                  <Chip label={job.type} size="small" sx={{ mt: 1, mb: 2 }} />
-                  <Divider sx={{ my: 1 }} />
-                  {job.workDates && job.workDates.length > 0 && (
-                    <>
-                      <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
-                        תאריכי עבודה:
-                      </Typography>
-                      {job.workDates.map((date, index) => (
-                        <Typography key={index} variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                          <DateRange fontSize="small" sx={{ mr: 1 }} /> {date}
-                        </Typography>
-                      ))}
-                      <Divider sx={{ my: 1 }} />
-                    </>
-                  )}
-                  <Typography variant="body2" sx={{ mt: 2 }}>
-                    תיאור המשרה:
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {job.description && job.description.length > 100 
-                      ? `${job.description.substring(0, 100)}...` 
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    {job.description && job.description.length > 150
+                      ? `${job.description.substring(0, 150)}...`
                       : job.description}
                   </Typography>
-                </CardContent>
-                <CardActions>
-                  <Button size="small" variant="outlined">צפייה בפרטים</Button>
-                  <Button 
-                    size="small" 
-                    variant="contained" 
-                    color="primary" 
-                    onClick={() => handleApplyForJob(job.id)}
-                    disabled={job.isDeleted || job.isFilled}
+                  <Divider sx={{ my: 2 }} />
+                  <Grid container spacing={1}>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <AttachMoneyIcon color="action" sx={{ ml: 0.5 }} />
+                        <Typography variant="body2">
+                          <strong style={{ fontSize: '1.2em', color: '#4caf50' }}>
+                            ₪{job.salary}
+                          </strong>{' '}
+                          לשעה
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <GroupIcon color="action" sx={{ ml: 0.5 }} />
+                        <Typography variant="body2">
+                          {job.workersNeeded || 1} עובדים נדרשים
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                  <Divider sx={{ my: 2 }} />
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      width: '100%',
+                    }}
                   >
-                    הגשת מועמדות
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '50%' }}>
+                      <AccessTimeIcon sx={{ ml: 0.5, mt: 0.5 }} />
+                      <Box>
+                        <Typography variant="subtitle2">שעות עבודה:</Typography>
+                        {Array.isArray(job.workHours) ? (
+                          job.workHours.map((time, index) => (
+                            <Typography key={index} variant="body2" color="text.secondary">
+                              {time}
+                            </Typography>
+                          ))
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            {job.startTime} - {job.endTime}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '50%' }}>
+                      <DateRangeIcon sx={{ ml: 0.5, mt: 0.5 }} />
+                      <Box>
+                        <Typography variant="subtitle2">תאריכי עבודה:</Typography>
+                        {Array.isArray(job.workDates) ? (
+                          job.workDates.map((date, index) => (
+                            <Typography key={index} variant="body2" color="text.secondary">
+                              {date}
+                            </Typography>
+                          ))
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            {job.workDates}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
+                  <Button
+                    size="medium"
+                    color="primary"
+                    component={Link}
+                    to={`/user/${job.employerId}`}
+                  >
+                    צפיה בפרטי מעסיק
+                  </Button>
+                  <Button
+                    size="medium"
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => handleApplyForJob(job.id)}
+                  >
+                    הגש מועמדות
                   </Button>
                 </CardActions>
               </Card>
             </Grid>
           ))}
         </Grid>
-      ) : (
-        <Typography variant="body1" align="center">
-          לא נמצאו עבודות התואמות את החיפוש שלך.
-        </Typography>
       )}
     </Container>
   );
 }
-
-export default JobListPage;

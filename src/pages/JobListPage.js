@@ -26,10 +26,20 @@ import {
   DateRange as DateRangeIcon,
   Group as GroupIcon,
 } from '@mui/icons-material';
-import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function JobListPage() {
   const [jobs, setJobs] = useState([]);
@@ -258,14 +268,15 @@ export default function JobListPage() {
                     </Grid>
                   </Grid>
                   <Divider sx={{ my: 2 }} />
-                  {/* Updated section for date and time */}
-                  <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    width: '100%',
-                  }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      width: '100%',
+                    }}
+                  >
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', width: '50%' }}>
                       <AccessTimeIcon sx={{ ml: 0.5, mt: 0.5 }} />
                       <Box>
@@ -306,9 +317,10 @@ export default function JobListPage() {
                   <Button
                     size="medium"
                     color="primary"
-                    onClick={() => navigate(`/jobs/${job.id}`)}
+                    component={Link}
+                    to={`/user/${job.employerId}`}
                   >
-                    לפרטים נוספים
+                    צפיה בפרטי מעסיק
                   </Button>
                   <Button
                     size="medium"

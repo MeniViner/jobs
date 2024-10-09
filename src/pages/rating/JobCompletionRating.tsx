@@ -11,7 +11,7 @@ import {
   Alert,
 } from '@mui/material';
 import { doc, updateDoc, addDoc, collection, query, where, getDocs, runTransaction } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db } from '../../services/firebase';
 import { RatingInput } from './RatingSystem';
 
 interface Worker {

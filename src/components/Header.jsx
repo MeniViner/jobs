@@ -63,6 +63,11 @@ export default function Header() {
     }
   };
 
+  // פונקציה חדשה: הפניית המשתמש לדף הדירוג
+  const handleNotificationClick = () => {
+    navigate('/rate-employer'); // הפנייה לדף הדירוג
+  };
+
   const regularMenuItems = [
     { text: 'דף הבית', icon: <HomeIcon />, link: '/' },
     { text: 'צ\'אט', icon: <ChatIcon />, link: '/job-chat', authRequired: true },
@@ -233,7 +238,7 @@ export default function Header() {
                 )}
 
                 {user && (
-                  <IconButton color="inherit" sx={{ mx: 1 }}>
+                  <IconButton color="inherit" sx={{ mx: 1 }} onClick={handleNotificationClick}>
                     <Badge badgeContent={4} color="secondary">
                       <NotificationsIcon />
                     </Badge>

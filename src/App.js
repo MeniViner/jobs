@@ -1,12 +1,10 @@
-import React from 'react';
-import { useContext } from 'react';
-import { AuthContext } from './contexts/AuthContext';
+import React, { useContext } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import rtlPlugin from 'stylis-plugin-rtl';
-import { CacheProvider } from '@emotion/react'; 
+import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 
 import PostJob from './pages/PostJob';
@@ -26,7 +24,7 @@ import MyWorksPage from './pages/WorksIPublished.js';
 import MyApplications from './pages/NominatedWorks.js';
 import UserProfilePage from './pages/profile/SocialProfile.js';
 import TopUsersPage from './pages/Management/TopUsersPage.js';
-
+import JobCompletionRating from './pages/rating/JobCompletionRating.tsx'; // ייבוא הדף החדש
 
 const ProtectedAdminRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
@@ -36,9 +34,8 @@ const ProtectedAdminRoute = ({ children }) => {
   return children;
 };
 
-
 const theme = createTheme({
-  direction: 'rtl',  // תמיכה בימין לשמאל
+  direction: 'rtl', // תמיכה בימין לשמאל
 });
 
 // יצירת cache עם תמיכה ב-RTL
@@ -59,10 +56,10 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/management/top-users" element={<TopUsersPage />} />
               <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
-              <Route path="/job-chat" element={<JobChat />} />  {/* נתיב לדף הצ'אט */}
+              <Route path="/job-chat" element={<JobChat />} /> {/* נתיב לדף הצ'אט */}
               <Route path="/user/:userId" element={<UserProfilePage />} />
               <Route path="/admin" element={<AdminPage />} />
-              <Route path="/admin/users" element={ <ProtectedAdminRoute> <AdminUsersPage /></ProtectedAdminRoute>} />
+              <Route path="/admin/users" element={<ProtectedAdminRoute><AdminUsersPage /></ProtectedAdminRoute>} />
               <Route path="/jobs" element={<JobListPage />} />
               <Route path="/saved-jobs" element={<SavedJobsPage />} />
               <Route path="/post-job" element={<PostJob />} />
@@ -70,15 +67,19 @@ function App() {
               <Route path="/ManageUsers" element={<ManageUsers />} />
               <Route path="/account" element={<AccountPage />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/chat/:jobId" element={<JobChat />} />  
+              <Route path="/chat/:jobId" element={<JobChat />} />
               <Route path="/my-published-jobs" element={<MyWorksPage />} />
               <Route path="/my-applications" element={<MyApplications />} />
+
+              {/* נתיב לדף הדירוג החדש */}
+              <Route path="/rate-employer/:jobId" element={<JobCompletionRating />} />
+
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Router>
         </ThemeProvider>
-      </CacheProvider>   
-    </AuthProvider> 
+      </CacheProvider>
+    </AuthProvider>
   );
 }
 

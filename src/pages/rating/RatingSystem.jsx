@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Rating, TextField, Button, Card, CardContent, Avatar } from '@mui/material';
 import { collection, addDoc, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
-import { useAuth } from '../contexts/AuthContext';
+import { db } from '../../services/firebase';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const RatingInput = ({ jobId, targetUserId, isEmployerRating }) => {
   const [rating, setRating] = useState(0);

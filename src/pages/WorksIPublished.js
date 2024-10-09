@@ -9,11 +9,11 @@ import {
   Delete, Undo, Flag, ExpandMore, ExpandLess, Chat, Edit 
 } from '@mui/icons-material';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db } from '../services/firebase.js';
 import { getAuth } from 'firebase/auth';
 import { Link } from 'react-router-dom';
-import { RatingInput } from './RatingSystem';
-import JobCompletionRating from './JobCompletionRating.tsx';
+import { RatingInput } from './rating/RatingSystem.jsx';
+import JobCompletionRating from './rating/JobCompletionRating.tsx';
 
 
 

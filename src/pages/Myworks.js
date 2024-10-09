@@ -13,10 +13,13 @@ import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { Link } from 'react-router-dom';
 import { RatingInput } from './RatingSystem';
+import JobCompletionRating from './JobCompletionRating.tsx';
+
 
 
 function EditJobDialog({ open, handleClose, job, handleSave }) {
   const [editedJob, setEditedJob] = useState(job || {});
+  
 
   useEffect(() => {
     if (job) {
@@ -171,6 +174,8 @@ export default function MyWorksPage() {
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const auth = getAuth();
+  const [openRatingDialog, setOpenRatingDialog] = useState(false);
+  const [jobToRate, setJobToRate] = useState(null);
 
   useEffect(() => {
     fetchEmployerJobs();
@@ -344,18 +349,35 @@ export default function MyWorksPage() {
     }
   };
 
-  const handleMarkJobCompleted = async (jobId) => {
+  const handleMarkJobCompleted = (jobId) => {
+    setJobToRate(jobId);
+    setOpenRatingDialog(true);
+  };
+  const handleJobCompletionRatingClose = () => {
+    setOpenRatingDialog(false);
+    setJobToRate(null);
+  };
+
+  const handleJobCompletionRatingComplete = () => {
+    fetchEmployerJobs(); // Refresh the job list
+  };
+
+  const handleConfirmJobCompletion = async () => {
+    if (!jobToRate) return;
+  
     try {
-      const jobRef = doc(db, 'jobs', jobId);
+      const jobRef = doc(db, 'jobs', jobToRate);
       await updateDoc(jobRef, {
         isCompleted: true,
         isPublic: false,
       });
-
+  
       setJobs(
-        jobs.map((job) => (job.id === jobId ? { ...job, isCompleted: true, isPublic: false } : job))
+        jobs.map((job) => (job.id === jobToRate ? { ...job, isCompleted: true, isPublic: false } : job))
       );
-
+  
+      setOpenRatingDialog(false);
+      setJobToRate(null);
       alert('העבודה סומנה כהושלמה והוסרה מרשימת העבודות הפעילות');
     } catch (error) {
       console.error('Error marking job as completed:', error);
@@ -584,16 +606,16 @@ export default function MyWorksPage() {
                     </Box>
                   )}
                   {!job.isCompleted && (
-                    <Button
-                      variant="contained"
-                      color="success"
-                      startIcon={<Flag />}
-                      onClick={() => handleMarkJobCompleted(job.id)}
-                      fullWidth
-                      sx={{ mt: 2 }}
-                    >
-                      סמן כהושלם (רק לאחר שהעובדים הגיעו)
-                    </Button>
+                   <Button
+                   variant="contained"
+                   color="success"
+                   startIcon={<Flag />}
+                   onClick={() => handleMarkJobCompleted(job.id)}
+                   fullWidth
+                   sx={{ mt: 2 }}
+                 >
+                   סמן כהושלם (רק לאחר שהעובדים הגיעו)
+                 </Button>
                   )}
                   {job.isCompleted && (
                     <Box mt={2}>
@@ -791,6 +813,33 @@ export default function MyWorksPage() {
           </Button>
         </DialogActions>
       </Dialog>
+      <Dialog
+  open={openRatingDialog}
+  onClose={() => setOpenRatingDialog(false)}
+  aria-labelledby="rating-dialog-title"
+  aria-describedby="rating-dialog-description"
+>
+  <DialogTitle id="rating-dialog-title">סיום עבודה ודירוג עובדים</DialogTitle>
+  <DialogContent>
+    <DialogContentText id="rating-dialog-description">
+      האם אתה מעוניין לדרג את העובדים שהשתתפו בעבודה זו? תוכל לדרג אותם מיד לאחר סימון העבודה כהושלמה.
+    </DialogContentText>
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setOpenRatingDialog(false)} color="primary">
+      ביטול
+    </Button>
+    <Button onClick={handleConfirmJobCompletion} color="primary" autoFocus>
+      סיים עבודה ודרג עובדים
+    </Button>
+  </DialogActions>
+</Dialog>
+<JobCompletionRating
+        open={openRatingDialog}
+        onClose={handleJobCompletionRatingClose}
+        jobId={jobToRate}
+        onComplete={handleJobCompletionRatingComplete}
+      />
     </Container>
   );
 }

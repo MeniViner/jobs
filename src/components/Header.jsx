@@ -58,6 +58,7 @@ export default function Header() {
       setSnackbarMessage('נדרש להיות מעסיק כדי לפרסם עבודה. אנא שדרג את החשבון שלך.');
       setSnackbarOpen(true);
       navigate('/account');
+      // navigate('/employer-registration'); //לא להפעיל כרגע!
     } else {
       navigate('/post-job');
     }

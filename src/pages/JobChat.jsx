@@ -1,26 +1,41 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { 
-  Typography, 
+  Box, 
   List, 
   ListItem, 
   ListItemText, 
-  Box, 
+  ListItemAvatar, 
+  Avatar, 
+  Typography, 
   TextField, 
-  Button,
-  Paper,
-  CircularProgress,
-  Switch,
-  FormControlLabel,
+  IconButton, 
+  AppBar,
+  Toolbar,
+  Divider,
   Badge,
-  Avatar,
-  IconButton,
+  CircularProgress,
+  Button,
+  Switch,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
-  DialogTitle
+  DialogTitle,
+  Fab,
+  Menu,
+  MenuItem,
+  useTheme
 } from '@mui/material';
-import { Chat as ChatIcon, Send as SendIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { 
+  Send as SendIcon, 
+  ArrowBack as ArrowBackIcon,
+  MoreVert as MoreVertIcon,
+  Work as WorkIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  Chat as ChatIcon,
+  ExitToApp as ExitToAppIcon
+} from '@mui/icons-material';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
@@ -38,82 +53,77 @@ export default function JobChat() {
   const [isEmployerView, setIsEmployerView] = useState(true);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [chatToDelete, setChatToDelete] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
 
   const scrollToBottom = () => {
-    setTimeout(() => { 
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-  };
-
-  const sortChats = (a, b) => {
-    if (a.unreadCount !== b.unreadCount) {
-      return b.unreadCount - a.unreadCount;
-    }
-    const aTime = a.timestamp?.toDate?.() || a.timestamp || new Date(0);
-    const bTime = b.timestamp?.toDate?.() || b.timestamp || new Date(0);
-    return bTime - aTime;
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
     if (!user) return;
 
-    const fetchJobsAndChats = async () => {
+    const fetchData = async () => {
       setLoading(true);
       if (isEmployerView) {
         const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', user.uid));
-        const jobsSnapshot = await getDocs(jobsQuery);
-        const jobsList = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), applicantCount: 0, unreadCount: 0, lastMessageTimestamp: null }));
+        const unsubscribe = onSnapshot(jobsQuery, async (snapshot) => {
+          const jobsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), applicantCount: 0, unreadCount: 0, lastMessageTimestamp: null }));
+          
+          for (let job of jobsList) {
+            const chatsQuery = query(collection(db, 'jobChats'), where('jobId', '==', job.id));
+            const chatsSnapshot = await getDocs(chatsQuery);
+            job.applicantCount = chatsSnapshot.size;
+            
+            let unreadCount = 0;
+            let lastMessageTimestamp = null;
+            for (let chatDoc of chatsSnapshot.docs) {
+              const messagesQuery = query(
+                collection(db, 'jobChats', chatDoc.id, 'messages'),
+                where('recipientId', '==', user.uid),
+                where('read', '==', false)
+              );
+              const messagesSnapshot = await getDocs(messagesQuery);
+              unreadCount += messagesSnapshot.size;
 
-        for (let job of jobsList) {
-          const chatsQuery = query(collection(db, 'jobChats'), where('jobId', '==', job.id));
-          const chatsSnapshot = await getDocs(chatsQuery);
-          job.applicantCount = chatsSnapshot.size;
+              if (chatDoc.data().timestamp && (!lastMessageTimestamp || chatDoc.data().timestamp.toDate() > lastMessageTimestamp)) {
+                lastMessageTimestamp = chatDoc.data().timestamp.toDate();
+              }
+            }
+            job.unreadCount = unreadCount;
+            job.lastMessageTimestamp = lastMessageTimestamp;
+          }
+          
+          jobsList.sort((a, b) => {
+            if (a.lastMessageTimestamp && b.lastMessageTimestamp) {
+              return b.lastMessageTimestamp - a.lastMessageTimestamp;
+            }
+            return 0;
+          });
 
-          let unreadCount = 0;
-          let lastMessageTimestamp = null;
-          for (let chatDoc of chatsSnapshot.docs) {
-            const messagesQuery = query(
-              collection(db, 'jobChats', chatDoc.id, 'messages'),
-              where('recipientId', '==', user.uid),
-              where('read', '==', false)
-            );
-            const messagesSnapshot = await getDocs(messagesQuery);
-            unreadCount += messagesSnapshot.size;
+          setJobs(jobsList);
+          setLoading(false);
 
-            if (chatDoc.data().timestamp && (!lastMessageTimestamp || chatDoc.data().timestamp.toDate() > lastMessageTimestamp)) {
-              lastMessageTimestamp = chatDoc.data().timestamp.toDate();
+          if (jobId) {
+            const selectedJob = jobsList.find(job => job.id === jobId);
+            if (selectedJob) {
+              setSelectedJob(selectedJob);
+              fetchChatsForJob(selectedJob.id);
             }
           }
-          job.unreadCount = unreadCount;
-          job.lastMessageTimestamp = lastMessageTimestamp;
-        }
-
-        jobsList.sort((a, b) => {
-          if (a.lastMessageTimestamp && b.lastMessageTimestamp) {
-            return b.lastMessageTimestamp - a.lastMessageTimestamp;
-          }
-          return 0;
         });
-
-        setJobs(jobsList);
-
-        if (jobId) {
-          const selectedJob = jobsList.find(job => job.id === jobId);
-          if (selectedJob) {
-            setSelectedJob(selectedJob);
-            fetchChatsForJob(selectedJob.id);
-          }
-        }
+        return () => unsubscribe();
       } else {
         const chatsQuery = query(collection(db, 'jobChats'), where('applicantId', '==', user.uid));
         const unsubscribe = onSnapshot(chatsQuery, async (snapshot) => {
-          let chatList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), unreadCount: 0 }));
-
-          for (let chat of chatList) {
+          const chatsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), unreadCount: 0 }));
+          
+          for (let chat of chatsList) {
             const messagesQuery = query(
               collection(db, 'jobChats', chat.id, 'messages'),
               where('recipientId', '==', user.uid),
@@ -122,28 +132,30 @@ export default function JobChat() {
             const messagesSnapshot = await getDocs(messagesQuery);
             chat.unreadCount = messagesSnapshot.size;
           }
+          
+          chatsList.sort((a, b) => {
+            if (a.timestamp && b.timestamp) {
+              return b.timestamp.toDate() - a.timestamp.toDate();
+            }
+            return 0;
+          });
 
-          chatList.sort(sortChats);
-
-          setChats(chatList);
+          setChats(chatsList);
           setLoading(false);
 
           if (jobId) {
-            const selectedChat = chatList.find(chat => chat.jobId === jobId);
+            const selectedChat = chatsList.find(chat => chat.jobId === jobId);
             if (selectedChat) {
               setSelectedChat(selectedChat);
               fetchMessages(selectedChat.id);
-              scrollToBottom();
             }
           }
         });
-
         return () => unsubscribe();
       }
-      setLoading(false);
     };
 
-    fetchJobsAndChats();
+    fetchData();
   }, [user, jobId, isEmployerView]);
 
   const fetchChatsForJob = async (jobId) => {
@@ -164,7 +176,12 @@ export default function JobChat() {
         chat.unreadCount = messagesSnapshot.size;
       }
 
-      chatList.sort(sortChats);
+      chatList.sort((a, b) => {
+        if (a.timestamp && b.timestamp) {
+          return b.timestamp.toDate() - a.timestamp.toDate();
+        }
+        return 0;
+      });
 
       setChats(chatList);
     });
@@ -205,7 +222,7 @@ export default function JobChat() {
       const updatedChats = prevChats.map(chat => 
         chat.id === chatId ? { ...chat, unreadCount: 0 } : chat
       );
-      return updatedChats.sort(sortChats);
+      return updatedChats;
     });
 
     if (isEmployerView) {
@@ -220,18 +237,16 @@ export default function JobChat() {
     }
   };
 
-  const handleJobClick = (job) => {
+  const handleJobSelect = (job) => {
     setSelectedJob(job);
-    fetchChatsForJob(job.id);
     setSelectedChat(null);
-    setMessages([]);
+    fetchChatsForJob(job.id);
   };
 
-  const handleChatClick = async (chat) => {
+  const handleChatSelect = async (chat) => {
     setSelectedChat(chat);
     await fetchMessages(chat.id);
     await markMessagesAsRead(chat.id);
-    scrollToBottom();
   };
 
   const handleSendMessage = async () => {
@@ -250,11 +265,9 @@ export default function JobChat() {
 
     await addDoc(collection(db, 'jobChats', selectedChat.id, 'messages'), messageData);
 
-    // Update chat timestamp
     const chatRef = doc(db, 'jobChats', selectedChat.id);
     await updateDoc(chatRef, { timestamp: serverTimestamp() });
 
-    // Update job's last message timestamp
     if (isEmployerView) {
       const jobRef = doc(db, 'jobs', selectedChat.jobId);
       await updateDoc(jobRef, { lastMessageTimestamp: serverTimestamp() });
@@ -270,12 +283,11 @@ export default function JobChat() {
     setNewMessage('');
     scrollToBottom();
 
-    // Reorder chats without increasing unread count for the sender
     setChats(prevChats => {
       const updatedChats = prevChats.map(chat => 
         chat.id === selectedChat.id ? { ...chat, timestamp: new Date() } : chat
       );
-      return updatedChats.sort(sortChats);
+      return updatedChats.sort((a, b) => b.timestamp - a.timestamp);
     });
   };
 
@@ -326,205 +338,259 @@ export default function JobChat() {
     }
   };
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const handleDeleteJobChat = async (job) => {
+    try {
+      const chatsQuery = query(collection(db, 'jobChats'), where('jobId', '==', job.id));
+      const chatsSnapshot = await getDocs(chatsQuery);
+      
+      for (let chatDoc of chatsSnapshot.docs) {
+        const messagesQuery = query(collection(db, 'jobChats', chatDoc.id, 'messages'));
+        const messagesSnapshot = await getDocs(messagesQuery);
+        const deletePromises = messagesSnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        
+        await deleteDoc(chatDoc.ref);
+      }
+
+      setJobs(jobs.filter(j => j.id !== job.id));
+      if (selectedJob && selectedJob.id === job.id) {
+        setSelectedJob(null);
+        setSelectedChat(null);
+        setMessages([]);
+      }
+      setAnchorEl(null);
+    } catch (error) {
+      console.error("Error deleting job chat:", error);
+      alert('אירעה שגיאה במחיקת השיחות של העבודה');
+    }
+  };
+
+  const handleExitChat = () => {
+    setSelectedChat(null);
+    setMessages([]);
+    if (isEmployerView) {
+      setSelectedJob(null);
+    }
+  };
+
+  const renderJobList = () => (
+    <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+      {jobs.map((job) => (
+        <ListItem 
+          button 
+          key={job.id} 
+          onClick={() => handleJobSelect(job)}
+          sx={{
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '&:last-child': { borderBottom: 'none' },
+          }}
+        >
+          <ListItemAvatar>
+            <Avatar sx={{ bgcolor: 'primary.main' }}>
+              <WorkIcon />
+            </Avatar>
+          </ListItemAvatar>
+          <ListItemText 
+            primary={job.title} 
+            secondary={`${job.applicantCount} מועמדים`}
+            primaryTypographyProps={{ fontWeight: 'medium' }}
+          />
+          {job.unreadCount > 0 && (
+            <Badge badgeContent={job.unreadCount} color="primary" sx={{ mr: 1 }}>
+              <ChatIcon color="action" />
+            </Badge>
+          )}
+          <IconButton
+            edge="end"
+            aria-label="more"
+            onClick={(e) => {
+              e.stopPropagation();
+              setAnchorEl(e.currentTarget);
+            }}
+          >
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={() => setAnchorEl(null)}
+          >
+            <MenuItem onClick={() => handleDeleteJobChat(job)}>מחק שיחות עבודה</MenuItem>
+          </Menu>
+        </ListItem>
+      ))}
+    </List>
+  );
+
+  const renderChatList = () => (
+    <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+      {chats.map((chat) => (
+        <ListItem 
+          button 
+          key={chat.id} 
+          onClick={() => handleChatSelect(chat)}
+          sx={{
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '&:last-child': { borderBottom: 'none' },
+          }}
+        >
+          <ListItemAvatar>
+            <Avatar src={`https://picsum.photos/seed/${chat.employerId}/200`} />
+          </ListItemAvatar>
+          <ListItemText 
+            primary={chat.jobTitle} 
+            secondary={chat.employerName}
+            primaryTypographyProps={{ fontWeight: 'medium' }}
+          />
+          {chat.unreadCount > 0 && (
+            <Badge badgeContent={chat.unreadCount} color="primary" sx={{ mr: 1 }}>
+              <ChatIcon color="action" />
+            </Badge>
+          )}
+          <IconButton 
+            edge="end" 
+            aria-label="delete"
+            onClick={(e) => {
+              e.stopPropagation();
+              setChatToDelete(chat);
+              setOpenDeleteDialog(true);
+            }}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </ListItem>
+      ))}
+    </List>
+  );
+
+  const renderMessages = () => (
+    <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2, bgcolor: 'grey.100' }} ref={chatContainerRef}>
+      {messages.map((message) => (
+        <Box
+          key={message.id}
+          sx={{
+            display: 'flex',
+            justifyContent: message.senderId === user.uid ? 'flex-end' : 'flex-start',
+            mb: 2,
+          }}
+        >
+          <Box
+            sx={{
+              maxWidth: '70%',
+              p: 2,
+              borderRadius: 4,
+              bgcolor: message.senderId === user.uid ? 'primary.main' : 'background.paper',
+              color: message.senderId === user.uid ? 'primary.contrastText' : 'text.primary',
+            }}
+          >
+            <Typography variant="body1">{message.text}</Typography>
+            <Typography variant="caption" display="block" sx={{ mt: 1, opacity: 0.7 }}>
+              {message.timestamp?.toDate().toLocaleString()}
+            </Typography>
+          </Box>
+        </Box>
+      ))}
+      <div ref={messagesEndRef} />
+    </Box>
+  );
 
   return (
-    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
-      <FormControlLabel
-        control={<Switch checked={isEmployerView} onChange={toggleView} />}
-        label={isEmployerView ? "תצוגת מעסיק" : "תצוגת עובד"}
-        sx={{ mb: 2 }}
-      />
-      <Box sx={{ display: 'flex', flexGrow: 1 }}>
-        <Paper elevation={3} sx={{ width: '30%', mr: 2, overflow: 'auto' }}>
-          <Typography variant="h6" sx={{ p: 2 }}>
-            {isEmployerView ? 'עבודות' : 'צ\'אטים'}
-          </Typography>
-          <List>
-            {isEmployerView
-              ? jobs.map((job) => (
-                  <ListItem 
-                    button 
-                    key={job.id} 
-                    onClick={() => handleJobClick(job)}
-                    selected={selectedJob && selectedJob.id === job.id}
-                  >
-                    <ListItemText 
-                      primary={job.title} 
-                      secondary={
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="body2" component="span">
-                            {job.applicantCount} מועמדים
-                          </Typography>
-                        </Box>
-                      } 
-                    />
-                    {job.unreadCount > 0 && (
-                      <Badge badgeContent={job.unreadCount} color="primary">
-                        <ChatIcon />
-                      </Badge>
-                    )}
-                  </ListItem>
-                ))
-              : chats.map((chat) => (
-                  <ListItem 
-                    button 
-                    key={chat.id} 
-                    onClick={() => handleChatClick(chat)}
-                    selected={selectedChat && selectedChat.id === chat.id}
-                  >
-                    <ListItemText 
-                      primary={chat.jobTitle} 
-                      secondary={chat.employerName} 
-                    />
-                    {chat.unreadCount > 0 && (
-                      <Badge badgeContent={chat.unreadCount} color="primary">
-                        <ChatIcon />
-                      </Badge>
-                    )}
-                    <IconButton 
-                      edge="end" 
-                      aria-label="delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setChatToDelete(chat);
-                        
-                        setOpenDeleteDialog(true);
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItem>
-                ))
-            }
-          </List>
-        </Paper>
-        <Paper elevation={3} sx={{ width: '70%', display: 'flex', flexDirection: 'column' }}>
-          {isEmployerView && selectedJob && !selectedChat ? (
-            <Box sx={{ p: 2 }}>
-              <Typography variant="h6">{selectedJob.title}</Typography>
-              <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                {selectedJob.applicantCount} מועמדים
-              </Typography>
-              <List>
-                {chats.map((chat) => (
-                  <ListItem 
-                    button 
-                    key={chat.id} 
-                    onClick={() => handleChatClick(chat)}
-                  >
-                    <Avatar sx={{ mr: 2 }}>{chat.applicantName && chat.applicantName[0]}</Avatar>
-                    <ListItemText 
-                      primary={chat.applicantName} 
-                      secondary={`הודעות חדשות: ${chat.unreadCount}`} 
-                    />
-                    {chat.unreadCount > 0 && (
-                      <Badge badgeContent={chat.unreadCount} color="primary">
-                        <ChatIcon />
-                      </Badge>
-                    )}
-                    <IconButton 
-                      edge="end" 
-                      aria-label="delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setChatToDelete(chat);
-                        setOpenDeleteDialog(true);
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          ) : selectedChat ? (
-            <>
-              <Typography variant="h6" sx={{ p: 2 }}>
-                {selectedChat.jobTitle} - {isEmployerView ? selectedChat.applicantName : selectedChat.employerName}
-              </Typography>
-              <Box sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: '500px', p: 2, display: 'flex', flexDirection: 'column' }}>
-                {messages.map((message) => (
-                  <Box 
-                    key={message.id} 
-                    sx={{ 
-                      mb: 1, 
-                      alignSelf: message.senderId === user.uid ? 'flex-end' : 'flex-start',
-                      maxWidth: '70%'
-                    }}
-                  >
-                    <Paper 
-                      elevation={1} 
-                      sx={{ 
-                        p: 1, 
-                        backgroundColor: message.senderId === user.uid ? 'primary.main' : 'grey.300',
-                        color: message.senderId === user.uid ? 'white' : 'black',
-                        borderRadius: message.senderId === user.uid ? '20px 20px 0 20px' : '20px 20px 20px 0'
-                      }}
-                    >
-                      <Typography variant="body2">{message.text}</Typography>
-                      <Typography variant="caption" display="block" color={message.senderId === user.uid ? 'white' : 'text.secondary'}>
-                        {message.senderName} - {message.timestamp?.toDate?.()?.toLocaleString() || 'N/A'}
-                      </Typography>
-                    </Paper>
-                  </Box>
-                ))}
-                <div ref={messagesEndRef} />
-              </Box>
-              <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TextField
-                    fullWidth
-                    variant="outlined"
-                    size="small"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="הקלד הודעה..."
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSendMessage();
-                      }
-                    }}
-                    sx={{ mr: 1 }}
-                  />
-                  <Button 
-                    variant="contained" 
-                    onClick={handleSendMessage} 
-                    endIcon={<SendIcon />}
-                  >
-                    שלח
-                  </Button>
-                </Box>
-              </Box>
-            </>
-          ) : !isEmployerView ? (
-            <Box sx={{ p: 2 }}>
-              <Typography variant="h6">בחר צ'אט או התחל צ'אט חדש</Typography>
-              <List>
-                {jobs.map((job) => (
-                  <ListItem 
-                    button 
-                    key={job.id} 
-                    onClick={() => handleNewChat(job)}
-                  >
-                    <ListItemText primary={job.title} secondary={`מעסיק: ${job.employerName}`} />
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          ) : (
-            <Typography variant="body1" sx={{ p: 2 }}>
-              בחר עבודה מהרשימה כדי לראות את הצ'אטים הקשורים
-            </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
+      <AppBar position="fixed" color="primary" elevation={0} sx={{ top: 64, zIndex: (theme) => theme.zIndex.drawer + 0 }}>
+        <Toolbar>
+          {(selectedJob || selectedChat) && (
+            <IconButton edge="start" color="inherit" onClick={() => {
+              setSelectedJob(null);
+              setSelectedChat(null);
+            }} sx={{ mr: 2 }}>
+              <ArrowBackIcon />
+            </IconButton>
           )}
-        </Paper>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            {selectedChat ? (isEmployerView ? selectedChat.applicantName : selectedChat.jobTitle) : 'JobChat'}
+          </Typography>
+          <Switch 
+            checked={isEmployerView} 
+            onChange={toggleView}
+            color="default"
+          />
+          <Typography variant="body2" sx={{ ml: 1 }}>
+            {isEmployerView ? "מעסיק" : "עובד"}
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Toolbar />
+
+      <Box sx={{ flexGrow: 1, overflow: 'hidden', mt: 8 }}>
+        {!selectedChat ? (
+          <Box sx={{ height: '100%', width: '100%' }}>
+            {isEmployerView ? (
+              selectedJob ? (
+                <Box>
+                  <Typography variant="h6" sx={{ p: 2, bgcolor: 'background.paper' }}>
+                    {selectedJob.title}
+                  </Typography>
+                  {renderChatList()}
+                </Box>
+              ) : (
+                renderJobList()
+              )
+            ) : (
+              renderChatList()
+            )}
+          </Box>
+        ) : (
+          <Box sx={{ 
+            height: 'calc(100% - 64px)',
+            width: '100%', 
+            display: 'flex', 
+            flexDirection: 'column'
+          }}>
+            {renderMessages()}
+            <Box sx={{ p: 2, bgcolor: 'background.paper', display: 'flex', alignItems: 'center' }}>
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="הקלד הודעה..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSendMessage();
+                  }
+                }}
+                sx={{ mr: 1 }}
+              />
+              <IconButton color="primary" onClick={handleSendMessage}>
+                <SendIcon />
+              </IconButton>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<ExitToAppIcon />}
+                onClick={handleExitChat}
+                sx={{ ml: 1 }}
+              >
+                צא מצ'אט
+              </Button>
+            </Box>
+          </Box>
+        )}
       </Box>
+
+      {!isEmployerView && !selectedChat && (
+        <Fab 
+          color="primary" 
+          aria-label="add" 
+          sx={{ position: 'fixed', bottom: 16, right: 16 }}
+          onClick={() => {/* Handle new chat creation */}}
+        >
+          <AddIcon />
+        </Fab>
+      )}
+
       <Dialog
         open={openDeleteDialog}
         onClose={() => setOpenDeleteDialog(false)}

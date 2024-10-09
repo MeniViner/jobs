@@ -498,7 +498,7 @@ export default function JobChat() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="fixed" color="primary" elevation={0} sx={{ top: 64, zIndex: (theme) => theme.zIndex.drawer + 0 }}>
+      <AppBar position="fixed" color="primary" elevation={0} sx={{ top: 56, zIndex: (theme) => theme.zIndex.drawer + 0 }}>
         <Toolbar>
           {(selectedJob || selectedChat) && (
             <IconButton edge="start" color="inherit" onClick={() => {

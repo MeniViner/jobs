@@ -2,8 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { getAuth, signOut } from 'firebase/auth';
-import { db } from '../services/firebase';
-import { AuthContext } from '../contexts/AuthContext';
+import { db } from '../../services/firebase';
+import { AuthContext } from '../../contexts/AuthContext';
 
 import { Box, Typography, CircularProgress, Snackbar, Alert } from '@mui/material';
 import EmployeeProfile from './EmployeeProfile';

@@ -5,7 +5,7 @@ import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../contexts/AuthContext';
-import UserProfile from '../../components/UserProfile';
+import UserProfile from './UserProfile';
 import { Container, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
 
 const AccountPage = () => {

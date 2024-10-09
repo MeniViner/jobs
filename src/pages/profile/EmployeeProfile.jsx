@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RatingDisplay } from '../pages/RatingSystem';
+import { RatingDisplay } from '../rating/RatingSystem';
 import { 
   Box, Typography, Button, Avatar, Chip, IconButton, Dialog, DialogTitle, DialogContent, 
   DialogActions, TextField, LinearProgress, Card, CardContent, Paper, Tooltip, Snackbar, Alert 

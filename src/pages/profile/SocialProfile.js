@@ -27,7 +27,7 @@ import {
   Work as WorkIcon,
   Chat as ChatIcon,
 } from '@mui/icons-material';
-import { RatingDisplay, RatingInput } from '../../pages/RatingSystem';
+import { RatingDisplay, RatingInput } from '../rating/RatingSystem';
 import { useAuth } from '../../contexts/AuthContext';
 import { styled } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';

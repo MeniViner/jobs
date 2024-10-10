@@ -111,14 +111,14 @@ const AccountPage = () => {
       setUser(prevUser => ({ ...prevUser, ...updatedData }));
       setSnackbar({
         open: true,
-        message: t('Profile updated successfully'),
+        message: 'Profile updated successfully',
         severity: 'success'
       });
     } catch (error) {
       console.error('Error updating profile:', error);
       setSnackbar({
         open: true,
-        message: t('Error updating profile'),
+        message: 'Error updating profile',
         severity: 'error'
       });
     }

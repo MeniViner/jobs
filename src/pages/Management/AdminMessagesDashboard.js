@@ -15,6 +15,7 @@ export default function AdminJobsDashboard() {
   const [currentJob, setCurrentJob] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '' });
   const [expandedRow, setExpandedRow] = useState(null);
+  const [expandedEmployer, setExpandedEmployer] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -177,6 +178,10 @@ export default function AdminJobsDashboard() {
     setExpandedRow(expandedRow === jobId ? null : jobId);
   };
 
+  const handleExpandEmployer = (employerId) => {
+    setExpandedEmployer(expandedEmployer === employerId ? null : employerId);
+  };  
+
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
   };
@@ -223,85 +228,81 @@ export default function AdminJobsDashboard() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredJobs.map((employer, employerIndex) => (
+            {filteredJobs.map((employer) => (
               <React.Fragment key={employer.employerId}>
                 <TableRow>
                   <TableCell colSpan={8} style={{ backgroundColor: '#f5f5f5' }}>
-                    <Typography variant="h6">{employer.employerName || 'לא צוין'}</Typography>
+                    <Box display="flex" alignItems="center">
+                      <IconButton
+                        aria-label="expand employer"
+                        size="small"
+                        onClick={() => handleExpandEmployer(employer.employerId)}
+                      >
+                        {expandedEmployer === employer.employerId ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+                      </IconButton>
+                      <Typography variant="h6" sx={{ ml: 1 }}>
+                        {employer.employerName || 'לא צוין'}
+                      </Typography>
+                    </Box>
                   </TableCell>
                 </TableRow>
-                {employer.jobs.map((job, index) => (
-                  <React.Fragment key={job.id}>
-                    <TableRow>
-                      <TableCell>
-                        <IconButton
-                          aria-label="expand row"
-                          size="small"
-                          onClick={() => handleExpandRow(job.id)}
-                          sx={{
-                            border: '2px solid #1976d2',
-                            borderRadius: '50%',
-                            padding: '8px',
-                            '&:hover': {
-                              backgroundColor: 'rgba(25, 118, 210, 0.04)',
-                            },
-                          }}
-                        >
-                          {expandedRow === job.id ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                        </IconButton>
-                      </TableCell>
-                      <TableCell>{job.title || 'N/A'}</TableCell>
-                      <TableCell>{job.companyName || 'N/A'}</TableCell>
-                      <TableCell>{job.location || 'N/A'}</TableCell>
-                      <TableCell>{job.type || 'N/A'}</TableCell>
-                      <TableCell>{job.salary ? `₪${job.salary}` : 'N/A'}</TableCell>
-                      <TableCell>{job.employeeCount}</TableCell>
-                      <TableCell>
-                        <IconButton onClick={() => handleOpenDialog(job)}>
-                          <Edit />
-                        </IconButton>
-                        <IconButton onClick={() => handleDeleteJob(job.id)}>
-                          <Delete />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
-                        <Collapse in={expandedRow === job.id} timeout="auto" unmountOnExit>
-                          <Box margin={1}>
-                            <Typography variant="h6" gutterBottom component="div">
-                              פרטי משרה
-                            </Typography>
-                            <Table size="small" aria-label="purchases">
-                              <TableBody>
-                                <TableRow>
-                                  <TableCell component="th" scope="row">תיאור</TableCell>
-                                  <TableCell>{job.description || 'לא צוין'}</TableCell>
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell component="th" scope="row">שעות עבודה</TableCell>
-                                  <TableCell>{job.startTime && job.endTime ? `${job.startTime} - ${job.endTime}` : 'לא צוין'}</TableCell>
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell component="th" scope="row">תאריכי עבודה</TableCell>
-                                  <TableCell>{job.workDates && job.workDates.length > 0 ? job.workDates.join(', ') : 'לא צוין'}</TableCell>
-                                </TableRow>
-                                <TableRow>
-                                  <TableCell component="th" scope="row">פרטי מעסיק</TableCell>
-                                  <TableCell>
-                                    <Typography>שם: {job.employerName}</Typography>
-                                    <Typography>אימייל: {job.employerEmail}</Typography>
-                                    <Typography>טלפון: {job.employerPhone}</Typography>
-                                  </TableCell>
-                                </TableRow>
-                              </TableBody>
-                            </Table>
-                          </Box>
-                        </Collapse>
-                      </TableCell>
-                    </TableRow>
-                  </React.Fragment>
-                ))}
+                {expandedEmployer === employer.employerId &&
+                  employer.jobs.map((job) => (
+                    <React.Fragment key={job.id}>
+                      <TableRow>
+                        <TableCell />
+                        <TableCell>{job.title || 'N/A'}</TableCell>
+                        <TableCell>{job.companyName || 'N/A'}</TableCell>
+                        <TableCell>{job.location || 'N/A'}</TableCell>
+                        <TableCell>{job.type || 'N/A'}</TableCell>
+                        <TableCell>{job.salary ? `₪${job.salary}` : 'N/A'}</TableCell>
+                        <TableCell>{job.employeeCount}</TableCell>
+                        <TableCell>
+                          <IconButton onClick={() => handleOpenDialog(job)}>
+                            <Edit />
+                          </IconButton>
+                          <IconButton onClick={() => handleDeleteJob(job.id)}>
+                            <Delete />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+                          <Collapse in={expandedRow === job.id} timeout="auto" unmountOnExit>
+                            <Box margin={1}>
+                              <Typography variant="h6" gutterBottom component="div">
+                                פרטי משרה
+                              </Typography>
+                              <Table size="small" aria-label="purchases">
+                                <TableBody>
+                                  <TableRow>
+                                    <TableCell component="th" scope="row">תיאור</TableCell>
+                                    <TableCell>{job.description || 'לא צוין'}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell component="th" scope="row">שעות עבודה</TableCell>
+                                    <TableCell>{job.startTime && job.endTime ? `${job.startTime} - ${job.endTime}` : 'לא צוין'}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell component="th" scope="row">תאריכי עבודה</TableCell>
+                                    <TableCell>{job.workDates && job.workDates.length > 0 ? job.workDates.join(', ') : 'לא צוין'}</TableCell>
+                                  </TableRow>
+                                  <TableRow>
+                                    <TableCell component="th" scope="row">פרטי מעסיק</TableCell>
+                                    <TableCell>
+                                      <Typography>שם: {job.employerName}</Typography>
+                                      <Typography>אימייל: {job.employerEmail}</Typography>
+                                      <Typography>טלפון: {job.employerPhone}</Typography>
+                                    </TableCell>
+                                  </TableRow>
+                                </TableBody>
+                              </Table>
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
+                  ))}
               </React.Fragment>
             ))}
           </TableBody>

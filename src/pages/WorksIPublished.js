@@ -8,13 +8,12 @@ import {
   Work, LocationOn, AttachMoney, AccessTime, DateRange, Person, CheckCircle, Group, DoneAll, 
   Delete, Undo, Flag, ExpandMore, ExpandLess, Chat, Edit 
 } from '@mui/icons-material';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase.js';
 import { getAuth } from 'firebase/auth';
 import { Link } from 'react-router-dom';
 import { RatingInput } from './rating/RatingSystem.jsx';
 import JobCompletionRating from './rating/JobCompletionRating.tsx';
-
 
 
 function EditJobDialog({ open, handleClose, job, handleSave }) {
@@ -161,6 +160,7 @@ function EditJobDialog({ open, handleClose, job, handleSave }) {
   );
 }
 
+
 export default function MyWorksPage() {
   const [jobs, setJobs] = useState([]);
   const [expandedJob, setExpandedJob] = useState(null);
@@ -176,6 +176,22 @@ export default function MyWorksPage() {
   const [openRatingDialog, setOpenRatingDialog] = useState(false);
   const [jobToRate, setJobToRate] = useState(null);
   const auth = getAuth();
+
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      // Check if the user has signed in with Google
+      const googleUser = user.providerData.find(provider => provider.providerId === 'google.com');
+  
+      if (googleUser) {
+        // Store user's photoURL and other details in Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+          displayName: googleUser.displayName,
+          email: googleUser.email,
+          photoURL: googleUser.photoURL,  // Store the Google profile picture
+        }, { merge: true });  // Merge so we don't overwrite existing fields
+      }
+    }
+  });
 
   useEffect(() => {
     fetchEmployerJobs();
@@ -209,19 +225,52 @@ export default function MyWorksPage() {
   
     setJobs(jobsList);
   
+    // const allApplicants = new Map();
+    // for (const job of jobsList) {
+    //   const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
+    //   const applicantsSnapshot = await getDocs(applicantsQuery);
+    //   for (const applicantDoc of applicantsSnapshot.docs) {
+    //     const applicantData = applicantDoc.data();
+    //     const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
+    //     if (!allApplicants.has(applicantData.applicantId)) {
+    //       const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
+    //       allApplicants.set(applicantData.applicantId, {
+    //         id: applicantDoc.id,
+    //         ...applicantData,
+    //         userData: userData.data(),
+    //         appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
+    //       });
+    //     } else {
+    //       allApplicants.get(applicantData.applicantId).appliedJobs.push({
+    //         jobId: job.id,
+    //         hired: applicantData.hired || false,
+    //       });
+    //     }
+    //   }
+    // }
+    // setApplicants(Array.from(allApplicants.values()));
+
     const allApplicants = new Map();
     for (const job of jobsList) {
       const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
       const applicantsSnapshot = await getDocs(applicantsQuery);
+
       for (const applicantDoc of applicantsSnapshot.docs) {
         const applicantData = applicantDoc.data();
-        const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
+        const userDoc = await getDoc(doc(db, 'users', applicantData.applicantId));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+
         if (!allApplicants.has(applicantData.applicantId)) {
-          const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
           allApplicants.set(applicantData.applicantId, {
             id: applicantDoc.id,
             ...applicantData,
-            userData: userData.data(),
+            userData: {
+              ...userData,
+              // Ensure you are getting the photoURL from Firestore
+              avatarUrl: userData.avatarUrl || null, 
+              photoURL: userData.photoURL || null, 
+              profileURL: userData.profileURL || null, 
+            },
             appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
           });
         } else {
@@ -233,6 +282,15 @@ export default function MyWorksPage() {
       }
     }
     setApplicants(Array.from(allApplicants.values()));
+
+  };
+
+  const getGoogleProfilePicture = (email) => {
+    const auth = getAuth();
+    const users = auth.currentUser.providerData;
+  
+    const user = users.find((provider) => provider.email === email);
+    return user ? user.photoURL : null;
   };
   
 
@@ -666,9 +724,9 @@ export default function MyWorksPage() {
                                   <Avatar
                                     alt={applicant.name}
                                     src={
-                                      applicant.userData?.avatarUrl || 
+                                      applicant.userData?.profileURL || 
                                       applicant.userData?.photoURL ||
-                                      applicant.userData?.profileURL 
+                                      applicant.userData?.avatarUrl  
                                     }
                                   />
                                 </ListItemAvatar>

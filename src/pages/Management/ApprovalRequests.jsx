@@ -63,7 +63,6 @@ export default function ApprovalRequests({ onCountUpdate }) {
     onCountUpdate(totalCount);
   };
 
-  
   const handleApproval = async (userId, approved, isEmployerRequest) => {
     try {
       if (isEmployerRequest) {
@@ -88,10 +87,12 @@ export default function ApprovalRequests({ onCountUpdate }) {
         if (approved) {
           // Delete user from Firebase Authentication
           try {
-            const userToDelete = await auth.getUser(userId);
-            await auth.deleteUser(userId);
+            const user = await auth.getUser(userId);
+            await deleteUser(user);
           } catch (error) {
             console.error('Error deleting user from Authentication:', error);
+            setSnackbar({ open: true, message: 'שגיאה במחיקת המשתמש מהאימות', severity: 'error' });
+            return;
           }
           
           // Delete user document from Firestore
@@ -104,20 +105,21 @@ export default function ApprovalRequests({ onCountUpdate }) {
           }
           
           setPendingDeletions(prevState => prevState.filter(user => user.id !== userId));
-          alert('החשבון נמחק בהצלחה');
+          setSnackbar({ open: true, message: 'החשבון נמחק בהצלחה', severity: 'success' });
         } else {
           await updateDoc(doc(db, 'users', userId), { pendingDeletion: false });
           setPendingDeletions(prevState => prevState.filter(user => user.id !== userId));
-          alert('בקשת מחיקת החשבון נדחתה');
+          setSnackbar({ open: true, message: 'בקשת מחיקת החשבון נדחתה', severity: 'info' });
         }
       }
     } catch (error) {
       console.error('Error updating request status:', error);
-      alert('שגיאה בעדכון סטטוס הבקשה');
+      setSnackbar({ open: true, message: 'שגיאה בעדכון סטטוס הבקשה', severity: 'error' });
     }
   };
 
-  const handleTabChange = (event, newValue) => {
+
+  const handleTabChange = (event, newValue) => { // לא למחחוק את ה event!!
     setTabValue(newValue);
   };
 

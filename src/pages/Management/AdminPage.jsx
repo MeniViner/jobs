@@ -49,7 +49,7 @@ export default function AdminPage() {
   });
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
-  const handleChange = (newValue) => {
+  const handleChange = (event, newValue) => {
     setValue(newValue);
     localStorage.setItem('adminTabIndex', String(newValue));
   };
@@ -77,7 +77,7 @@ export default function AdminPage() {
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs
           value={value}
-          onChange={(event, newValue) => handleChange(newValue)}
+          onChange={handleChange}
           aria-label="admin tabs"
           sx={{ '& .MuiTabs-flexContainer': { flexDirection: 'row-reverse' } }}
         >

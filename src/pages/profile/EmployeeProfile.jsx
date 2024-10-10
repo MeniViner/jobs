@@ -218,7 +218,7 @@ const EmployeeProfile = ({
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <PhoneIcon sx={{ mr: 1, color: 'primary.main' }} />
-              <Typography variant="body2">{profileData.phone || 'הוסף מספר טלפון'}</Typography>
+              <Typography variant="body2">{profileData.phoneNumber || 'הוסף מספר טלפון'}</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <EmailIcon sx={{ mr: 1, color: 'primary.main' }} />

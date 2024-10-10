@@ -21,7 +21,7 @@ export default function ApprovalRequests({ onCountUpdate }) {
     setLoading(true);
     setError('');
 
-    const employerQuery = query(collection(db, 'employerRequests'), where('status', '==', 'pending'));
+    const employerQuery = query(collection(db, 'employers'), where('status', '==', 'pending'));
     const deletionQuery = query(collection(db, 'users'), where('pendingDeletion', '==', true));
 
     const unsubscribeEmployers = onSnapshot(employerQuery, 
@@ -66,7 +66,7 @@ export default function ApprovalRequests({ onCountUpdate }) {
   const handleApproval = async (userId, approved, isEmployerRequest) => {
     try {
       if (isEmployerRequest) {
-        const employerRequestRef = doc(db, 'employerRequests', userId);
+        const employerRequestRef = doc(db, 'employers', userId);
         const userRef = doc(db, 'users', userId);
         
         if (approved) {

@@ -69,7 +69,7 @@ export default function EmployerRegistrationForm() {
 
     setIsLoading(true);
     try {
-      await setDoc(doc(db, 'employerRequests', user.uid), {
+      await setDoc(doc(db, 'employers', user.uid), {
         ...employerDetails,
         userId: user.uid,
         createdAt: new Date(),

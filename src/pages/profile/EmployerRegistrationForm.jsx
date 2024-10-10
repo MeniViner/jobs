@@ -78,7 +78,9 @@ export default function EmployerRegistrationForm() {
       });
 
       // Update user document to indicate pending employer status
-      await setDoc(doc(db, 'users', user.uid), { employerRequestStatus: 'pending' }, { merge: true });
+      // await setDoc(doc(db, 'users', user.uid), { employerRequestStatus: 'pending' }, { merge: true });
+      await setDoc(doc(db, 'users', user.uid), { employerRequestStatus: 'pending', pendingEmployer: true }, { merge: true });
+
 
       setSnackbar({ open: true, message: 'Registration submitted successfully', severity: 'success' });
       setUserStatus('pending');

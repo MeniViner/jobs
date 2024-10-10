@@ -73,8 +73,8 @@ const CloudinaryUpload = ({ setNewImage, banner = false }) => {
           component="span"
           sx={{
             position: 'absolute',
-            bottom: banner ? '10px' : '-30px',
-            right: banner ? '10px' : '50%',
+            bottom: banner ? '10px' : '-20px',
+            right: banner ? '10px' : '49%',
             transform: banner ? 'none' : 'translateX(60px)',
             bgcolor: 'white',
             '&:hover': { bgcolor: '#f0f0f0' },

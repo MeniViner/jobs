@@ -28,6 +28,7 @@ const UserProfile = () => {
             photoURL: auth.currentUser.photoURL || userDoc.data().photoURL,
             skills: userDoc.data().skills || [],
             languages: userDoc.data().languages || [],
+            pendingEmployer: userDoc.data().pendingEmployer || false,
             employerDetails: userDoc.data().employerDetails || {
               companyName: '',
               companyDescription: '',

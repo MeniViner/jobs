@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { Business, Category, Description, Email, Phone, Person, Delete } from '@mui/icons-material';
 
-export default function ApprovalRequests() {
+export default function ApprovalRequests({ onCountUpdate }) {
   const [pendingEmployers, setPendingEmployers] = useState([]);
   const [pendingDeletions, setPendingDeletions] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -28,6 +28,7 @@ export default function ApprovalRequests() {
       (snapshot) => {
         const employers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setPendingEmployers(employers);
+        updateTotalCount(employers.length, pendingDeletions.length);
         setLoading(false);
       },
       (err) => {
@@ -41,6 +42,7 @@ export default function ApprovalRequests() {
       (snapshot) => {
         const deletions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setPendingDeletions(deletions);
+        updateTotalCount(pendingEmployers.length, deletions.length);
         setLoading(false);
       },
       (err) => {
@@ -50,14 +52,18 @@ export default function ApprovalRequests() {
       }
     );
 
-    // Cleanup function
     return () => {
       unsubscribeEmployers();
       unsubscribeDeletions();
     };
-  }, [db]);
+  }, [db, onCountUpdate]);
 
+  const updateTotalCount = (employersCount, deletionsCount) => {
+    const totalCount = employersCount + deletionsCount;
+    onCountUpdate(totalCount);
+  };
 
+  
   const handleApproval = async (userId, approved, isEmployerRequest) => {
     try {
       if (isEmployerRequest) {

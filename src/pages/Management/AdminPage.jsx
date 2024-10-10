@@ -61,6 +61,10 @@ export default function AdminPage() {
     }
   }, []);
 
+  const handleCountUpdate = (count) => {
+    setPendingRequestsCount(count);
+  };
+
   if (!user?.isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -98,7 +102,7 @@ export default function AdminPage() {
       {tabComponents.map((tab, index) => (
         <TabPanel key={index} value={value} index={index}>
           {index === 1 ? (
-            <ApprovalRequests onCountUpdate={setPendingRequestsCount} />
+            <ApprovalRequests onCountUpdate={handleCountUpdate} />
           ) : (
             <tab.component />
           )}

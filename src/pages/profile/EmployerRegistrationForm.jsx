@@ -12,27 +12,46 @@ export default function EmployerRegistrationForm() {
   const navigate = useNavigate();
   const [employerDetails, setEmployerDetails] = useState({
     companyName: '',
-    companyDescription: '',
     businessType: '',
+    description: '',
+    email: '',
+    phone: '',
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [isLoading, setIsLoading] = useState(true);
-  const [hasPendingRequest, setHasPendingRequest] = useState(false);
+  const [userStatus, setUserStatus] = useState(null);
 
   useEffect(() => {
-    const checkExistingRequest = async () => {
+    const checkUserStatus = async () => {
+      setIsLoading(true);
       const user = auth.currentUser;
       if (user) {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists() && userDoc.data().pendingEmployer) {
-          setHasPendingRequest(true);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.isEmployer) {
+              navigate('/account');
+            } else if (userData.employerRequestStatus === 'pending') {
+              setUserStatus('pending');
+            } else {
+              setUserStatus('eligible');
+            }
+          } else {
+            setUserStatus('eligible');
+          }
+        } catch (error) {
+          console.error("Error checking user status:", error);
+          setSnackbar({ open: true, message: 'Error checking user status', severity: 'error' });
         }
+      } else {
+        navigate('/login');
       }
       setIsLoading(false);
     };
 
-    checkExistingRequest();
-  }, []);
+    checkUserStatus();
+  }, [navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -48,23 +67,26 @@ export default function EmployerRegistrationForm() {
       return;
     }
 
+    setIsLoading(true);
     try {
-      await setDoc(doc(db, 'employers', user.uid), {
+      await setDoc(doc(db, 'employerRequests', user.uid), {
         ...employerDetails,
         userId: user.uid,
         createdAt: new Date(),
-        status: 'pending'
+        status: 'pending',
+        approved: false
       });
 
       // Update user document to indicate pending employer status
-      await setDoc(doc(db, 'users', user.uid), { pendingEmployer: true }, { merge: true });
+      await setDoc(doc(db, 'users', user.uid), { employerRequestStatus: 'pending' }, { merge: true });
 
       setSnackbar({ open: true, message: 'Registration submitted successfully', severity: 'success' });
-      setHasPendingRequest(true);
+      setUserStatus('pending');
     } catch (error) {
       console.error("Error submitting employer registration: ", error);
       setSnackbar({ open: true, message: 'Error submitting registration', severity: 'error' });
     }
+    setIsLoading(false);
   };
 
   if (isLoading) {
@@ -89,7 +111,7 @@ export default function EmployerRegistrationForm() {
           </Typography>
         </Box>
 
-        {hasPendingRequest ? (
+        {userStatus === 'pending' ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Alert severity="info" sx={{ mb: 2 }}>
               בקשתך להירשם כמעסיק ממתינה לאישור. אנא המתן לתשובה.
@@ -129,12 +151,31 @@ export default function EmployerRegistrationForm() {
             <TextField
               fullWidth
               label="תיאור חברה"
-              name="companyDescription"
-              value={employerDetails.companyDescription}
+              name="description"
+              value={employerDetails.description}
               onChange={handleInputChange}
               margin="normal"
               multiline
               rows={4}
+              required
+            />
+            <TextField
+              fullWidth
+              label="אימייל"
+              name="email"
+              type="email"
+              value={employerDetails.email}
+              onChange={handleInputChange}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="טלפון"
+              name="phone"
+              value={employerDetails.phone}
+              onChange={handleInputChange}
+              margin="normal"
               required
             />
             <Button
@@ -155,6 +196,7 @@ export default function EmployerRegistrationForm() {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}

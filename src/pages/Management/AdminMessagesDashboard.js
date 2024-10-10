@@ -404,6 +404,7 @@ export default function AdminJobsDashboard() {
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         message={snackbar.message}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       />
     </>
   );

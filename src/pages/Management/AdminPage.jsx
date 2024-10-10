@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Container, Typography, Tabs, Tab, Box } from '@mui/material';
+import { Container, Typography, Tabs, Tab, Box, Badge } from '@mui/material';
 import AdminUsersPage from './AdminUsersPage';
 import ManageUsers from './ManageUsers';
 import AdminJobsDashboard from './AdminMessagesDashboard';
@@ -10,7 +10,6 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-// TabPanel component without TypeScript annotations
 function TabPanel({ children, value, index }) {
   return (
     <div
@@ -28,14 +27,12 @@ function TabPanel({ children, value, index }) {
   );
 }
 
-// PropTypes for TabPanel
 TabPanel.propTypes = {
   children: PropTypes.node,
   value: PropTypes.number.isRequired,
   index: PropTypes.number.isRequired,
 };
 
-// Define the tab components in an array
 const tabComponents = [
   { label: "ניהול הרשאות", component: AdminUsersPage },
   { label: "בקשות לאישור", component: ApprovalRequests },
@@ -48,17 +45,16 @@ const tabComponents = [
 export default function AdminPage() {
   const { user } = useContext(AuthContext);
   const [value, setValue] = useState(() => {
-    // Retrieve the saved tab index from localStorage, defaulting to 0 if not found
     return parseInt(localStorage.getItem('adminTabIndex') || '0', 10);
   });
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   const handleChange = (newValue) => {
     setValue(newValue);
-    localStorage.setItem('adminTabIndex', String(newValue)); // Save the tab index in localStorage
+    localStorage.setItem('adminTabIndex', String(newValue));
   };
 
   useEffect(() => {
-    // Sync value in case of manual changes to localStorage
     const savedTab = localStorage.getItem('adminTabIndex');
     if (savedTab) {
       setValue(parseInt(savedTab, 10));
@@ -84,7 +80,15 @@ export default function AdminPage() {
           {tabComponents.map((tab, index) => (
             <Tab
               key={index}
-              label={tab.label}
+              label={
+                index === 1 ? (
+                  <Badge badgeContent={pendingRequestsCount} color="error">
+                    {tab.label}
+                  </Badge>
+                ) : (
+                  tab.label
+                )
+              }
               id={`admin-tab-${index}`}
               aria-controls={`admin-tabpanel-${index}`}
             />
@@ -93,7 +97,11 @@ export default function AdminPage() {
       </Box>
       {tabComponents.map((tab, index) => (
         <TabPanel key={index} value={value} index={index}>
-          <tab.component />
+          {index === 1 ? (
+            <ApprovalRequests onCountUpdate={setPendingRequestsCount} />
+          ) : (
+            <tab.component />
+          )}
         </TabPanel>
       ))}
     </Container>

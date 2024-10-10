@@ -10,6 +10,11 @@ import {
   Language as LanguageIcon, LocationOn as LocationIcon, Phone as PhoneIcon, Email as EmailIcon,
   Add as AddIcon, ExitToApp as ExitToAppIcon, ArrowUpward as ArrowUpwardIcon, Info as InfoIcon,
 } from '@mui/icons-material';
+import CloudinaryUpload from '../../components/CloudinaryUpload';  // Import the new CloudinaryUpload component
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import userProfilePic from '../../images/user.png'
+
 
 const EmployeeProfile = ({
   profileData,
@@ -24,6 +29,9 @@ const EmployeeProfile = ({
   const [newProfilePicture, setNewProfilePicture] = useState(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [editedData, setEditedData] = useState(profileData);
+  const auth = getAuth();
+  const db = getFirestore();
+
 
   const calculateCompletionPercentage = (data) => {
     const fields = ['name', 'email', 'phone', 'location', 'skills', 'education', 'experience', 'languages', 'bio'];
@@ -38,11 +46,22 @@ const EmployeeProfile = ({
     }
   }, [profileData]);
 
-  const handleProfilePictureChange = (e) => {
-    if (e.target.files[0]) {
-      setNewProfilePicture(e.target.files[0]);
-    }
-  };
+  useEffect(() => {
+    const fetchUserImages = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid); // Fetch from 'users' collection
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          setNewProfilePicture(userData.photoURL); // Profile picture from 'users' collection
+        }
+      }
+    };
+
+    fetchUserImages();
+  }, [auth.currentUser]);
+
 
   const handleSaveChanges = () => {
     onUpdateProfile(editedData);
@@ -56,50 +75,27 @@ const EmployeeProfile = ({
   return (
     <Box sx={{ maxWidth: '100%', width: '100%', p: 2, bgcolor: '#f5f5f5' }}>
       <Card elevation={3} sx={{ borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
-        <Box sx={{ 
-          height: 150, 
-          background: 'linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)',
+      <Box sx={{
+          height: 150,
+          background: 'linear-gradient(45deg, #ff4081 60%, #ffeb3b 90%)',
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
           position: 'relative',
         }}>
           <Avatar
-            src={profileData.photoURL || '/placeholder.svg'}
+            src={newProfilePicture || profileData.photoURL || userProfilePic}
             alt={profileData.name}
-            sx={{ 
-              width: 120, 
-              height: 120, 
+            sx={{
+              width: 120,
+              height: 120,
               border: '4px solid white',
               boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
               position: 'absolute',
               bottom: '-60px',
             }}
           />
-          <input
-            accept="image/*"
-            style={{ display: 'none' }}
-            id="icon-button-file"
-            type="file"
-            onChange={handleProfilePictureChange}
-          />
-          <label htmlFor="icon-button-file">
-            <IconButton 
-              color="primary" 
-              aria-label="upload picture" 
-              component="span"
-              sx={{ 
-                position: 'absolute', 
-                bottom: '-30px', 
-                right: '50%', 
-                transform: 'translateX(80px)',
-                bgcolor: 'white',
-                '&:hover': { bgcolor: '#f0f0f0' },
-              }}
-            >
-              <PhotoCameraIcon />
-            </IconButton>
-          </label>
+          <CloudinaryUpload setNewImage={setNewProfilePicture} />
         </Box>
 
         <RatingDisplay userId={profileData.uid} isEmployer={false} />

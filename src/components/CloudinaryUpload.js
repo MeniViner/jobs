@@ -45,7 +45,7 @@ const CloudinaryUpload = ({ setNewImage, banner = false }) => {
         const user = auth.currentUser;
         if (user) {
           const docRef = doc(db, 'users', user.uid);
-          const imageField = banner ? { bannerURL: optimizedImageUrl } : { photoURL: optimizedImageUrl };
+          const imageField = banner ? { bannerURL: optimizedImageUrl } : { profileURL: optimizedImageUrl };
           await updateDoc(docRef, imageField);
           console.log('Updated Firestore with image URL:', optimizedImageUrl);
         }

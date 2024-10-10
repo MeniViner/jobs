@@ -25,7 +25,7 @@ const UserProfile = () => {
         if (userDoc.exists()) {
           const data = {
             ...userDoc.data(),
-            photoURL: auth.currentUser.photoURL || userDoc.data().photoURL,
+            photoURL: auth.currentUser.photoURL || userDoc.data().photoURL ,
             skills: userDoc.data().skills || [],
             languages: userDoc.data().languages || [],
             pendingEmployer: userDoc.data().pendingEmployer || false,

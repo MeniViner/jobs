@@ -96,6 +96,35 @@ export const RatingDisplay = ({ userId }) => {
         const ratingsQuery = query(collection(db, 'ratings'), where('ratedUser', '==', userId));
         const ratingsSnapshot = await getDocs(ratingsQuery);
         const ratingsData = ratingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+
+
+        // Fetch user data for rater's profile picture
+        const raterIds = [...new Set(ratingsData.map(rating => rating.ratedBy))]; // Unique ratedBy ids
+        const userPhotoURLs = await Promise.all(raterIds.map(async (raterId) => {
+          const userDocRef = doc(db, 'users', raterId);
+          const userDocSnap = await getDocs(userDocRef);
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            return { id: raterId, photoURL: userData.photoURL, name: userData.name }; // Assuming `name` is also in user data
+          }
+          return { id: raterId, photoURL: null, name: 'Unknown' }; // Fallback
+        }));
+
+        // Create a mapping of userId to their photoURL
+        const userPhotoMap = {};
+        userPhotoURLs.forEach(user => {
+          userPhotoMap[user.id] = user;
+        });
+
+        // Update ratings with user profile info
+        const ratingsWithProfile = ratingsData.map(rating => ({
+          ...rating,
+          raterProfile: userPhotoMap[rating.ratedBy] || { photoURL: null, name: 'Unknown' }
+        }));
+        
+
+
         setRatings(ratingsData);
   
         if (ratingsData.length > 0) {
@@ -124,7 +153,7 @@ export const RatingDisplay = ({ userId }) => {
         <Card key={rating.id} sx={{ mb: 2 }}>
           <CardContent>
             <Box display="flex" alignItems="center" mb={1}>
-              <Avatar src={rating.raterPhotoURL} />
+              <Avatar src={rating.raterprofileURL || rating.raterProfile.profileURL} />
               <Typography variant="subtitle1" ml={1}>{rating.raterName}</Typography>
             </Box>
             <Rating value={rating.rating} readOnly />

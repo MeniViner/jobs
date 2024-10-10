@@ -33,7 +33,9 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import BusinessIcon from '@mui/icons-material/Business';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import { getAuth } from 'firebase/auth';
 import logo from '../logo.png';
+
 
 export default function Header() {
   const { user } = useContext(AuthContext);
@@ -43,6 +45,8 @@ export default function Header() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const auth = getAuth(); 
+
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -199,7 +203,7 @@ export default function Header() {
                     component={Link}
                     to="/account"
                   >
-                    <Avatar alt={user.displayName || user.email} src={user.photoURL}>
+                    <Avatar alt={user.displayName || user.email} src={user.photoURL || user.profileURL || auth.currentUser?.photoURL}>
                       {user.displayName ? user.displayName.charAt(0) : user.email.charAt(0)}
                     </Avatar>
                   </IconButton>
@@ -222,7 +226,7 @@ export default function Header() {
                     to="/account"
                     sx={{ mr: 1 }}
                   >
-                    <Avatar alt={user.displayName || user.email} src={user.photoURL}>
+                    <Avatar alt={user.displayName || user.email} src={user.profileURL || auth.currentUser?.photoURL}>
                       {user.displayName ? user.displayName.charAt(0) : user.email.charAt(0)}
                     </Avatar>
                   </IconButton>

@@ -120,7 +120,7 @@ const UserProfilePage = () => {
           }}
         />
         <Avatar
-          src={user.photoURL || '/placeholder.svg'}
+          src={user.photoURL || user.profileURL}
           alt={user.name || 'User Name'}
           sx={{
             width: isMobile ? 100 : 150,

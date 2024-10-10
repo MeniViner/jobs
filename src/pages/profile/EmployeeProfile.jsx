@@ -54,7 +54,7 @@ const EmployeeProfile = ({
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
-          setNewProfilePicture(userData.photoURL); // Profile picture from 'users' collection
+          setNewProfilePicture(userData.profileURL); // Profile picture from 'users' collection
         }
       }
     };
@@ -84,7 +84,7 @@ const EmployeeProfile = ({
           position: 'relative',
         }}>
           <Avatar
-            src={newProfilePicture || profileData.photoURL || userProfilePic}
+            src={newProfilePicture || profileData.photoURL || auth.currentUser?.photoURL || userProfilePic }
             alt={profileData.name}
             sx={{
               width: 120,

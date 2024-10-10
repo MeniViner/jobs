@@ -52,7 +52,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
-          setNewProfilePicture(userData.photoURL); // Profile picture from 'users' collection
+          setNewProfilePicture(userData.profileURL); // Profile picture from 'users' collection
           setNewBannerImage(userData.bannerURL); // Banner image from 'users' collection
         }
       }
@@ -99,7 +99,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
           }}
         >
           <Avatar
-            src={newProfilePicture || employerProfileData.photoURL || '/placeholder.svg'}
+            src={newProfilePicture || employerProfileData.profileURL || '/placeholder.svg'}
             alt={employerProfileData.name}
             sx={{
               width: 120,

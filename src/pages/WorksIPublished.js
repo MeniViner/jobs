@@ -215,6 +215,7 @@ export default function MyWorksPage() {
       const applicantsSnapshot = await getDocs(applicantsQuery);
       for (const applicantDoc of applicantsSnapshot.docs) {
         const applicantData = applicantDoc.data();
+        const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
         if (!allApplicants.has(applicantData.applicantId)) {
           const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
           allApplicants.set(applicantData.applicantId, {
@@ -662,7 +663,14 @@ export default function MyWorksPage() {
                             <React.Fragment key={applicant.id}>
                               <ListItem alignItems="flex-start">
                                 <ListItemAvatar>
-                                  <Avatar alt={applicant.name} src={applicant.userData?.avatarUrl} />
+                                  <Avatar
+                                    alt={applicant.name}
+                                    src={
+                                      applicant.userData?.avatarUrl || 
+                                      applicant.userData?.photoURL ||
+                                      applicant.userData?.profileURL 
+                                    }
+                                  />
                                 </ListItemAvatar>
                                 <ListItemText
                                   primary={

@@ -18,10 +18,13 @@ import {
   collection,
   query,
   where,
+  doc,
+  getDoc,
   getDocs,
   collectionGroup, // Import collectionGroup here
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+
 
 export default function TopUsersPage() {
   const [topEmployers, setTopEmployers] = useState([]);
@@ -47,45 +50,97 @@ export default function TopUsersPage() {
           }
         });
 
-        // Convert to array and sort
-        const topEmployersData = Object.keys(employerJobCounts)
-          .map((employerId) => ({
-            id: employerId,
-            name: employerJobCounts[employerId].name,
-            jobCount: employerJobCounts[employerId].count,
-          }))
-          .sort((a, b) => b.jobCount - a.jobCount)
-          .slice(0, 5);
+        // // Convert to array and sort
+        // const topEmployersData = Object.keys(employerJobCounts)
+        //   .map((employerId) => ({
+        //     id: employerId,
+        //     name: employerJobCounts[employerId].name,
+        //     jobCount: employerJobCounts[employerId].count,
+        //   }))
+        //   .sort((a, b) => b.jobCount - a.jobCount)
+        //   .slice(0, 5);
 
+        // setTopEmployers(topEmployersData);
+
+
+          // Fetch user details for employers
+        const topEmployersData = await Promise.all(
+          Object.keys(employerJobCounts).map(async (employerId) => {
+            const userDoc = await getDoc(doc(db, 'users', employerId));
+            // const userName = userDoc.exists() ? userDoc.data().displayName || 'אנונימי' : 'אנונימי';
+            const userData = userDoc.exists() ? userDoc.data() : {};
+            return {
+              id: employerId,
+              name: userData.displayName || 'אנונימי',
+              photoURL: userData.photoURL || userData.profileURL || null,
+              jobCount: employerJobCounts[employerId].count,
+            };
+          })
+        );
+          // Sort and limit top employers
+        topEmployersData.sort((a, b) => b.jobCount - a.jobCount).slice(0, 5);
         setTopEmployers(topEmployersData);
+
 
         // Fetch all job applications and hired workers
         const jobApplicationsQuery = collectionGroup(db, 'applicants');
         const jobApplicationsSnapshot = await getDocs(jobApplicationsQuery);
 
+        // const workerJobCounts = {};
+        // jobApplicationsSnapshot.forEach((doc) => {
+        //   const data = doc.data();
+        //   if (data.hired) {
+        //     const workerId = data.applicantId;
+        //     if (!workerJobCounts[workerId]) {
+        //       workerJobCounts[workerId] = { count: 0, name: data.applicantName || 'אנונימי' };
+        //     }
+        //     workerJobCounts[workerId].count += 1;
+        //   }
+        // });
+
         const workerJobCounts = {};
-        jobApplicationsSnapshot.forEach((doc) => {
-          const data = doc.data();
+        for (const applicationDoc of jobApplicationsSnapshot.docs) {
+          const data = applicationDoc.data();
           if (data.hired) {
             const workerId = data.applicantId;
             if (!workerJobCounts[workerId]) {
-              workerJobCounts[workerId] = { count: 0, name: data.applicantName || 'אנונימי' };
+              workerJobCounts[workerId] = { count: 0, name: 'אנונימי' }; // Default name
             }
             workerJobCounts[workerId].count += 1;
           }
-        });
+        }
 
-        // Convert to array and sort
-        const topWorkersData = Object.keys(workerJobCounts)
-          .map((workerId) => ({
-            id: workerId,
-            name: workerJobCounts[workerId].name,
-            jobCount: workerJobCounts[workerId].count,
-          }))
-          .sort((a, b) => b.jobCount - a.jobCount)
-          .slice(0, 5);
+        // // Convert to array and sort
+        // const topWorkersData = Object.keys(workerJobCounts)
+        //   .map((workerId) => ({
+        //     id: workerId,
+        //     name: workerJobCounts[workerId].name,
+        //     jobCount: workerJobCounts[workerId].count,
+        //   }))
+        //   .sort((a, b) => b.jobCount - a.jobCount)
+        //   .slice(0, 5);
 
+        // setTopWorkers(topWorkersData);
+
+
+          // Fetch user details for workers
+        const topWorkersData = await Promise.all(
+          Object.keys(workerJobCounts).map(async (workerId) => {
+            const userDoc = await getDoc(doc(db, 'users', workerId));
+            const userData = userDoc.exists() ? userDoc.data() : {};
+            return {
+              id: workerId,
+              name: userData.displayName || 'אנונימי',
+              photoURL: userData.photoURL || userData.profileURL || null, 
+              jobCount: workerJobCounts[workerId].count,
+            };
+          })
+        );
+
+        // Sort and limit top workers
+        topWorkersData.sort((a, b) => b.jobCount - a.jobCount).slice(0, 5);
         setTopWorkers(topWorkersData);
+
 
         setLoading(false);
       } catch (error) {
@@ -106,7 +161,11 @@ export default function TopUsersPage() {
             {users.map((user, index) => (
               <ListItem key={user.id}>
                 <ListItemAvatar>
-                  <Avatar>{index + 1}</Avatar>
+                  {/* <Avatar>{index + 1}</Avatar> */}
+                  <Avatar
+                    alt={user.name}
+                    src={user.photoURL}
+                  />
                 </ListItemAvatar>
                 <ListItemText primary={user.name} secondary={`${user.jobCount} עבודות`} />
               </ListItem>

@@ -3,29 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import {
-  Box,
-  Typography,
-  Avatar,
-  Paper,
-  Grid,
-  Chip,
-  Divider,
-  Button,
-  Stack,
-  CircularProgress,
-  IconButton,
-  Tooltip,
+  Box, Typography, Avatar, Paper, Grid, Chip, Divider, Button, Stack, CircularProgress, 
 } from '@mui/material';
 import {
-  Email as EmailIcon,
-  Business as BusinessIcon,
-  LocationOn as LocationOnIcon,
-  CalendarToday as CalendarIcon,
-  Phone as PhoneIcon,
-  School as SchoolIcon,
-  Language as LanguageIcon,
-  Work as WorkIcon,
-  Chat as ChatIcon,
+  Email as EmailIcon, Business as BusinessIcon, LocationOn as LocationOnIcon, 
+  CalendarToday as CalendarIcon, Phone as PhoneIcon, School as SchoolIcon, 
+  Language as LanguageIcon, Work as WorkIcon, Chat as ChatIcon,
 } from '@mui/icons-material';
 import { RatingDisplay, RatingInput } from '../rating/RatingSystem';
 import { useAuth } from '../../contexts/AuthContext';

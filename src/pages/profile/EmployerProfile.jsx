@@ -81,15 +81,15 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
     <Box sx={{ maxWidth: '100%', width: '100%', p: 2, bgcolor: '#f5f5f5' }}>
       <Card elevation={3} sx={{ borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
         <Box
-          //   // backgroundImage: newBannerImage ,
-          //   // ? `url(${newBannerImage})` 
-          //   // : employerProfileData.bannerURL
-          //   //   ? `url(${employerProfileData.bannerURL})`
-          //   //   : 'linear-gradient(45deg, #2196f3 30%, #21cbf3 90%)',
 
           sx={{
-            height: 200,
-            backgroundImage: `url(${newBannerImage})`,
+            height: isMobile ? 150 : 200,
+            backgroundImage: newBannerImage
+            ? `url(${encodeURI(newBannerImage)})` 
+            : employerProfileData.bannerURL
+            ? `url(${employerProfileData.bannerURL})`
+            : 'linear-gradient(45deg, #2196f3 30%, #21cbf3 90%)',
+
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             display: 'flex',

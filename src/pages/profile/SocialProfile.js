@@ -114,13 +114,17 @@ const UserProfilePage = () => {
           sx={{
             height: isMobile ? 150 : 200,
             background: user.isEmployer
-              ? 'linear-gradient(135deg, #00b09b 0%, #96c93d 100%)'
-              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              ? user.bannerURL // Check if the user has a bannerURL
+                ? `url(${encodeURI(user.bannerURL)})` // If bannerURL exists, show the image
+                : 'linear-gradient(135deg, #00b09b 0%, #96c93d 100%)' // Fallback to gradient
+              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Default gradient for non-employers
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
             borderRadius: 2,
           }}
         />
         <Avatar
-          src={user.photoURL || user.profileURL}
+          src={user.profileURL || user.photoURL}
           alt={user.name || 'User Name'}
           sx={{
             width: isMobile ? 100 : 150,

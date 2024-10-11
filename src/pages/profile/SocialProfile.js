@@ -15,6 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { styled } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
+
 // עיצוב מותאם אישית ל-Paper
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),

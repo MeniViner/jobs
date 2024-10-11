@@ -12,6 +12,8 @@ import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import CloudinaryUpload from '../../components/CloudinaryUpload';  // Import the new CloudinaryUpload component
 import { RatingDisplay } from '../rating/RatingSystem';
+import useMediaQuery from '@mui/material/useMediaQuery';
+
 
 const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut }) => {
   const [employerProfileData, setEmployerProfileData] = useState({});
@@ -24,6 +26,8 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
 
   const auth = getAuth();
   const db = getFirestore();
+  const isMobile = useMediaQuery('(max-width:600px)');
+
 
   // Fetch employer profile fields from 'employers' collection
   useEffect(() => {

@@ -39,12 +39,30 @@ const EmployeeProfile = ({
     return (completedFields.length / fields.length) * 100;
   };
 
+  // useEffect(() => {
+  //   if (profileData) {
+  //     setCompletionPercentage(calculateCompletionPercentage(profileData));
+  //     setEditedData(profileData);
+  //   }
+  // }, [profileData]);
   useEffect(() => {
     if (profileData) {
       setCompletionPercentage(calculateCompletionPercentage(profileData));
-      setEditedData(profileData);
+  
+      // Initialize editedData with profileData
+      setEditedData({
+        name: profileData.name || '',
+        location: profileData.location || '',
+        phone: profileData.phone || '',
+        skills: profileData.skills || [],
+        education: profileData.education || '',
+        experience: profileData.experience || '',
+        languages: profileData.languages || [],
+        bio: profileData.bio || '',
+      });
     }
   }, [profileData]);
+  
 
   useEffect(() => {
     const fetchUserImages = async () => {
@@ -104,9 +122,9 @@ const EmployeeProfile = ({
           <Typography variant="h5" align="center" gutterBottom fontWeight="bold">
             {profileData.name}
           </Typography>
-          <Typography variant="body1" align="center" color="text.secondary" gutterBottom>
+          {/* <Typography variant="body1" align="center" color="text.secondary" gutterBottom>
             מחפש עבודה
-          </Typography>
+          </Typography> */}
 
           <Box sx={{ mt: 2, mb: 3 }}>
             <Typography variant="body2" color="text.secondary" align="center" gutterBottom>
@@ -196,14 +214,14 @@ const EmployeeProfile = ({
             {profileData.skills.length > 3 && (
               <Chip label={`+${profileData.skills.length - 3}`} size="small" variant="outlined" />
             )}
-            <Tooltip title="הוסף כישורים">
+            {/* <Tooltip title="הוסף כישורים">
               <Chip 
                 icon={<AddIcon />} 
                 label="הוסף" 
                 onClick={() => setEditing(true)} 
                 sx={{ cursor: 'pointer' }} 
               />
-            </Tooltip>
+            </Tooltip> */}
           </Box>
 
           <Box sx={{ mt: 4 }}>
@@ -214,7 +232,7 @@ const EmployeeProfile = ({
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <PhoneIcon sx={{ mr: 1, color: 'primary.main' }} />
-              <Typography variant="body2">{profileData.phoneNumber || 'הוסף מספר טלפון'}</Typography>
+              <Typography variant="body2">{profileData.phone || 'הוסף מספר טלפון'}</Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <EmailIcon sx={{ mr: 1, color: 'primary.main' }} />

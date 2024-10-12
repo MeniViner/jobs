@@ -82,7 +82,7 @@ export default function EmployerRegistrationForm() {
       await setDoc(doc(db, 'users', user.uid), { employerRequestStatus: 'pending', pendingEmployer: true }, { merge: true });
 
 
-      setSnackbar({ open: true, message: 'Registration submitted successfully', severity: 'success' });
+      setSnackbar({ open: true, message: 'הרישום נשלח בהצלחה', severity: 'success' });
       setUserStatus('pending');
     } catch (error) {
       console.error("Error submitting employer registration: ", error);

@@ -8,7 +8,7 @@ import {
   Edit as EditIcon, Business as BusinessIcon, LocationOn as LocationIcon, 
   Phone as PhoneIcon, Email as EmailIcon, ExitToApp as ExitToAppIcon
 } from '@mui/icons-material';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import CloudinaryUpload from '../../components/CloudinaryUpload';  // Import the new CloudinaryUpload component
 import { RatingDisplay } from '../rating/RatingSystem';
@@ -22,48 +22,76 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
   const [newBannerImage, setNewBannerImage] = useState(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [editedData, setEditedData] = useState({});
+  const [editName, setEditName] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  const [photoURL, setPhotoURL] = useState(null); // State for photoURL 
 
   const auth = getAuth();
   const db = getFirestore();
   const isMobile = useMediaQuery('(max-width:600px)');
 
-
-  // Fetch employer profile fields from 'employers' collection
+  // Use onSnapshot for real-time updates from the 'employers' collection
   useEffect(() => {
     const fetchEmployerData = async () => {
       const user = auth.currentUser;
       if (user) {
         const docRef = doc(db, 'employers', user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setEmployerProfileData(data);
-          setCompletionPercentage(calculateCompletionPercentage(data));
-        }
+
+        // Set up real-time listener using onSnapshot
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setEmployerProfileData(data);
+            setCompletionPercentage(calculateCompletionPercentage(data));
+  
+            // Initialize editedData with existing data from Firestore
+            setEditedData({
+              name: data.name || '',
+              location: data.location || '',
+              phone: data.phone || '',
+              companyName: data.companyName || '',
+              businessType: data.businessType || '',
+              companyDescription: data.companyDescription || '',
+            });
+          }
+        }, (error) => {
+          console.error("Error fetching employer data:", error);
+        });
+
+        // Unsubscribe from the listener when the component unmounts
+        return () => unsubscribe();
       }
     };
-
+  
     fetchEmployerData();
-  }, [auth.currentUser]);
-
-  // Fetch profile picture and banner from 'users' collection
-  useEffect(() => {
-    const fetchUserImages = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userDocRef = doc(db, 'users', user.uid); // Fetch from 'users' collection
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          setNewProfilePicture(userData.profileURL); // Profile picture from 'users' collection
-          setNewBannerImage(userData.bannerURL); // Banner image from 'users' collection
+  }, [auth.currentUser, db]);  
+    // Use onSnapshot for real-time updates from the 'users' collection
+    useEffect(() => {
+      const fetchUserImages = async () => {
+        const user = auth.currentUser;
+        if (user) {
+          const userDocRef = doc(db, 'users', user.uid);
+  
+          // Set up real-time listener using onSnapshot
+          const unsubscribe = onSnapshot(userDocRef, (userDocSnap) => {
+            if (userDocSnap.exists()) {
+              const userData = userDocSnap.data();
+              setNewProfilePicture(userData.profileURL); // Profile picture from 'users' collection
+              setNewBannerImage(userData.bannerURL); // Banner image from 'users' collection
+              setPhotoURL(userData.photoURL); 
+              setEditName(userData.name); 
+            }
+          }, (error) => {
+            console.error("Error fetching user images:", error);
+          });
+  
+          // Unsubscribe from the listener when the component unmounts
+          return () => unsubscribe();
         }
-      }
-    };
-
-    fetchUserImages();
-  }, [auth.currentUser]);
+      };
+  
+      fetchUserImages();
+    }, [auth.currentUser, db]);
 
   const calculateCompletionPercentage = (data) => {
     const fields = ['name', 'email', 'phone', 'location', 'companyName', 'companyDescription', 'businessType'];
@@ -72,14 +100,27 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
   };  
   
   const handleSaveChanges = async () => {
-    if (auth.currentUser) {
-      const docRef = doc(db, 'employers', auth.currentUser.uid);
-      await updateDoc(docRef, editedData);
-      setEmployerProfileData(editedData);
-      setEditing(false);
-      setSnackbar({ open: true, message: 'Profile updated successfully', severity: 'success' });
+    const user = auth.currentUser;
+  
+    if (user) {
+      try {
+        // Update the 'users' collection for name
+        const userDocRef = doc(db, 'users', user.uid);
+        await updateDoc(userDocRef, { name: editName });
+  
+        // Update the 'employers' collection for the rest of the fields
+        const employerDocRef = doc(db, 'employers', user.uid);
+        await updateDoc(employerDocRef, editedData);
+  
+        setSnackbar({ open: true, message: 'Profile updated successfully', severity: 'success' });
+        setEditing(false);
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        setSnackbar({ open: true, message: 'Error updating profile', severity: 'error' });
+      }
     }
   };
+  
 
   return (
     <Box sx={{ maxWidth: '100%', width: '100%', p: 2, bgcolor: '#f5f5f5' }}>
@@ -103,7 +144,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
           }}
         >
           <Avatar
-            src={newProfilePicture || employerProfileData.profileURL || '/placeholder.svg'}
+            src={newProfilePicture || employerProfileData.profileURL || photoURL }
             alt={employerProfileData.name}
             sx={{
               width: 120,
@@ -120,9 +161,10 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
 
         <RatingDisplay userId={auth.currentUser?.uid} isEmployer={true} />
 
-        <CardContent sx={{ pt: 8, pb: 4, px: 3 }}>
+        <CardContent sx={{ pt: 8, pb: 4, px: 3 }}> 
           <Typography variant="h5" align="center" gutterBottom fontWeight="bold">
-            {profileData.name || 'Employer Name'}
+            {/* from users db */}
+            {profileData.name || 'Employer Name'} 
           </Typography>
 
           <Typography variant="body1" align="center" color="text.secondary" gutterBottom>
@@ -257,8 +299,8 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
             fullWidth
             label="Name"
             name="name"
-            value={editedData.name || ''}
-            onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
+            value={editName || ''}  // Controlled by editName
+            onChange={(e) => setEditName(e.target.value)}  // Update editName only
             margin="normal"
           />
           <TextField

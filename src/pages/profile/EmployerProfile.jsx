@@ -2,18 +2,73 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, Button, Avatar, IconButton, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, LinearProgress, Card, CardContent,
-  Snackbar, Alert
+  Snackbar, Alert, Grid, Paper
 } from '@mui/material';
 import {
   Edit as EditIcon, Business as BusinessIcon, LocationOn as LocationIcon, 
-  Phone as PhoneIcon, Email as EmailIcon, ExitToApp as ExitToAppIcon
+  Phone as PhoneIcon, Email as EmailIcon, ExitToApp as ExitToAppIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { getFirestore, doc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import CloudinaryUpload from '../../components/CloudinaryUpload';  // Import the new CloudinaryUpload component
+import CloudinaryUpload from '../../components/CloudinaryUpload';
 import { RatingDisplay } from '../rating/RatingSystem';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { styled } from '@mui/system';
 
+const BannerBox = styled(Box)(({ theme, banner }) => ({
+  height: banner ? 200 : 150,
+  backgroundImage: banner
+    ? `url(${encodeURI(banner)})`
+    : 'linear-gradient(45deg, #2196f3 30%, #21cbf3 90%)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'flex-end',
+  justifyContent: 'center',
+  [theme.breakpoints.down('sm')]: {
+    height: 150,
+  },
+}));
+
+const StyledAvatar = styled(Avatar)(({ theme }) => ({
+  width: 140,
+  height: 140,
+  border: `4px solid ${theme.palette.background.paper}`,
+  boxShadow: theme.shadows[4],
+  position: 'absolute',
+  bottom: -70,
+  [theme.breakpoints.down('sm')]: {
+    width: 100,
+    height: 100,
+    bottom: -50,
+  },
+}));
+
+const ActionButton = styled(Button)(({ theme, colorVariant }) => ({
+  borderRadius: 25,
+  padding: theme.spacing(1.5, 3),
+  boxShadow: theme.shadows[2],
+  textTransform: 'none',
+  fontWeight: 'bold',
+  ...(colorVariant === 'primary' && {
+    backgroundColor: theme.palette.primary.main,
+    color: '#fff',
+    '&:hover': {
+      backgroundColor: theme.palette.primary.dark,
+      boxShadow: theme.shadows[4],
+    },
+  }),
+  ...(colorVariant === 'error' && {
+    backgroundColor: theme.palette.error.main,
+    color: '#fff',
+    '&:hover': {
+      backgroundColor: theme.palette.error.dark,
+      boxShadow: theme.shadows[4],
+    },
+  }),
+}));
 
 const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut }) => {
   const [employerProfileData, setEmployerProfileData] = useState({});
@@ -30,7 +85,8 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
   const db = getFirestore();
   const isMobile = useMediaQuery('(max-width:600px)');
 
-  // Use onSnapshot for real-time updates from the 'employers' collection
+
+  // Fetch employer profile fields from 'employers' collection
   useEffect(() => {
     const fetchEmployerData = async () => {
       const user = auth.currentUser;
@@ -64,34 +120,25 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
     };
   
     fetchEmployerData();
-  }, [auth.currentUser, db]);  
-    // Use onSnapshot for real-time updates from the 'users' collection
-    useEffect(() => {
-      const fetchUserImages = async () => {
-        const user = auth.currentUser;
-        if (user) {
-          const userDocRef = doc(db, 'users', user.uid);
-  
-          // Set up real-time listener using onSnapshot
-          const unsubscribe = onSnapshot(userDocRef, (userDocSnap) => {
-            if (userDocSnap.exists()) {
-              const userData = userDocSnap.data();
-              setNewProfilePicture(userData.profileURL); // Profile picture from 'users' collection
-              setNewBannerImage(userData.bannerURL); // Banner image from 'users' collection
-              setPhotoURL(userData.photoURL); 
-              setEditName(userData.name); 
-            }
-          }, (error) => {
-            console.error("Error fetching user images:", error);
-          });
-  
-          // Unsubscribe from the listener when the component unmounts
-          return () => unsubscribe();
+  }, [auth.currentUser]);
+
+  // Fetch profile picture and banner from 'users' collection
+  useEffect(() => {
+    const fetchUserImages = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid); // Fetch from 'users' collection
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          setNewProfilePicture(userData.profileURL); // Profile picture from 'users' collection
+          setNewBannerImage(userData.bannerURL); // Banner image from 'users' collection
         }
-      };
-  
-      fetchUserImages();
-    }, [auth.currentUser, db]);
+      }
+    };
+
+    fetchUserImages();
+  }, [auth.currentUser]);
 
   const calculateCompletionPercentage = (data) => {
     const fields = ['email', 'phone', 'location', 'companyName', 'companyDescription', 'businessType'];
@@ -100,24 +147,12 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
   };  
   
   const handleSaveChanges = async () => {
-    const user = auth.currentUser;
-  
-    if (user) {
-      try {
-        // Update the 'users' collection for name
-        const userDocRef = doc(db, 'users', user.uid);
-        await updateDoc(userDocRef, { name: editName });
-  
-        // Update the 'employers' collection for the rest of the fields
-        const employerDocRef = doc(db, 'employers', user.uid);
-        await updateDoc(employerDocRef, editedData);
-  
-        setSnackbar({ open: true, message: 'Profile updated successfully', severity: 'success' });
-        setEditing(false);
-      } catch (error) {
-        console.error('Error updating profile:', error);
-        setSnackbar({ open: true, message: 'Error updating profile', severity: 'error' });
-      }
+    if (auth.currentUser) {
+      const docRef = doc(db, 'employers', auth.currentUser.uid);
+      await updateDoc(docRef, editedData);
+      setEmployerProfileData(editedData);
+      setEditing(false);
+      setSnackbar({ open: true, message: 'Profile updated successfully', severity: 'success' });
     }
   };
   
@@ -126,7 +161,6 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
     <Box sx={{ maxWidth: '100%', width: '100%', p: 2, bgcolor: '#f5f5f5' }}>
       <Card elevation={3} sx={{ borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
         <Box
-
           sx={{
             height: isMobile ? 150 : 200,
             backgroundImage: newBannerImage
@@ -144,7 +178,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
           }}
         >
           <Avatar
-            src={newProfilePicture || employerProfileData.profileURL || photoURL }
+            src={newProfilePicture || employerProfileData.profileURL || '/placeholder.svg'}
             alt={employerProfileData.name}
             sx={{
               width: 120,
@@ -159,18 +193,15 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
           <CloudinaryUpload setNewImage={setNewBannerImage} banner={true} />
         </Box>
 
-        <RatingDisplay userId={auth.currentUser?.uid} isEmployer={true} />
-
-        <CardContent sx={{ pt: 8, pb: 4, px: 3 }}> 
+        <CardContent sx={{ pt: 8, pb: 4, px: 3 }}>
           <Typography variant="h5" align="center" gutterBottom fontWeight="bold">
-            {/* from users db */}
-            {profileData.name || 'Employer Name'} 
+            {profileData.name || 'Employer Name'}
+          </Typography>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            {employerProfileData.companyName || 'שם החברה'}
           </Typography>
 
-          <Typography variant="body1" align="center" color="text.secondary" gutterBottom>
-            {employerProfileData.companyName || 'Add Company Name'}
-          </Typography>
-
+          <RatingDisplay userId={auth.currentUser?.uid} isEmployer={true} />
 
           <Box sx={{ mt: 2, mb: 3 }}>
             <Typography variant="body2" color="text.secondary" align="center" gutterBottom>
@@ -182,8 +213,10 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
               sx={{
                 height: 10,
                 borderRadius: 5,
+                bgcolor: 'grey.300',
                 '& .MuiLinearProgress-bar': {
                   borderRadius: 5,
+                  backgroundColor: 'primary.main',
                 },
               }}
             />
@@ -192,97 +225,93 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
             </Typography>
           </Box>
 
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" gutterBottom fontWeight="bold">
-            פרטי התקשרות
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <LocationIcon sx={{ mr: 1, color: 'primary.main' }} />
-              <Typography variant="body2">
-                {employerProfileData.location || 'Add Location'}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <PhoneIcon sx={{ mr: 1, color: 'primary.main' }} />
-              <Typography variant="body2">
-                {employerProfileData.phone || 'Add Phone Number'}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <EmailIcon sx={{ mr: 1, color: 'primary.main' }} />
-              <Typography variant="body2">
-                {employerProfileData.email || 'Add Email Address'}
-              </Typography>
-            </Box>
-          </Box>
+          <Grid container spacing={4} sx={{ mt: 4 }}>
+            <Grid item xs={12} md={6}>
+              <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                פרטי התקשרות
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <LocationIcon color="primary" sx={{ mr: 2 }} />
+                  <Typography variant="body1">
+                    {employerProfileData.location || 'הוסף מיקום'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <PhoneIcon color="primary" sx={{ mr: 2 }} />
+                  <Typography variant="body1">
+                    {employerProfileData.phone || 'הוסף מספר טלפון'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <EmailIcon color="primary" sx={{ mr: 2 }} />
+                  <Typography variant="body1">
+                    {employerProfileData.email || 'הוסף כתובת אימייל'}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
 
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" gutterBottom fontWeight="bold">
-            פרטי החברה
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <BusinessIcon sx={{ mr: 1, color: 'primary.main' }} />
-              <Typography variant="body2">
-                {employerProfileData.businessType || 'Add Business Type'}
-              </Typography>
-            </Box>
-            <Typography variant="body2" sx={{ mt: 2 }}>
-              {employerProfileData.companyDescription || 'Add company description to attract potential employees.'}
-            </Typography>
-          </Box>
+            <Grid item xs={12} md={6}>
+              <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  פרטי החברה
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <BusinessIcon color="primary" sx={{ mr: 2 }} />
+                  <Typography variant="body1">
+                    {employerProfileData.businessType || 'הוסף סוג עסק'}
+                  </Typography>
+                </Box>
+                <Typography variant="body1" color="text.secondary">
+                  {employerProfileData.companyDescription || 'הוסף תיאור חברה כדי למשוך מועמדים פוטנציאליים.'}
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
 
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>
-            <Button
-              startIcon={<EditIcon />}
-              variant="contained"
-              color="primary"
-              onClick={() => setEditing(true)}
-              sx={{
-                borderRadius: 20,
-                boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-                '&:hover': { boxShadow: '0 6px 12px rgba(0,0,0,0.2)' },
-              }}
-            >
-              ערוך פרופיל
-            </Button>
-            <Button
-              startIcon={<ExitToAppIcon />}
-              variant="outlined"
-              color="error"
-              onClick={handleSignOut}
-              sx={{
-                borderRadius: 20,
-                boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-                '&:hover': { boxShadow: '0 6px 12px rgba(0,0,0,0.2)' },
-              }}
-            >
-              התנתק
-            </Button>
-          </Box>
+          <Grid container spacing={2} sx={{ mt: 4, justifyContent: 'center' }}>
+            <Grid item>
+              <ActionButton
+                startIcon={<EditIcon />}
+                colorVariant="primary"
+                onClick={() => setEditing(true)}
+              >
+                עריכת פרופיל
+              </ActionButton>
+            </Grid>
+            <Grid item>
+              <ActionButton
+                startIcon={<ExitToAppIcon />}
+                colorVariant="error"
+                onClick={handleSignOut}
+              >
+                התנתק
+              </ActionButton>
+            </Grid>
+          </Grid>
 
-          <Box sx={{ mt: 4 }}>
+          <Box sx={{ mt: 4, textAlign: 'center' }}>
             {employerProfileData.pendingDeletion ? (
               <Typography
                 variant="body1"
-                align="center"
                 sx={{
                   p: 2,
                   bgcolor: 'warning.light',
-                  color: 'warning.contrastText',
-                  borderRadius: 1,
+                  color: 'warning.dark',
+                  borderRadius: 2,
                 }}
               >
                 בקשתך למחיקת החשבון בהמתנה לאישור
               </Typography>
             ) : (
-              <Button
-                variant="contained"
-                color="error"
+              <ActionButton
+                startIcon={<DeleteIcon />}
+                colorVariant="error"
                 onClick={onDeleteAccountRequest}
-                fullWidth
+                fullWidth={isMobile}
                 sx={{
-                  borderRadius: 20,
-                  mt: 2,
+                  maxWidth: isMobile ? '100%' : '300px',
                 }}
               >
                 בקשה למחיקת חשבון
@@ -292,6 +321,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
         </CardContent>
       </Card> 
 
+      {/* Dialog לעריכת פרופיל */}
       <Dialog open={editing} onClose={() => setEditing(false)} fullWidth maxWidth="sm">
         <DialogTitle>ערוך פרופיל</DialogTitle>
         <DialogContent>
@@ -299,8 +329,8 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
             fullWidth
             label="Name"
             name="name"
-            value={editName || ''}  // Controlled by editName
-            onChange={(e) => setEditName(e.target.value)}  // Update editName only
+            value={editedData.name || ''}
+            onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
             margin="normal"
           />
           <TextField
@@ -340,20 +370,25 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
             label="Company Description"
             name="companyDescription"
             value={editedData.companyDescription || ''}
-            onChange={(e) => setEditedData({ ...editedData, companyDescription: e.target.value })}
+            onChange={(e) => 
+              setEditedData({ ...editedData, companyDescription: e.target.value })
+            }
             margin="normal"
             multiline
             rows={3}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditing(false)}>Cancel</Button>
-          <Button onClick={handleSaveChanges} color="primary">
-          שמור שינויים
+          <Button onClick={() => setEditing(false)} color="secondary">
+            ביטול
+          </Button>
+          <Button onClick={handleSaveChanges} color="primary" variant="contained">
+            שמירת שינויים
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* Snackbar להודעות */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -371,5 +406,5 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
     </Box>
   );
 };
-
+ 
 export default EmployerProfile;

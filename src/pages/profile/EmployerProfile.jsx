@@ -193,8 +193,6 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
           <CloudinaryUpload setNewImage={setNewBannerImage} banner={true} />
         </Box>
 
-        <RatingDisplay userId={auth.currentUser?.uid} isEmployer={true} />
-
         <CardContent sx={{ pt: 8, pb: 4, px: 3 }}>
           <Typography variant="h5" align="center" gutterBottom fontWeight="bold">
             {profileData.name || 'Employer Name'}

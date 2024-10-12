@@ -408,5 +408,5 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
     </Box>
   );
 };
-
+ 
 export default EmployerProfile;

@@ -521,7 +521,7 @@ export default function JobListPage() {
                       </div>
                       <div style={styles.jobDetailItem}>
                         <Users size={20} color="#0077B6" style={{ marginLeft: '8px' }} />
-                        <span>{job.workersNeeded || 1} עובדים נדרשים</span>
+                        <span>{job.workersNeeded || 1} עובדים</span>
                       </div>
                     </div>
                   </div>

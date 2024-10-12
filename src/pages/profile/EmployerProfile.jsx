@@ -85,7 +85,6 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
   const db = getFirestore();
   const isMobile = useMediaQuery('(max-width:600px)');
 
-  // Use onSnapshot for real-time updates from the 'employers' collection
 
   // Fetch employer profile fields from 'employers' collection
   useEffect(() => {
@@ -121,34 +120,6 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
     };
   
     fetchEmployerData();
-  }, [auth.currentUser, db]);  
-    // Use onSnapshot for real-time updates from the 'users' collection
-    useEffect(() => {
-      const fetchUserImages = async () => {
-        const user = auth.currentUser;
-        if (user) {
-          const userDocRef = doc(db, 'users', user.uid);
-  
-          // Set up real-time listener using onSnapshot
-          const unsubscribe = onSnapshot(userDocRef, (userDocSnap) => {
-            if (userDocSnap.exists()) {
-              const userData = userDocSnap.data();
-              setNewProfilePicture(userData.profileURL); // Profile picture from 'users' collection
-              setNewBannerImage(userData.bannerURL); // Banner image from 'users' collection
-              setPhotoURL(userData.photoURL); 
-              setEditName(userData.name); 
-            }
-          }, (error) => {
-            console.error("Error fetching user images:", error);
-          });
-  
-          // Unsubscribe from the listener when the component unmounts
-          return () => unsubscribe();
-        }
-      };
-  
-      fetchUserImages();
-    }, [auth.currentUser, db]);
   }, [auth.currentUser]);
 
   // Fetch profile picture and banner from 'users' collection
@@ -156,12 +127,12 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
     const fetchUserImages = async () => {
       const user = auth.currentUser;
       if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
+        const userDocRef = doc(db, 'users', user.uid); // Fetch from 'users' collection
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
-          setNewProfilePicture(userData.profileURL);
-          setNewBannerImage(userData.bannerURL);
+          setNewProfilePicture(userData.profileURL); // Profile picture from 'users' collection
+          setNewBannerImage(userData.bannerURL); // Banner image from 'users' collection
         }
       }
     };
@@ -176,30 +147,12 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
   };  
   
   const handleSaveChanges = async () => {
-    const user = auth.currentUser;
-  
-    if (user) {
-      try {
-        // Update the 'users' collection for name
-        const userDocRef = doc(db, 'users', user.uid);
-        await updateDoc(userDocRef, { name: editName });
-  
-        // Update the 'employers' collection for the rest of the fields
-        const employerDocRef = doc(db, 'employers', user.uid);
-        await updateDoc(employerDocRef, editedData);
-  
-        setSnackbar({ open: true, message: 'Profile updated successfully', severity: 'success' });
-        setEditing(false);
-      } catch (error) {
-        console.error('Error updating profile:', error);
-        setSnackbar({ open: true, message: 'Error updating profile', severity: 'error' });
-      }
     if (auth.currentUser) {
       const docRef = doc(db, 'employers', auth.currentUser.uid);
       await updateDoc(docRef, editedData);
-      setEmployerProfileData(prev => ({ ...prev, ...editedData }));
+      setEmployerProfileData(editedData);
       setEditing(false);
-      setSnackbar({ open: true, message: 'הפרופיל עודכן בהצלחה', severity: 'success' });
+      setSnackbar({ open: true, message: 'Profile updated successfully', severity: 'success' });
     }
   };
   
@@ -208,7 +161,6 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
     <Box sx={{ maxWidth: '100%', width: '100%', p: 2, bgcolor: '#f5f5f5' }}>
       <Card elevation={3} sx={{ borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
         <Box
-
           sx={{
             height: isMobile ? 150 : 200,
             backgroundImage: newBannerImage
@@ -226,7 +178,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
           }}
         >
           <Avatar
-            src={newProfilePicture || employerProfileData.profileURL || photoURL }
+            src={newProfilePicture || employerProfileData.profileURL || '/placeholder.svg'}
             alt={employerProfileData.name}
             sx={{
               width: 120,
@@ -243,28 +195,9 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
 
         <RatingDisplay userId={auth.currentUser?.uid} isEmployer={true} />
 
-        <CardContent sx={{ pt: 8, pb: 4, px: 3 }}> 
+        <CardContent sx={{ pt: 8, pb: 4, px: 3 }}>
           <Typography variant="h5" align="center" gutterBottom fontWeight="bold">
-            {/* from users db */}
-            {profileData.name || 'Employer Name'} 
-    <Box sx={{ maxWidth: '1200px', margin: '0 auto', p: 2, bgcolor: '#f0f2f5' }}>
-      <Paper elevation={3} sx={{ borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
-        <BannerBox banner={newBannerImage || employerProfileData.bannerURL}>
-          <StyledAvatar
-            src={newProfilePicture || employerProfileData.profileURL || '/placeholder.svg'}
-            alt={employerProfileData.name || 'שם המעסיק'}
-          />
-          <Box sx={{ position: 'absolute', top: 60, right: 16 }}>
-            <CloudinaryUpload setNewImage={setNewBannerImage} banner={true} />
-          </Box>
-          <Box sx={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)' }}>
-            <CloudinaryUpload setNewImage={setNewProfilePicture} />
-          </Box>
-        </BannerBox>
-
-        <Box sx={{ p: 3, pt: 10, textAlign: 'center' }}>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            {profileData.name || 'שם המעסיק'}
+            {profileData.name || 'Employer Name'}
           </Typography>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             {employerProfileData.companyName || 'שם החברה'}
@@ -387,8 +320,8 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
               </ActionButton>
             )}
           </Box>
-        </Box>
-      </Paper>
+        </CardContent>
+      </Card>
 
       {/* Dialog לעריכת פרופיל */}
       <Dialog open={editing} onClose={() => setEditing(false)} fullWidth maxWidth="sm">
@@ -398,8 +331,8 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
             fullWidth
             label="Name"
             name="name"
-            value={editName || ''}  // Controlled by editName
-            onChange={(e) => setEditName(e.target.value)}  // Update editName only
+            value={editedData.name || ''}
+            onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
             margin="normal"
           />
           <TextField
@@ -439,82 +372,13 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
             label="Company Description"
             name="companyDescription"
             value={editedData.companyDescription || ''}
-            onChange={(e) => setEditedData({ ...editedData, companyDescription: e.target.value })}
+            onChange={(e) => 
+              setEditedData({ ...editedData, companyDescription: e.target.value })
+            }
             margin="normal"
             multiline
             rows={3}
           />
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="שם"
-                name="name"
-                value={editedData.name || employerProfileData.name || ''}
-                onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
-                margin="normal"
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="מיקום"
-                name="location"
-                value={editedData.location || employerProfileData.location || ''}
-                onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
-                margin="normal"
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="מספר טלפון"
-                name="phone"
-                value={editedData.phone || employerProfileData.phone || ''}
-                onChange={(e) => setEditedData({ ...editedData, phone: e.target.value })}
-                margin="normal"
-                variant="outlined"
-                type="tel"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="שם החברה"
-                name="companyName"
-                value={editedData.companyName || employerProfileData.companyName || ''}
-                onChange={(e) => setEditedData({ ...editedData, companyName: e.target.value })}
-                margin="normal"
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="סוג עסק"
-                name="businessType"
-                value={editedData.businessType || employerProfileData.businessType || ''}
-                onChange={(e) => setEditedData({ ...editedData, businessType: e.target.value })}
-                margin="normal"
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="תיאור החברה"
-                name="companyDescription"
-                value={editedData.companyDescription || employerProfileData.companyDescription || ''}
-                onChange={(e) => setEditedData({ ...editedData, companyDescription: e.target.value })}
-                margin="normal"
-                variant="outlined"
-                multiline
-                rows={4}
-              />
-            </Grid>
-          </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditing(false)} color="secondary">

@@ -94,7 +94,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
     }, [auth.currentUser, db]);
 
   const calculateCompletionPercentage = (data) => {
-    const fields = ['name', 'email', 'phone', 'location', 'companyName', 'companyDescription', 'businessType'];
+    const fields = ['email', 'phone', 'location', 'companyName', 'companyDescription', 'businessType'];
     const completedFields = fields.filter(field => data[field] && data[field].length > 0);
     return (completedFields.length / fields.length) * 100;
   };  
@@ -174,7 +174,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
 
           <Box sx={{ mt: 2, mb: 3 }}>
             <Typography variant="body2" color="text.secondary" align="center" gutterBottom>
-              Profile Completion
+            השלמת פרטי הפרופיל
             </Typography>
             <LinearProgress
               variant="determinate"
@@ -188,13 +188,13 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
               }}
             />
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
-              {Math.round(completionPercentage)}% Completed
+              {Math.round(completionPercentage)}% הושלם
             </Typography>
           </Box>
 
           <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom fontWeight="bold">
-              Contact Details
+            פרטי התקשרות
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <LocationIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -218,7 +218,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
 
           <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom fontWeight="bold">
-              Company Details
+            פרטי החברה
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <BusinessIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -243,7 +243,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
                 '&:hover': { boxShadow: '0 6px 12px rgba(0,0,0,0.2)' },
               }}
             >
-              Edit Profile
+              ערוך פרופיל
             </Button>
             <Button
               startIcon={<ExitToAppIcon />}
@@ -256,7 +256,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
                 '&:hover': { boxShadow: '0 6px 12px rgba(0,0,0,0.2)' },
               }}
             >
-              Sign Out
+              התנתק
             </Button>
           </Box>
 
@@ -272,7 +272,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
                   borderRadius: 1,
                 }}
               >
-                Account deletion request pending approval
+                בקשתך למחיקת החשבון בהמתנה לאישור
               </Typography>
             ) : (
               <Button
@@ -285,7 +285,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
                   mt: 2,
                 }}
               >
-                Request Account Deletion
+                בקשה למחיקת חשבון
               </Button>
             )}
           </Box>
@@ -293,7 +293,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
       </Card> 
 
       <Dialog open={editing} onClose={() => setEditing(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Edit Profile</DialogTitle>
+        <DialogTitle>ערוך פרופיל</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
@@ -349,7 +349,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
         <DialogActions>
           <Button onClick={() => setEditing(false)}>Cancel</Button>
           <Button onClick={handleSaveChanges} color="primary">
-            Save Changes
+          שמור שינויים
           </Button>
         </DialogActions>
       </Dialog>

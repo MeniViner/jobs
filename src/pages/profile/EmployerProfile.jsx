@@ -290,7 +290,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
             )}
           </Box>
         </CardContent>
-      </Card>
+      </Card> 
 
       <Dialog open={editing} onClose={() => setEditing(false)} fullWidth maxWidth="sm">
         <DialogTitle>Edit Profile</DialogTitle>

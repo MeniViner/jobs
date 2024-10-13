@@ -436,7 +436,7 @@ export default function EmployerProfile({
             sx={{
               position: 'absolute',
               bottom: -8,
-              right: -8,
+              right: 4,
               backgroundColor: 'background.paper',
               '&:hover': { backgroundColor: 'action.hover' },
             }}

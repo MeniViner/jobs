@@ -124,14 +124,14 @@ export default function Header() {
         { label: 'חיפוש', icon: <SearchIcon />, path: '/jobs' },
         { label: 'פרסם עבודה', icon: <AddIcon />, path: '/post-job' },
         { label: 'פרסומים שלי', icon: <BusinessIcon />, path: '/my-published-jobs' },
-        { label: "צ'אט", icon: <ChatIcon />, path: '/job-chat' },
+        { label: "הודעות", icon: <ChatIcon />, path: '/job-chat' },
         { label: 'פרופיל', icon: <PersonIcon />, path: '/account' },
       ]
     : [
         { label: 'חיפוש', icon: <SearchIcon />, path: '/jobs' },
         { label: 'שמורים', icon: <FavoriteIcon />, path: '/saved-jobs' },
         { label: 'מועמדויות', icon: <AssignmentIcon />, path: '/my-applications' },
-        { label: "צ'אט", icon: <ChatIcon />, path: '/job-chat' },
+        { label: "הודעות", icon: <ChatIcon />, path: '/job-chat' },
         { label: 'פרופיל', icon: <PersonIcon />, path: '/account' },
       ];
 

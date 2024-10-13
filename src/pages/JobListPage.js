@@ -1,17 +1,34 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, MapPin, Bookmark, DollarSign, Users, Clock, Briefcase, Filter, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, MapPin, Bookmark, DollarSign, Users, Clock, Briefcase, Filter, X, ChevronDown, ChevronUp,
+  Settings as TuneIcon } from 'lucide-react'
+  import { SlidersHorizontal } from 'lucide-react'
+
 import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../services/firebase'
 import { getAuth } from 'firebase/auth'
 import { Link } from 'react-router-dom'
+import {
+  Box,
+  Typography,
+  IconButton,
+  Button,
+  Slider,
+  Dialog,
+  DialogContent,
+  DialogActions,
+  ToggleButton,
+  ToggleButtonGroup,
+  Chip,
+
+} from '@mui/material'
 
 export default function JobListPage() {
   const [jobs, setJobs] = useState([])
   const [filter, setFilter] = useState('')
   const [locationFilter, setLocationFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
-  const [salaryFilter, setSalaryFilter] = useState(0)
+  const [salaryFilter, setSalaryFilter] = useState([40, 3400])
   const [loading, setLoading] = useState(true)
   const [savedJobs, setSavedJobs] = useState([])
   const [showFilters, setShowFilters] = useState(false)
@@ -118,7 +135,7 @@ export default function JobListPage() {
         break
       case 'salary':
         setSalaryFilter(value)
-        if (value > 0) {
+        if (value[0] > 40 || value[1] < 3400) {
           setActiveFilters([...activeFilters.filter(f => f.type !== 'salary'), { type: 'salary', value }])
         } else {
           setActiveFilters(activeFilters.filter(f => f.type !== 'salary'))
@@ -144,7 +161,7 @@ export default function JobListPage() {
         setCategoryFilter('')
         break
       case 'salary':
-        setSalaryFilter(0)
+        setSalaryFilter([40, 3400])
         break
       case 'location':
         setLocationFilter('')
@@ -159,7 +176,7 @@ export default function JobListPage() {
       job.title.toLowerCase().includes(filter.toLowerCase()) &&
       (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
       (categoryFilter === '' || job.category === categoryFilter) &&
-      (salaryFilter === 0 || job.salary >= salaryFilter)
+      (job.salary >= salaryFilter[0] && job.salary <= salaryFilter[1])
     )
   })
 
@@ -185,7 +202,6 @@ export default function JobListPage() {
     searchContainer: {
       background: '#FFFFFF',
       borderRadius: '20px',
-      padding: '24px',
       boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
       marginBottom: '2rem',
     },
@@ -340,27 +356,167 @@ export default function JobListPage() {
   return (
     <div style={styles.container}>
       <div style={styles.content}>        
-        <div style={styles.searchContainer}>
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={{ ...styles.inputWrapper, flex: 1 }}>
-              <Search style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#829AB1' }} />
-              <input
-                type="text"
-                placeholder="חיפוש מהיר לפי תפקיד"
-                style={styles.input}
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
+        <Box sx={{ width: '100%',  mb: 2,  display: 'flex', gap :'2%'}}>
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              display: 'flex',
+              alignItems: 'center',
+              p: 2,
+              width: '80%',
+              borderRadius: '100px',
+              border: '1px solid #e0e0e0',
+              boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+              cursor: 'pointer',
+            }}
+          >
+            <Typography sx={{ flexGrow: 1, textAlign: 'right' }}>
+              מיקום? · קטגוריה · סכום מינמלי
+            </Typography>
+            <IconButton size="small" sx={{ ml: 1 }}>
+              <Search />
+            </IconButton>
+          </Box>
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              display: 'flex',
+              alignItems: 'center',
+              p: 2,
+              width: '15%',
+              borderRadius: '100px',
+              border: '1px solid #e0e0e0',
+              boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+              cursor: 'pointer',
+            }}
+            onClick={() => setShowFilters(true)}
+          >
+            < SlidersHorizontal sx={{ mr: 1 }} />
+          </Box>
+
+          <Dialog
+            open={showFilters}
+            onClose={() => setShowFilters(false)}
+            fullWidth
+            maxWidth="xs"
+            PaperProps={{
+              sx: {
+                borderRadius: '12px',
+                m: 0,
+                width: '100%',
+                maxHeight: '100%',
+              },
+            }}
+          >
+            <DialogContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
+                  מסננים
+                </Typography>
+                <IconButton edge="end" color="inherit" onClick={() => setShowFilters(false)} aria-label="close">
+                  <X />
+                </IconButton>
+              </Box>
+
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                סוג משרה
+              </Typography>
+              <ToggleButtonGroup
+                value={categoryFilter}
+                exclusive
+                onChange={(e, value) => handleFilterChange('category', value)}
+                
+                aria-label="job type"
+                sx={{ mb: 3, width: '100%' }}
+              >
+                <ToggleButton
+                  value="fullTime"
+                  aria-label="full time"
+                  sx={{
+                    flex: 1,
+                    borderRadius: '100px',
+                    mr: 1,
+                    border: '1px solid #e0e0e0',
+                    '&.Mui-selected': {
+                      bgcolor: '#E0F2FE',
+                      color: '#0077B6',
+                      '&:hover': {
+                        bgcolor: '#E0F2FE',
+                      },
+                    },
+                  }}
+                >
+                  משרה מלאה
+                </ToggleButton>
+                <ToggleButton
+                  value="partTime"
+                  aria-label="part time"
+                  sx={{
+                    flex: 1,
+                    borderRadius: '100px',
+                    border: '1px solid #e0e0e0',
+                    '&.Mui-selected': {
+                      bgcolor: '#E0F2FE',
+                      color: '#0077B6',
+                      '&:hover': {
+                        bgcolor: '#E0F2FE',
+                      },
+                    },
+                  }}
+                >
+                  משרה חלקית
+                </ToggleButton>
+              </ToggleButtonGroup>
+
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                טווח מחירים
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  מינימום
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  מקסימום
+                </Typography>
+              </Box>
+              <Slider
+                value={salaryFilter}
+                onChange={(e, newValue) => handleFilterChange('salary', newValue)}
+                valueLabelDisplay="auto"
+                min={40}
+                max={3400}
+                step={10}
+                sx={{
+                  '& .MuiSlider-thumb': {
+                    height: 24,
+                    width: 24,
+                    backgroundColor: '#fff',
+                    border: '2px solid currentColor',
+                    '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
+                      boxShadow: 'inherit',
+                    },
+                  },
+                  '& .MuiSlider-track': {
+                    height: 4,
+                  },
+                  '& .MuiSlider-rail': {
+                    height: 4,
+                    opacity: 0.5,
+                    backgroundColor: '#bfbfbf',
+                  },
+                }}
               />
-            </div>
-            <button
-              style={styles.button}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              הגדר סינון
-            </button>
-          </div>
-          
-          <AnimatePresence>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  ₪ {salaryFilter[0]}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {salaryFilter[1] === 3400 ? `₪ ${salaryFilter[1]} ומעלה` : `₪ ${salaryFilter[1]}`}
+                </Typography>
+              </Box>
+            </DialogContent>
+
+            <AnimatePresence>
             {showFilters && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -406,46 +562,62 @@ export default function JobListPage() {
                       onChange={(e) => handleFilterChange('category', e.target.value)}
                     >
                       <option value="">כל הקטגוריות</option>
-                      <option  value="tech">טכנולוגיה</option>
+                      <option value="tech">טכנולוגיה</option>
                       <option value="finance">פיננסים</option>
                       <option value="marketing">שיווק</option>
                       <option value="education">חינוך</option>
                     </select>
-                  </div>
-                  <div>
-                    <label htmlFor="salary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: '500', color: '#486581' }}>
-                      שכר מינימלי לשעה: ₪{salaryFilter}
-                    </label>
-                    <input
-                      type="range"
-                      id="salary"
-                      min="0"
-                      max="200"
-                      step="10"
-                      style={{ ...styles.input, padding: '8px 0' }}
-                      value={salaryFilter}
-                      onChange={(e) => handleFilterChange('salary', parseInt(e.target.value))}
-                    />
                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {activeFilters.length > 0 && (
-            <div style={{
-              display: 'flex',
-              overflowX: 'auto',
-              whiteSpace: 'nowrap',
-              padding: '0.5rem 0',
-              marginTop: '1rem',
-              WebkitOverflowScrolling: 'touch',
-              msOverflowStyle: '-ms-autohiding-scrollbar'
-            }}>
+            <DialogActions sx={{ p: 3, pt: 0 }}>
+              <Button
+                onClick={() => {
+                  setCategoryFilter('')
+                  setSalaryFilter([40, 3400])
+                  setLocationFilter('')
+                  setActiveFilters([])
+                }}
+                sx={{
+                  color: 'text.primary',
+                  bgcolor: '#F3F4F6',
+                  '&:hover': {
+                    bgcolor: '#E5E7EB',
+                  },
+                  borderRadius: '8px',
+                  px: 3,
+                  py: 1,
+                }}
+              >
+                לנקות הכל
+              </Button>
+              <Button
+                onClick={() => setShowFilters(false)}
+                sx={{
+                  color: 'white',
+                  bgcolor: 'black',
+                  '&:hover': {
+                    bgcolor: '#333',
+                  },
+                  borderRadius: '8px',
+                  px: 3,
+                  py: 1,
+                }}
+              >
+                הצגת {filteredJobs.length} משרות
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
+        {activeFilters.length > 0 && (
+            <div style={styles.activeFiltersContainer}>
               {activeFilters.map((filter, index) => (
-                <span key={index} style={{...styles.activeFilter, marginRight: '0.5rem', flex: '0 0 auto'}}>
+                <span key={index} style={{...styles.activeFilter, marginRight: '0.5rem', flex: '0 0 auto',backgroundColor: 'lightblue', color:'black'}}>
                   {filter.type === 'category' && `קטגוריה: ${filter.value}`}
-                  {filter.type === 'salary' && `שכר מינימלי: ₪${filter.value}`}
+                  {filter.type === 'salary' && `שכר מינימלי: ₪${filter.value[0]}`}
                   {filter.type === 'location' && `מיקום: ${filter.value}`}
                   <button
                     onClick={() => removeFilter(filter.type)}
@@ -458,7 +630,7 @@ export default function JobListPage() {
               ))}
             </div>
           )}
-        </div>
+
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
@@ -559,41 +731,40 @@ export default function JobListPage() {
                           </div>
                         </div>
                         <p style={{ fontSize: '0.875rem', color: '#486581', lineHeight: '1.6' }}>
-                          {job.fullDescription || 'אין תיאור מפורט זמין למשרה זו.'}
+                          {job.fullDescription ||
+                            'תיאור מלא של המשרה לא זמין כרגע. אנא צור קשר עם המעסיק לקבלת מידע נוסף.'}
                         </p>
                       </motion.div>
                     )}
                   </AnimatePresence>
                   <div style={styles.jobFooter}>
-                    <Link to={`/user/${job.employerId}`} style={styles.link}>
+                  <Link to={`/user/${job.employerId}`} style={styles.link}>
                       צפיה בפרטי מעסיק
                     </Link>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <button
-                        onClick={() => setExpandedJob(expandedJob === job.id ? null : job.id)}
-                        style={styles.expandButton}
-                        aria-expanded={expandedJob === job.id}
-                        aria-controls={`job-details-${job.id}`}
-                      >
-                        {expandedJob === job.id ? (
-                          <>
-                            <ChevronUp size={20} style={{ marginLeft: '4px' }} />
-                            פחות פרטים
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown size={20} style={{ marginLeft: '4px' }} />
-                            יותר פרטים
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleApplyForJob(job.id)}
-                        style={styles.applyButton}
-                      >
-                        הגש מועמדות
-                      </button>
-                    </div>
+                    <button
+                      style={styles.expandButton}
+                      onClick={() => setExpandedJob(expandedJob === job.id ? null : job.id)}
+                      aria-expanded={expandedJob === job.id}
+                      aria-controls={`job-details-${job.id}`}
+                    >
+                      {expandedJob === job.id ? (
+                        <>
+                          <span style={{ marginLeft: '2px' }}>הסתר פרטים</span>
+                          <ChevronUp size={20}style={{ marginLeft: '17px' }} />
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ marginLeft: '2px' }}>הצג פרטים</span>
+                          <ChevronDown size={20}style={{ marginLeft: '17px' }} />
+                        </>
+                      )}
+                    </button>
+                    <button
+                      style={styles.applyButton}
+                      onClick={() => handleApplyForJob(job.id)}
+                    >
+                      הגש מועמדות
+                    </button>
                   </div>
                 </motion.div>
               ))}

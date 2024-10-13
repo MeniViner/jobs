@@ -315,7 +315,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
                 }}
               >
                 בקשה למחיקת חשבון
-              </Button>
+              </ActionButton>
             )}
           </Box>
         </CardContent>

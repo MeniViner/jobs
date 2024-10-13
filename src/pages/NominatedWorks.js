@@ -95,21 +95,19 @@ export default function MyApplications() {
       const jobsCollection = collection(db, 'jobs');
       const jobsSnapshot = await getDocs(jobsCollection);
       const jobsData = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      const applicationsMap = new Map();
-      const hiredJobsMap = new Map();
-
-      for (const job of jobsData) {
+  
+      // Fetch all applicants for each job in parallel
+      const jobsWithApplicationsPromises = jobsData.map(async (job) => {
         const applicantsCollection = collection(db, 'jobChats', job.id, 'applicants');
         const applicantsQuery = query(applicantsCollection, where('applicantId', '==', user.uid));
         const applicantsSnapshot = await getDocs(applicantsQuery);
-
+  
         if (!applicantsSnapshot.empty) {
           const latestApplication = applicantsSnapshot.docs.reduce((latest, current) => {
             return latest.data().timestamp > current.data().timestamp ? latest : current;
           });
-
-          const applicationData = {
+  
+          return {
             id: latestApplication.id,
             jobId: job.id,
             ...job,
@@ -117,23 +115,22 @@ export default function MyApplications() {
             status: latestApplication.data().hired ? 'התקבלת' : 'ממתין',
             applicationCount: applicantsSnapshot.size,
           };
-
-          if (latestApplication.data().hired) {
-            hiredJobsMap.set(job.id, applicationData);
-          } else {
-            applicationsMap.set(job.id, applicationData);
-          }
         }
-      }
-
-      setApplications(Array.from(applicationsMap.values()));
-      setHiredJobs(Array.from(hiredJobsMap.values()));
+        return null;
+      });
+  
+      const jobsWithApplications = await Promise.all(jobsWithApplicationsPromises);
+      const filteredJobs = jobsWithApplications.filter(job => job !== null);
+  
+      setApplications(filteredJobs.filter(job => job.status !== 'התקבלת'));
+      setHiredJobs(filteredJobs.filter(job => job.status === 'התקבלת'));
     } catch (error) {
       console.error("Error fetching applications and hired jobs:", error);
     } finally {
       setLoading(false);
     }
   };
+  
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);

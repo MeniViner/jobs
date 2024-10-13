@@ -18,24 +18,22 @@ import {
   useMediaQuery,
   useTheme,
   Box,
-  Fade,
   Paper,
+  BottomNavigation,
+  BottomNavigationAction,
 } from '@mui/material'
 import {
-  Menu as MenuIcon,
-  Home as HomeIcon,
-  Work as WorkIcon,
+  Search as SearchIcon,
+  Favorite as FavoriteIcon,
+  ChatBubbleOutline as ChatIcon,
+  PersonOutline as PersonIcon,
   Add as AddIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon,
-  Chat as ChatIcon,
-  Assignment as AssignmentIcon,
-  Bookmark as BookmarkIcon,
   Business as BusinessIcon,
-  SupervisorAccount as SupervisorAccountIcon,
-  Notifications as NotificationsIcon,
+  AssignmentOutlined as AssignmentIcon,
+  BookmarkBorder as BookmarkIcon,
+  NotificationsNone as NotificationsIcon,
   AccountCircle as AccountCircleIcon,
   ExitToApp as LogoutIcon,
-  Search as SearchIcon,
 } from '@mui/icons-material'
 
 export default function Header() {
@@ -43,13 +41,11 @@ export default function Header() {
   const navigate = useNavigate()
   const location = useLocation()
   const [anchorEl, setAnchorEl] = useState(null)
-  const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState(null)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const auth = getAuth()
 
   const [scrolled, setScrolled] = useState(false)
-  const [showSearch, setShowSearch] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -69,13 +65,8 @@ export default function Header() {
     setAnchorEl(event.currentTarget)
   }
 
-  const handleMobileMenuOpen = (event) => {
-    setMobileMoreAnchorEl(event.currentTarget)
-  }
-
   const handleMenuClose = () => {
     setAnchorEl(null)
-    setMobileMoreAnchorEl(null)
   }
 
   const handleLogout = async () => {
@@ -119,14 +110,6 @@ export default function Header() {
           <ListItemText primary="עבודות שפרסמתי" />
         </MenuItem>
       )}
-      {user?.isAdmin && (
-        <MenuItem onClick={() => { handleMenuClose(); navigate('/admin') }}>
-          <ListItemIcon>
-            <AdminPanelSettingsIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary="ניהול" />
-        </MenuItem>
-      )}
       <MenuItem onClick={handleLogout}>
         <ListItemIcon>
           <LogoutIcon fontSize="small" />
@@ -136,45 +119,126 @@ export default function Header() {
     </Menu>
   )
 
-  const mobileMenuId = 'primary-search-account-menu-mobile'
-  const renderMobileMenu = (
-    <Menu
-      anchorEl={mobileMoreAnchorEl}
-      anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-      id={mobileMenuId}
-      keepMounted
-      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-      open={Boolean(mobileMoreAnchorEl)}
-      onClose={handleMenuClose}
-    >
-      {[
-        { icon: <HomeIcon />, text: 'דף הבית', link: '/' },
-        { icon: <WorkIcon />, text: 'עבודות', link: '/jobs' },
-        { icon: <ChatIcon />, text: "צ'אט", link: '/job-chat', authRequired: true },
-        { icon: <BookmarkIcon />, text: 'עבודות שמורות', link: '/saved-jobs', authRequired: true },
-        { icon: <AssignmentIcon />, text: 'המועמדויות שלי', link: '/my-applications', authRequired: true },
-      ].map((item) => (
-        (!item.authRequired || (item.authRequired && user)) && (
-          <MenuItem key={item.text} onClick={() => { handleMenuClose(); navigate(item.link) }}>
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </MenuItem>
-        )
-      ))}
-      {user?.isEmployer && (
-        <MenuItem onClick={() => { handleMenuClose(); navigate('/post-job') }}>
-          <ListItemIcon><AddIcon /></ListItemIcon>
-          <ListItemText primary="פרסם עבודה" />
-        </MenuItem>
-      )}
-      {!user?.isEmployer && (
-        <MenuItem onClick={handlePostJobClick}>
-          <ListItemIcon><AddIcon /></ListItemIcon>
-          <ListItemText primary="פרסם עבודה" />
-        </MenuItem>
-      )}
-    </Menu>
-  )
+  const navItems = user?.isEmployer
+    ? [
+        { label: 'חיפוש', icon: <SearchIcon />, path: '/jobs' },
+        { label: 'פרסם עבודה', icon: <AddIcon />, path: '/post-job' },
+        { label: 'פרסומים שלי', icon: <BusinessIcon />, path: '/my-published-jobs' },
+        { label: "צ'אט", icon: <ChatIcon />, path: '/job-chat' },
+        { label: 'פרופיל', icon: <PersonIcon />, path: '/account' },
+      ]
+    : [
+        { label: 'חיפוש', icon: <SearchIcon />, path: '/jobs' },
+        { label: 'שמורים', icon: <FavoriteIcon />, path: '/saved-jobs' },
+        { label: 'מועמדויות', icon: <AssignmentIcon />, path: '/my-applications' },
+        { label: "צ'אט", icon: <ChatIcon />, path: '/job-chat' },
+        { label: 'פרופיל', icon: <PersonIcon />, path: '/account' },
+      ];
+
+  const desktopNavItems = [
+    { text: 'דף הבית', link: '/' },
+    { text: 'עבודות', link: '/jobs' },
+    { text: "צ'אט", link: '/job-chat', authRequired: true },
+    { text: 'עבודות שמורות', link: '/saved-jobs', authRequired: true },
+    { text: 'המועמדויות שלי', link: '/my-applications', authRequired: true },
+    { text: 'ניהול', link: '/admin', authRequired: true, adminRequired: true },
+  ];
+
+  if (isMobile) {
+    return (
+      <>
+        <AppBar 
+          position="fixed" 
+          color="default" 
+          elevation={0} 
+          sx={{ 
+            top: 0, 
+            borderBottom: '1px solid rgba(0, 0, 0, 0.12)', 
+            zIndex: theme.zIndex.drawer + 2,
+            backgroundColor: 'background.paper',
+          }}
+        >
+          <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
+            <Typography
+              variant="h6"
+              noWrap
+              component={Link}
+              to="/"
+              sx={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 700,
+                color: 'primary.main',
+                textDecoration: 'none',
+              }}
+            >
+              WorkMatch
+            </Typography>
+            <IconButton
+              onClick={() => navigate('/notifications')}
+              sx={{ p: '10px' }}
+              aria-label="notifications"
+            >
+              <Badge badgeContent={4} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+          </Toolbar>
+        </AppBar>
+
+        <Box sx={{ pb: 7 }} /> {/* Spacer for content */}
+
+        <Paper 
+          sx={{ 
+            position: 'fixed', 
+            bottom: 0, 
+            left: 0, 
+            right: 0, 
+            zIndex: theme.zIndex.drawer + 2,
+            borderTop: '1px solid rgba(0, 0, 0, 0.12)',
+          }} 
+          elevation={3}
+        >
+          <BottomNavigation
+            showLabels
+            value={navItems.findIndex(item => item.path === location.pathname)}
+            onChange={(event, newValue) => {
+              navigate(navItems[newValue].path);
+            }}
+            sx={{
+              height: 64,
+              '& .MuiBottomNavigationAction-root': {
+                color: 'text.secondary',
+                '&.Mui-selected': {
+                  color: 'primary.main',
+                },
+              },
+              '& .MuiBottomNavigationAction-label': {
+                fontSize: '0.75rem',
+                '&.Mui-selected': {
+                  fontSize: '0.75rem',
+                },
+              },
+            }}
+          >
+            {navItems.map((item, index) => (
+              <BottomNavigationAction 
+                key={index} 
+                label={item.label} 
+                icon={item.icon} 
+                sx={{
+                  minWidth: 'auto',
+                  padding: '6px 0',
+                  '& .MuiSvgIcon-root': {
+                    fontSize: 28,
+                  },
+                }}
+              />
+            ))}
+          </BottomNavigation>
+        </Paper>
+      </>
+    )
+  }
 
   return (
     <AppBar 
@@ -187,9 +251,10 @@ export default function Header() {
         }),
         bgcolor: 'background.paper',
         borderBottom: scrolled ? 'none' : '1px solid rgba(0, 0, 0, 0.12)',
+        zIndex: theme.zIndex.drawer + 2,
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between', py: 1, direction: 'rtl' }}> {/* Set direction to RTL */}
+      <Toolbar sx={{ justifyContent: 'space-between', py: 1, direction: 'rtl' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Typography
             variant="h5"
@@ -197,7 +262,7 @@ export default function Header() {
             component={Link}
             to="/"
             sx={{
-              ml: 2, // Changed from mr to ml
+              ml: 2,
               fontFamily: 'Poppins, sans-serif',
               fontWeight: 700,
               letterSpacing: '.1rem',
@@ -210,51 +275,44 @@ export default function Header() {
             WorkMatch
           </Typography>
 
-          {!isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mr: 4 }}> {/* Changed from ml to mr */}
-              {[
-                { text: 'דף הבית', link: '/' },
-                { text: 'עבודות', link: '/jobs' },
-                { text: "צ'אט", link: '/job-chat', authRequired: true },
-                { text: 'עבודות שמורות', link: '/saved-jobs', authRequired: true },
-                { text: 'המועמדויות שלי', link: '/my-applications', authRequired: true },
-              ].map((item) => (
-                (!item.authRequired || (item.authRequired && user)) && (
-                  <Button
-                    key={item.text}
-                    component={Link}
-                    to={item.link}
-                    sx={{ 
-                      mx: 1, 
-                      color: location.pathname === item.link ? 'primary.main' : 'text.primary',
-                      fontWeight: location.pathname === item.link ? 600 : 400,
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                      position: 'relative',
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        bottom: -2,
-                        right: 0, // Changed from left to right
-                        width: '100%',
-                        height: 2,
-                        bgcolor: 'primary.main',
-                        transform: location.pathname === item.link ? 'scaleX(1)' : 'scaleX(0)',
-                        transition: 'transform 0.3s ease-in-out',
-                        transformOrigin: 'right', // Changed from left to right
-                      },
-                      '&:hover::after': {
-                        transform: 'scaleX(1)',
-                      },
-                    }}
-                  >
-                    {item.text}
-                  </Button>
-                )
-              ))}
-            </Box>
-          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', mr: 4 }}>
+            {desktopNavItems.map((item) => (
+              (!item.authRequired || (item.authRequired && user)) &&
+              (!item.adminRequired || (item.adminRequired && user?.isAdmin)) && (
+                <Button
+                  key={item.text}
+                  component={Link}
+                  to={item.link}
+                  sx={{ 
+                    mx: 1, 
+                    color: location.pathname === item.link ? 'primary.main' : 'text.primary',
+                    fontWeight: location.pathname === item.link ? 600 : 400,
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                    position: 'relative',
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      bottom: -2,
+                      right: 0,
+                      width: '100%',
+                      height: 2,
+                      bgcolor: 'primary.main',
+                      transform: location.pathname === item.link ? 'scaleX(1)' : 'scaleX(0)',
+                      transition: 'transform 0.3s ease-in-out',
+                      transformOrigin: 'right',
+                    },
+                    '&:hover::after': {
+                      transform: 'scaleX(1)',
+                    },
+                  }}
+                >
+                  {item.text}
+                </Button>
+              )
+            ))}
+          </Box>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -266,7 +324,7 @@ export default function Header() {
                 color="inherit"
                 onClick={() => navigate('/notifications')}
                 sx={{
-                  ml: 2, // Changed from mr to ml
+                  ml: 2,
                   '&:hover': {
                     bgcolor: 'action.hover',
                   },
@@ -279,63 +337,24 @@ export default function Header() {
             </Tooltip>
           )}
 
-          <Tooltip title="חיפוש">
-            <IconButton
-              size="large"
-              aria-label="search"
-              color="inherit"
-              onClick={() => setShowSearch(!showSearch)}
-              sx={{
-                ml: 2, // Changed from mr to ml
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
-              }}
-            >
-              <SearchIcon />
-            </IconButton>
-          </Tooltip>
-
-          {!isMobile && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handlePostJobClick}
-              sx={{
-                ml: 2, // Changed from mr to ml
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                fontWeight: 600,
-                '&:hover': {
-                  bgcolor: 'primary.dark',
-                },
-                borderRadius: '20px',
-                px: 3,
-              }}
-            >
-              פרסם עבודה
-            </Button>
-          )}
-
-          {isMobile && (
-            <Tooltip title="תפריט">
-              <IconButton
-                size="large"
-                aria-label="show more"
-                aria-controls={mobileMenuId}
-                aria-haspopup="true"
-                onClick={handleMobileMenuOpen}
-                color="inherit"
-                sx={{
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                  },
-                }}
-              >
-                <MenuIcon />
-              </IconButton>
-            </Tooltip>
-          )}
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handlePostJobClick}
+            sx={{
+              ml: 2,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              fontWeight: 600,
+              '&:hover': {
+                bgcolor: 'primary.dark',
+              },
+              borderRadius: '20px',
+              px: 3,
+            }}
+          >
+            פרסם עבודה
+          </Button>
 
           {user ? (
             <Tooltip title="הגדרות חשבון">
@@ -369,7 +388,7 @@ export default function Header() {
               component={Link}
               to="/login"
               sx={{
-                mr: 2, // Changed from ml to mr
+                mr: 2,
                 color: 'primary.main',
                 borderColor: 'primary.main',
                 fontWeight: 600,
@@ -386,37 +405,6 @@ export default function Header() {
           )}
         </Box>
       </Toolbar>
-      <Fade in={showSearch}>
-        <Paper 
-          elevation={4}
-          sx={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            p: 2,
-            display: showSearch ? 'block' : 'none',
-            zIndex: 1,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', direction: 'rtl' }}> {/* Set direction to RTL */}
-            <SearchIcon sx={{ color: 'action.active', ml: 1, my: 0.5 }} /> {/* Changed from mr to ml */}
-            <input 
-              type="text" 
-              placeholder="חפש עבודות..."
-              style={{
-                width: '100%',
-                border: 'none',
-                outline: 'none',
-                fontSize: '1rem',
-                padding: '8px',
-                textAlign: 'right', // Align text to the right
-              }}
-            />
-          </Box>
-        </Paper>
-      </Fade>
-      {renderMobileMenu}
       {renderMenu}
     </AppBar>
   )

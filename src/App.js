@@ -61,7 +61,7 @@ function App() {
                 component="main"
                 sx={{
                   flexGrow: 1,
-                  pt: { xs: '56px', sm: '64px', md: '70px' }, // Adjust these values based on your Header's height
+                  pt: {  sm: '64px', md: '70px' }, // Adjust these values based on your Header's height
                   bgcolor: 'background.default',
                 }}
               >

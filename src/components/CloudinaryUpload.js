@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { IconButton, CircularProgress, Menu, MenuItem } from '@mui/material';
 import { PhotoCamera as PhotoCameraIcon, Delete as DeleteIcon } from '@mui/icons-material';
@@ -9,6 +7,7 @@ import { getFirestore, doc, updateDoc, getDoc } from 'firebase/firestore';
 
 export default function CloudinaryUpload({ setNewImage, banner = false }) {
   const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
   const [loading, setLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [hasExistingImage, setHasExistingImage] = useState(false);
@@ -52,7 +51,7 @@ export default function CloudinaryUpload({ setNewImage, banner = false }) {
         const compressedFile = await imageCompression(file, options);
         const formData = new FormData();
         formData.append('file', compressedFile);
-        formData.append('upload_preset', 'socialjobs');
+        formData.append('upload_preset', uploadPreset);
         formData.append('folder', banner ? 'Banner images' : 'Profile pictures');
 
         const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
@@ -65,7 +64,7 @@ export default function CloudinaryUpload({ setNewImage, banner = false }) {
         }
 
         const data = await response.json();
-        const optimizedImageUrl = `https://res.cloudinary.com/${cloudName}/image/upload/q_auto,f_auto/${data.public_id}`;
+        const optimizedImageUrl = data.secure_url;
         setNewImage(optimizedImageUrl);
 
         const user = auth.currentUser;
@@ -91,29 +90,21 @@ export default function CloudinaryUpload({ setNewImage, banner = false }) {
       if (user) {
         const docRef = doc(db, 'users', user.uid);
         const imageField = banner ? 'bannerURL' : 'profileURL';
-        
+
         // Get the current image URL
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
           const currentImageUrl = data[imageField];
-          
-          // Delete image from Cloudinary
-          if (currentImageUrl) {
-            const publicId = currentImageUrl.split('/').pop().split('.')[0]; // Extract public_id from URL
-            await fetch(`/cloudinary/delete-image`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ public_id: publicId }),
-            });
-          }
+
+          // Delete image from Cloudinary (ניתן להוסיף כאן לוגיקה למחיקת התמונה מ-Cloudinary אם נדרש)
+
+          // Update Firestore document
+          await updateDoc(docRef, { [imageField]: null });
+          setNewImage(null);
+          setHasExistingImage(false);
+          console.log(`${banner ? 'Banner' : 'Profile'} image deleted successfully`);
         }
-        
-        // Update Firestore document
-        await updateDoc(docRef, { [imageField]: null });
-        setNewImage(null);
-        setHasExistingImage(false);
-        console.log(`${banner ? 'Banner' : 'Profile'} image deleted successfully`);
       }
     } catch (error) {
       console.error('Error during image deletion:', error);
@@ -127,7 +118,7 @@ export default function CloudinaryUpload({ setNewImage, banner = false }) {
     <>
       <IconButton
         color="primary"
-        aria-label={banner ? "manage banner" : "manage profile picture"}
+        aria-label={banner ? 'manage banner' : 'manage profile picture'}
         onClick={handleClick}
         sx={{
           position: 'absolute',
@@ -140,14 +131,10 @@ export default function CloudinaryUpload({ setNewImage, banner = false }) {
       >
         {loading ? <CircularProgress size={24} /> : <PhotoCameraIcon />}
       </IconButton>
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-      >
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
         <MenuItem>
           <label htmlFor={banner ? 'banner-upload' : 'profile-upload'}>
-            {hasExistingImage ? 'Change Photo' : 'Upload Photo'}
+            {hasExistingImage ? 'שנה תמונה' : 'העלה תמונה'}
           </label>
           <input
             accept="image/*"
@@ -160,11 +147,10 @@ export default function CloudinaryUpload({ setNewImage, banner = false }) {
         {hasExistingImage && (
           <MenuItem onClick={handleDeleteImage}>
             <DeleteIcon sx={{ mr: 1 }} />
-            Delete Photo
+            מחק תמונה
           </MenuItem>
         )}
       </Menu>
     </>
   );
 }
-

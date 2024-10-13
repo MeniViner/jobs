@@ -64,6 +64,7 @@ export default function EmployeeProfile({
   const [loading, setLoading] = useState(false);
   const auth = getAuth();
   const db = getFirestore();
+  const userId = auth.currentUser ? auth.currentUser.uid : null;
 
   // פונקציית CloudinaryUpload להעלאת תמונות
   const CloudinaryUpload = async (file, callback) => {
@@ -417,7 +418,18 @@ export default function EmployeeProfile({
           <Typography
             variant="body2"
             color="text.secondary"
-            onClick={() => navigate('/profile/view')}
+            onClick={() => {
+              if (userId) {
+                navigate(`/user/${userId}`);
+              } else {
+                setSnackbar({
+                  open: true,
+                  message: 'משתמש לא מחובר',
+                  severity: 'error',
+                });
+              }
+            }}
+            sx={{ cursor: 'pointer' }}
           >
             הצג פרופיל
           </Typography>

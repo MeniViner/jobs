@@ -77,14 +77,11 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
   const [newBannerImage, setNewBannerImage] = useState(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [editedData, setEditedData] = useState({});
-  const [editName, setEditName] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
-  const [photoURL, setPhotoURL] = useState(null); // State for photoURL 
 
   const auth = getAuth();
   const db = getFirestore();
   const isMobile = useMediaQuery('(max-width:600px)');
-
 
   // Fetch employer profile fields from 'employers' collection
   useEffect(() => {
@@ -155,7 +152,6 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
       setSnackbar({ open: true, message: 'Profile updated successfully', severity: 'success' });
     }
   };
-  
 
   return (
     <Box sx={{ maxWidth: '100%', width: '100%', p: 2, bgcolor: '#f5f5f5' }}>
@@ -164,10 +160,10 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
           sx={{
             height: isMobile ? 150 : 200,
             backgroundImage: newBannerImage
-            ? `url(${encodeURI(newBannerImage)})` 
-            : employerProfileData.bannerURL
-            ? `url(${employerProfileData.bannerURL})`
-            : 'linear-gradient(45deg, #2196f3 30%, #21cbf3 90%)',
+              ? `url(${encodeURI(newBannerImage)})` 
+              : employerProfileData.bannerURL
+              ? `url(${employerProfileData.bannerURL})`
+              : 'linear-gradient(45deg, #2196f3 30%, #21cbf3 90%)',
 
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -205,7 +201,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
 
           <Box sx={{ mt: 2, mb: 3 }}>
             <Typography variant="body2" color="text.secondary" align="center" gutterBottom>
-            השלמת פרטי הפרופיל
+              השלמת פרטי הפרופיל
             </Typography>
             <LinearProgress
               variant="determinate"
@@ -229,7 +225,7 @@ const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut })
             <Grid item xs={12} md={6}>
               <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
-                פרטי התקשרות
+                  פרטי התקשרות
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <LocationIcon color="primary" sx={{ mr: 2 }} />

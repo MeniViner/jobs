@@ -1,406 +1,484 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, Typography, Button, Avatar, IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, LinearProgress, Card, CardContent,
-  Snackbar, Alert, Grid, Paper
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Typography,
+  Avatar,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Snackbar,
+  Alert,
+  Divider,
+  LinearProgress,
 } from '@mui/material';
 import {
-  Edit as EditIcon, Business as BusinessIcon, LocationOn as LocationIcon, 
-  Phone as PhoneIcon, Email as EmailIcon, ExitToApp as ExitToAppIcon,
-  Delete as DeleteIcon
+  ArrowBack as ArrowBackIcon,
+  Notifications as NotificationsIcon,
+  ChevronRight as ChevronRightIcon,
+  Edit as EditIcon,
+  Star as StarIcon,
+  Add as AddIcon,
+  ExitToApp as ExitToAppIcon,
+  Delete as DeleteIcon,
+  Security as SecurityIcon,
+  Payment as PaymentIcon,
+  Receipt as ReceiptIcon,
+  Notifications as NotificationsSettingsIcon,
+  Lock as PrivacyIcon,
+  Settings as PreferencesIcon,
+  Person as PersonIcon,
+  Home as HomeIcon,
+  PhotoCamera as PhotoCameraIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
 import { getFirestore, doc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import CloudinaryUpload from '../../components/CloudinaryUpload';
 import { RatingDisplay } from '../rating/RatingSystem';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { styled } from '@mui/system';
+import CloudinaryUpload from '../../components/CloudinaryUpload';
 
-const BannerBox = styled(Box)(({ theme, banner }) => ({
-  height: banner ? 200 : 150,
-  backgroundImage: banner
-    ? `url(${encodeURI(banner)})`
-    : 'linear-gradient(45deg, #2196f3 30%, #21cbf3 90%)',
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'flex-end',
-  justifyContent: 'center',
-  [theme.breakpoints.down('sm')]: {
-    height: 150,
-  },
-}));
-
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-  width: 140,
-  height: 140,
-  border: `4px solid ${theme.palette.background.paper}`,
-  boxShadow: theme.shadows[4],
-  position: 'absolute',
-  bottom: -70,
-  [theme.breakpoints.down('sm')]: {
-    width: 100,
-    height: 100,
-    bottom: -50,
-  },
-}));
-
-const ActionButton = styled(Button)(({ theme, colorVariant }) => ({
-  borderRadius: 25,
-  padding: theme.spacing(1.5, 3),
-  boxShadow: theme.shadows[2],
-  textTransform: 'none',
-  fontWeight: 'bold',
-  ...(colorVariant === 'primary' && {
-    backgroundColor: theme.palette.primary.main,
-    color: '#fff',
-    '&:hover': {
-      backgroundColor: theme.palette.primary.dark,
-      boxShadow: theme.shadows[4],
-    },
-  }),
-  ...(colorVariant === 'error' && {
-    backgroundColor: theme.palette.error.main,
-    color: '#fff',
-    '&:hover': {
-      backgroundColor: theme.palette.error.dark,
-      boxShadow: theme.shadows[4],
-    },
-  }),
-}));
-
-const EmployerProfile = ({ profileData, onDeleteAccountRequest, handleSignOut }) => {
-  const [employerProfileData, setEmployerProfileData] = useState({});
-  const [editing, setEditing] = useState(false);
+export default function EmployerProfile({ profileData, onUpdateProfile, handleSignOut, snackbar, setSnackbar, onDeleteAccountRequest }) {
+  const navigate = useNavigate();
+  const [editingPersonalInfo, setEditingPersonalInfo] = useState(false);
+  const [editingBusinessInfo, setEditingBusinessInfo] = useState(false);
+  const [editingField, setEditingField] = useState(null);
+  const [editedData, setEditedData] = useState(profileData);
   const [newProfilePicture, setNewProfilePicture] = useState(null);
   const [newBannerImage, setNewBannerImage] = useState(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
-  const [editedData, setEditedData] = useState({});
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
-
+  const [showSecurity, setShowSecurity] = useState(false);
+  const [showRating, setShowRating] = useState(false);
   const auth = getAuth();
   const db = getFirestore();
-  const isMobile = useMediaQuery('(max-width:600px)');
 
-  // Fetch employer profile fields from 'employers' collection
   useEffect(() => {
-    const fetchEmployerData = async () => {
+    setEditedData(profileData);
+    setCompletionPercentage(calculateCompletionPercentage(profileData));
+  }, [profileData]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
       const user = auth.currentUser;
       if (user) {
-        const docRef = doc(db, 'employers', user.uid);
+        const userDocRef = doc(db, 'users', user.uid);
+        const employerDocRef = doc(db, 'employers', user.uid);
+      
+        const [userDocSnap, employerDocSnap] = await Promise.all([
+          getDoc(userDocRef),
+          getDoc(employerDocRef)
+        ]);
 
-        // Set up real-time listener using onSnapshot
-        const unsubscribe = onSnapshot(docRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setEmployerProfileData(data);
-            setCompletionPercentage(calculateCompletionPercentage(data));
-  
-            // Initialize editedData with existing data from Firestore
-            setEditedData({
-              name: data.name || '',
-              location: data.location || '',
-              phone: data.phone || '',
-              companyName: data.companyName || '',
-              businessType: data.businessType || '',
-              companyDescription: data.companyDescription || '',
-            });
-          }
-        }, (error) => {
-          console.error("Error fetching employer data:", error);
-        });
-
-        // Unsubscribe from the listener when the component unmounts
-        return () => unsubscribe();
-      }
-    };
-  
-    fetchEmployerData();
-  }, [auth.currentUser]);
-
-  // Fetch profile picture and banner from 'users' collection
-  useEffect(() => {
-    const fetchUserImages = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userDocRef = doc(db, 'users', user.uid); // Fetch from 'users' collection
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
+        if (userDocSnap.exists() && employerDocSnap.exists()) {
           const userData = userDocSnap.data();
-          setNewProfilePicture(userData.profileURL); // Profile picture from 'users' collection
-          setNewBannerImage(userData.bannerURL); // Banner image from 'users' collection
+          const employerData = employerDocSnap.data();
+          setNewProfilePicture(userData.profileURL);
+          setNewBannerImage(userData.bannerURL);
+          setEditedData({ 
+            ...userData, 
+            ...employerData,
+            companyName: employerData.companyName || '',
+            businessType: employerData.businessType || '',
+            description: employerData.description || '',
+            email: employerData.email || '',
+            phone: employerData.phone || '',
+          });
+          setCompletionPercentage(calculateCompletionPercentage({ ...userData, ...employerData }));
         }
       }
     };
 
-    fetchUserImages();
-  }, [auth.currentUser]);
+    fetchUserData();
+  }, [auth.currentUser, db]);
+
 
   const calculateCompletionPercentage = (data) => {
-    const fields = ['email', 'phone', 'location', 'companyName', 'companyDescription', 'businessType'];
+    const fields = ['name', 'email', 'phone', 'location', 'companyName', 'businessType', 'companyDescription', 'businessAddress', 'businessPhone', 'businessEmail', 'website', 'foundedYear', 'numberOfEmployees'];
     const completedFields = fields.filter(field => data[field] && data[field].length > 0);
     return (completedFields.length / fields.length) * 100;
-  };  
-  
-  const handleSaveChanges = async () => {
-    if (auth.currentUser) {
-      const docRef = doc(db, 'employers', auth.currentUser.uid);
-      await updateDoc(docRef, editedData);
-      setEmployerProfileData(editedData);
-      setEditing(false);
-      setSnackbar({ open: true, message: 'Profile updated successfully', severity: 'success' });
+  };
+
+  const handleEdit = (field) => {
+    setEditingField(field);
+  };
+
+  const handleSave = async (field, value) => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const collection = ['companyName', 'businessType', 'companyDescription', 'businessAddress', 'businessPhone', 'businessEmail', 'website', 'foundedYear', 'numberOfEmployees'].includes(field) ? 'employers' : 'users';
+        const docRef = doc(db, collection, user.uid);
+        await updateDoc(docRef, { [field]: value });
+        setEditedData({ ...editedData, [field]: value });
+        setEditingField(null);
+        onUpdateProfile({ ...editedData, [field]: value });
+        setSnackbar({ open: true, message: 'פרטים עודכנו בהצלחה', severity: 'success' });
+      }
+    } catch (error) {
+      console.error("Error updating document: ", error);
+      setSnackbar({ open: true, message: 'שגיאה בעדכון הפרטים', severity: 'error' });
     }
   };
 
-  return (
-    <Box sx={{ maxWidth: '100%', width: '100%', p: 2, bgcolor: '#f5f5f5' }}>
-      <Card elevation={3} sx={{ borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
-        <Box
-          sx={{
-            height: isMobile ? 150 : 200,
-            backgroundImage: newBannerImage
-              ? `url(${encodeURI(newBannerImage)})` 
-              : employerProfileData.bannerURL
-              ? `url(${employerProfileData.bannerURL})`
-              : 'linear-gradient(45deg, #2196f3 30%, #21cbf3 90%)',
+  const handleProfilePictureChange = async (url) => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        await updateDoc(userDocRef, { profileURL: url });
+        setNewProfilePicture(url);
+        onUpdateProfile({ ...editedData, profileURL: url });
+        setSnackbar({ open: true, message: 'תמונת הפרופיל עודכנה בהצלחה', severity: 'success' });
+      }
+    } catch (error) {
+      console.error("Error updating profile picture: ", error);
+      setSnackbar({ open: true, message: 'שגיאה בעדכון תמונת הפרופיל', severity: 'error' });
+    }
+  };
 
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            position: 'relative',
-          }}
-        >
-          <Avatar
-            src={newProfilePicture || employerProfileData.profileURL || '/placeholder.svg'}
-            alt={employerProfileData.name}
-            sx={{
-              width: 120,
-              height: 120,
-              border: '4px solid white',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-              position: 'absolute',
-              bottom: '-60px',
-            }}
-          />
-          <CloudinaryUpload setNewImage={setNewProfilePicture} />
-          <CloudinaryUpload setNewImage={setNewBannerImage} banner={true} />
-        </Box>
+  const handleBannerImageChange = async (url) => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        await updateDoc(userDocRef, { bannerURL: url });
+        setNewBannerImage(url);
+        onUpdateProfile({ ...editedData, bannerURL: url });
+        setSnackbar({ open: true, message: 'תמונת הבאנר עודכנה בהצלחה', severity: 'success' });
+      }
+    } catch (error) {
+      console.error("Error updating banner image: ", error);
+      setSnackbar({ open: true, message: 'שגיאה בעדכון תמונת הבאנר', severity: 'error' });
+    }
+  };
 
-        <CardContent sx={{ pt: 8, pb: 4, px: 3 }}>
-          <Typography variant="h5" align="center" gutterBottom fontWeight="bold">
-            {profileData.name || 'Employer Name'}
-          </Typography>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            {employerProfileData.companyName || 'שם החברה'}
-          </Typography>
+  const renderEditDialog = () => {
+    if (!editingField) return null;
 
-          <RatingDisplay userId={auth.currentUser?.uid} isEmployer={true} />
-
-          <Box sx={{ mt: 2, mb: 3 }}>
-            <Typography variant="body2" color="text.secondary" align="center" gutterBottom>
-              השלמת פרטי הפרופיל
-            </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={completionPercentage}
-              sx={{
-                height: 10,
-                borderRadius: 5,
-                bgcolor: 'grey.300',
-                '& .MuiLinearProgress-bar': {
-                  borderRadius: 5,
-                  backgroundColor: 'primary.main',
-                },
-              }}
-            />
-            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
-              {Math.round(completionPercentage)}% הושלם
-            </Typography>
-          </Box>
-
-          <Grid container spacing={4} sx={{ mt: 4 }}>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  פרטי התקשרות
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <LocationIcon color="primary" sx={{ mr: 2 }} />
-                  <Typography variant="body1">
-                    {employerProfileData.location || 'הוסף מיקום'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <PhoneIcon color="primary" sx={{ mr: 2 }} />
-                  <Typography variant="body1">
-                    {employerProfileData.phone || 'הוסף מספר טלפון'}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <EmailIcon color="primary" sx={{ mr: 2 }} />
-                  <Typography variant="body1">
-                    {employerProfileData.email || 'הוסף כתובת אימייל'}
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 1 }}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  פרטי החברה
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <BusinessIcon color="primary" sx={{ mr: 2 }} />
-                  <Typography variant="body1">
-                    {employerProfileData.businessType || 'הוסף סוג עסק'}
-                  </Typography>
-                </Box>
-                <Typography variant="body1" color="text.secondary">
-                  {employerProfileData.companyDescription || 'הוסף תיאור חברה כדי למשוך מועמדים פוטנציאליים.'}
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-
-          <Grid container spacing={2} sx={{ mt: 4, justifyContent: 'center' }}>
-            <Grid item>
-              <ActionButton
-                startIcon={<EditIcon />}
-                colorVariant="primary"
-                onClick={() => setEditing(true)}
-              >
-                עריכת פרופיל
-              </ActionButton>
-            </Grid>
-            <Grid item>
-              <ActionButton
-                startIcon={<ExitToAppIcon />}
-                colorVariant="error"
-                onClick={handleSignOut}
-              >
-                התנתק
-              </ActionButton>
-            </Grid>
-          </Grid>
-
-          <Box sx={{ mt: 4, textAlign: 'center' }}>
-            {employerProfileData.pendingDeletion ? (
-              <Typography
-                variant="body1"
-                sx={{
-                  p: 2,
-                  bgcolor: 'warning.light',
-                  color: 'warning.dark',
-                  borderRadius: 2,
-                }}
-              >
-                בקשתך למחיקת החשבון בהמתנה לאישור
-              </Typography>
-            ) : (
-              <ActionButton
-                startIcon={<DeleteIcon />}
-                colorVariant="error"
-                onClick={onDeleteAccountRequest}
-                fullWidth={isMobile}
-                sx={{
-                  maxWidth: isMobile ? '100%' : '300px',
-                }}
-              >
-                בקשה למחיקת חשבון
-              </ActionButton>
-            )}
-          </Box>
-        </CardContent>
-      </Card> 
-
-      {/* Dialog לעריכת פרופיל */}
-      <Dialog open={editing} onClose={() => setEditing(false)} fullWidth maxWidth="sm">
-        <DialogTitle>ערוך פרופיל</DialogTitle>
+    return (
+      <Dialog open={!!editingField} onClose={() => setEditingField(null)}>
+        <DialogTitle>עריכת {getFieldLabel(editingField)}</DialogTitle>
         <DialogContent>
           <TextField
+            autoFocus
+            margin="dense"
             fullWidth
-            label="Name"
-            name="name"
-            value={editedData.name || ''}
-            onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Location"
-            name="location"
-            value={editedData.location || ''}
-            onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Phone Number"
-            name="phone"
-            value={editedData.phone || ''}
-            onChange={(e) => setEditedData({ ...editedData, phone: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Company Name"
-            name="companyName"
-            value={editedData.companyName || ''}
-            onChange={(e) => setEditedData({ ...editedData, companyName: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Business Type"
-            name="businessType"
-            value={editedData.businessType || ''}
-            onChange={(e) => setEditedData({ ...editedData, businessType: e.target.value })}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Company Description"
-            name="companyDescription"
-            value={editedData.companyDescription || ''}
-            onChange={(e) => 
-              setEditedData({ ...editedData, companyDescription: e.target.value })
-            }
-            margin="normal"
-            multiline
-            rows={3}
+            multiline={['companyDescription', 'description'].includes(editingField)}
+            rows={['companyDescription', 'description'].includes(editingField) ? 4 : 1}
+            value={editedData[editingField] || ''}
+            onChange={(e) => setEditedData({ ...editedData, [editingField]: e.target.value })}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditing(false)} color="secondary">
-            ביטול
-          </Button>
-          <Button onClick={handleSaveChanges} color="primary" variant="contained">
-            שמירת שינויים
-          </Button>
+          <Button onClick={() => setEditingField(null)}>ביטול</Button>
+          <Button onClick={() => handleSave(editingField, editedData[editingField])}>שמירה</Button>
         </DialogActions>
       </Dialog>
+    );
+  };
 
-      {/* Snackbar להודעות */}
+  const getFieldLabel = (field) => {
+    switch (field) {
+      case 'name': return 'שם חוקי';
+      case 'phone': return 'מספר טלפון';
+      case 'email': return 'כתובת אימייל';
+      case 'location': return 'מיקום';
+      case 'companyName': return 'שם החברה';
+      case 'businessType': return 'סוג העסק';
+      case 'description': return 'תיאור החברה';
+      case 'businessAddress': return 'כתובת העסק';
+      case 'businessPhone': return 'טלפון העסק';
+      case 'businessEmail': return 'אימייל העסק';
+      case 'website': return 'אתר אינטרנט';
+      case 'foundedYear': return 'שנת הקמה';
+      case 'numberOfEmployees': return 'מספר עובדים';
+      default: return '';
+    }
+  };
+
+  const renderPersonalInfo = () => (
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>פרטים אישיים</Typography>
+        <IconButton onClick={() => setEditingPersonalInfo(false)}>
+          <ArrowBackIcon />
+        </IconButton>
+      </Box>
+      <List>
+        {['name', 'phone', 'email', 'location'].map((field) => (
+          <ListItem key={field} divider>
+            <ListItemText
+              primary={getFieldLabel(field)}
+              secondary={editedData[field] || 'לא סופק'}
+            />
+            <ListItemIcon>
+              <IconButton edge="end" onClick={() => handleEdit(field)}>
+                {editedData[field] ? <EditIcon /> : <AddIcon />}
+              </IconButton>
+            </ListItemIcon>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
+  const renderBusinessInfo = () => (
+    <Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>פרטי העסק</Typography>
+        <IconButton onClick={() => setEditingBusinessInfo(false)}>
+          <ArrowBackIcon />
+        </IconButton>
+      </Box>
+      <List>
+        {['companyName', 'businessType', 'description', 'email', 'phone', 'businessAddress', 'businessPhone', 'businessEmail', 'website', 'foundedYear', 'numberOfEmployees'].map((field) => (
+          <ListItem key={field} divider>
+            <ListItemText
+              primary={getFieldLabel(field)}
+              secondary={editedData[field] || 'לא סופק'}
+            />
+            <ListItemIcon>
+              <IconButton edge="end" onClick={() => handleEdit(field)}>
+                {editedData[field] ? <EditIcon /> : <AddIcon />}
+              </IconButton>
+            </ListItemIcon>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
+  const renderMainContent = () => (
+    <>
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ position: 'relative' }}>
+          <Avatar
+            alt={profileData.name}
+            src={newProfilePicture || profileData.photoURL || auth.currentUser?.photoURL || "/placeholder.svg"}
+            sx={{ width: 64, height: 64, mr: 2 }}
+          />
+          <IconButton
+            sx={{
+              position: 'absolute',
+              bottom: -8,
+              right: 8,
+              backgroundColor: 'background.paper',
+              '&:hover': { backgroundColor: 'action.hover' },
+            }}
+            onClick={() => document.getElementById('profile-picture-upload').click()}
+          >
+            <PhotoCameraIcon fontSize="small" />
+          </IconButton>
+          <input
+            id="profile-picture-upload"
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                CloudinaryUpload(file, handleProfilePictureChange);
+              }
+            }}
+          />
+        </Box>
+        <Box>
+          <Typography variant="h6">{profileData.name}</Typography>
+          <Typography variant="body2" color="text.secondary" onClick={() => navigate('/profile/view')}>
+            הצג פרופיל
+          </Typography>
+        </Box>
+      </Box>
+
+      <Box sx={{ p: 2, bgcolor: 'background.default' }}>
+        <Typography variant="h6" gutterBottom>
+          פרטי העסק
+        </Typography>
+        <Box sx={{ 
+          p: 2, 
+          bgcolor: 'background.paper', 
+          borderRadius: 2, 
+          display: 'flex', 
+          flexDirection: 'column',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          cursor: 'pointer',
+          '&:hover': {
+            bgcolor: 'action.hover',
+          },
+        }} onClick={() => setEditingBusinessInfo(true)}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <BusinessIcon sx={{ fontSize: 48, mr: 2, color: 'primary.main' }} />
+              <Typography variant="h6">
+                {editedData.companyName || 'הוסף שם חברה'}
+              </Typography>
+            </Box>
+            <ChevronRightIcon />
+          </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            {editedData.businessType || 'הוסף סוג עסק'}
+          </Typography>
+        </Box>
+      </Box>
+
+      <Box sx={{ p: 2 }}>
+        <Typography variant="h6" gutterBottom>השלמת פרופיל</Typography>
+        <LinearProgress 
+          variant="determinate" 
+          value={completionPercentage} 
+          sx={{ height: 10, borderRadius: 5 }} 
+        />
+        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
+          {Math.round(completionPercentage)}% הושלם
+        </Typography>
+      </Box>
+
+      <Typography variant="h6" sx={{ p: 2 }}>הגדרות</Typography>
+
+      <List>
+        <ListItem button onClick={() => setEditingPersonalInfo(true)}>
+          <ListItemIcon>
+            <PersonIcon />
+          </ListItemIcon>
+          <ListItemText primary="מידע אישי" secondary={profileData.name} />
+          <ChevronRightIcon />
+        </ListItem>
+        <Divider />
+        <ListItem button onClick={() => setShowRating(!showRating)}>
+          <ListItemIcon>
+            <StarIcon />
+          </ListItemIcon>
+          <ListItemText primary="דירוג" />
+          <ChevronRightIcon />
+        </ListItem>
+        {showRating && (
+          <Box sx={{ pl: 4, pr: 2, py: 2 }}>
+            <RatingDisplay userId={auth.currentUser?.uid} isEmployer={true} />
+          </Box>
+        )}
+        <Divider />
+        <ListItem button onClick={() => setShowSecurity(!showSecurity)}>
+          <ListItemIcon>
+            <SecurityIcon />
+          </ListItemIcon>
+          <ListItemText primary="התחברות ואבטחה" />
+          <ChevronRightIcon />
+        </ListItem>
+        {showSecurity && (
+          <Box sx={{ pl: 4, pr: 2, py: 2 }}>
+            {profileData.pendingDeletion ? (
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  p: 2, 
+                  bgcolor: 'warning.light', 
+                  color: 'warning.contrastText',
+                  borderRadius: 1
+                }}
+              >
+                בקשת מחיקת חשבון בהמתנה לאישור
+              </Typography>
+            ) : (
+              <Button
+                variant="contained"
+                color="error"
+                
+                onClick={onDeleteAccountRequest}
+                fullWidth
+                startIcon={<DeleteIcon />}
+              >
+                בקש מחיקת חשבון
+              </Button>
+            )}
+          </Box>
+        )}
+        <Divider />
+        {[
+          { key: 'payments', icon: <PaymentIcon />, label: 'תשלומים ותשלומים למארחים' },
+          { key: 'notifications', icon: <NotificationsSettingsIcon />, label: 'התראות' },
+          { key: 'privacy', icon: <PrivacyIcon />, label: 'פרטיות ושיתוף' },
+          { key: 'preferences', icon: <PreferencesIcon />, label: 'העדפות' },
+        ].map((item) => (
+          <React.Fragment key={item.key}>
+            <ListItem button onClick={() => alert('באמצע פיתוח')}>
+              <ListItemIcon>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.label} />
+              <ChevronRightIcon />
+            </ListItem>
+            <Divider />
+          </React.Fragment>
+        ))}
+      </List>
+
+      <Box sx={{ p: 2 }}>
+        <Button variant="outlined" color="primary" fullWidth onClick={handleSignOut} sx={{ mb: 2 }}>
+          התנתקות
+        </Button>
+      </Box>
+    </>
+  );
+
+  return (
+    <Box sx={{ bgcolor: 'background.paper', minHeight: '100vh' }}>
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1, textAlign: 'left' }}>
+          פרופיל מעסיק
+        </Typography>
+      </Box>
+
+      {editingPersonalInfo ? renderPersonalInfo() : 
+       editingBusinessInfo ? renderBusinessInfo() : renderMainContent()}
+
+      {renderEditDialog()}
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <Box sx={{ 
+        position: 'fixed', 
+        bottom: 0, 
+        left: 0, 
+        right: 0, 
+        bgcolor: 'background.paper',
+        borderTop: 1,
+        borderColor: 'divider',
+        display: 'flex',
+        justifyContent: 'space-around',
+        py: 1
+      }}>
+        <IconButton color="primary">
+          <Avatar sx={{ width: 24, height: 24 }} />
+        </IconButton>
+        <IconButton>
+          <NotificationsIcon />
+        </IconButton>
+        <IconButton>
+          <img src="/placeholder.svg?height=24&width=24" alt="Trips" style={{ width: 24, height: 24 }} />
+        </IconButton>
+        <IconButton>
+          <img src="/placeholder.svg?height=24&width=24" alt="Wishlist" style={{ width: 24, height: 24 }} />
+        </IconButton>
+        <IconButton>
+          <img src="/placeholder.svg?height=24&width=24" alt="Search" style={{ width: 24, height: 24 }} />
+        </IconButton>
+      </Box>
     </Box>
   );
-};
- 
-export default EmployerProfile;
+}

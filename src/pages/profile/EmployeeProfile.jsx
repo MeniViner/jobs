@@ -127,7 +127,7 @@ export default function EmployeeProfile({
     const fields = [
       'name',
       'email',
-      'phone',
+      'phoneNumber',
       'location',
       'skills',
       'education',
@@ -273,7 +273,7 @@ export default function EmployeeProfile({
         return 'שם חוקי';
       case 'preferredName':
         return 'שם פרטי מועדף';
-      case 'phone':
+      case 'phoneNumber':
         return 'מספר טלפון';
       case 'email':
         return 'כתובת אימייל';
@@ -319,7 +319,7 @@ export default function EmployeeProfile({
         {[
           'name',
           'preferredName',
-          'phone',
+          'phoneNumber',
           'email',
           'address',
           'emergencyContact',

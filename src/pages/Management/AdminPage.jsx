@@ -104,7 +104,7 @@ export default function AdminPage() {
           {index === 1 ? (
             <ApprovalRequests onCountUpdate={handleCountUpdate} />
           ) : (
-            <tab.component />
+            <tab.component setTab={setValue} />   
           )}
         </TabPanel>
       ))}

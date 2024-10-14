@@ -1,28 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Avatar,
-  Paper,
-  Stack,
-  Button,
-  Chip,
-  CircularProgress,
-  Rating,
-  IconButton,
+import { 
+  Box, Typography, Avatar, Paper, Stack, Button, Chip, CircularProgress, Rating, IconButton 
 } from '@mui/material';
 import {
-  Verified,
-  Language,
-  LocationOn,
-  Work,
-  School,
-  Email,
-  Phone,
-  Business,
+  Verified, Language, LocationOn, Work, School, Email, Phone, Business
 } from '@mui/icons-material';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
+
 
 export default function UserProfilePage() {
   const { userId } = useParams();
@@ -35,27 +20,19 @@ export default function UserProfilePage() {
     const fetchUserData = async () => {
       try {
         const userDocRef = doc(db, 'users', userId);
-        const employerDocRef = doc(db, 'employers', userId);
-
-        const [userDocSnap, employerDocSnap] = await Promise.all([
-          getDoc(userDocRef),
-          getDoc(employerDocRef),
-        ]);
-
+  
+        const userDocSnap = await getDoc(userDocRef);
+  
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
-          let employerData = {};
-
-          if (employerDocSnap.exists()) {
-            employerData = employerDocSnap.data();
-            setIsEmployer(true);
-          } else {
-            setIsEmployer(false);
-          }
-
+  
+          // Check if the user has the 'isEmployer' field to determine if they're an employer
+          const isEmployer = userData.isEmployer || false;
+  
+          setIsEmployer(isEmployer);
+  
           setProfileData({
             ...userData,
-            ...employerData,
           });
         } else {
           console.error('User does not exist');
@@ -66,9 +43,10 @@ export default function UserProfilePage() {
         setLoading(false);
       }
     };
-
+  
     fetchUserData();
   }, [db, userId]);
+  
 
   if (loading) {
     return (

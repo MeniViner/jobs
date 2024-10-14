@@ -1,37 +1,19 @@
 import React, { useState, useEffect, useContext } from 'react';
-import {
-  Container,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Switch,
-  Button,
-  Box,
-  CircularProgress,
-  TextField,
-  InputAdornment,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+import { 
+  Container, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead,
+  TableRow, Switch, Button, Box, CircularProgress, TextField, InputAdornment 
 } from '@mui/material';
-import { Search, Business, Category, Description, Email, Phone } from '@mui/icons-material';
-import { collection, getDocs, doc, updateDoc, query, where } from 'firebase/firestore';
+import { Search } from '@mui/icons-material';
+import { collection, getDocs, getDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
 
-export default function AdminUsersPage() {
+export default function AdminUsersPage({ setTab }) {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState(null);
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -41,25 +23,33 @@ export default function AdminUsersPage() {
   }, [user]);
 
   useEffect(() => {
-    const filtered = users.filter(user => 
-      user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredUsers(filtered);
+    const delayDebounceFn = setTimeout(() => {
+      const filtered = users.filter(user =>
+        user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+    }, 300); // Adjust debounce delay as needed
+  
+    return () => clearTimeout(delayDebounceFn); // Cleanup the timeout
   }, [users, searchTerm]);
-
+ 
+  const getEmployerDetails = async (userDoc) => {
+    const employerRef = doc(db, 'employers', userDoc.id);
+    const employerDoc = await getDoc(employerRef);
+    return employerDoc.exists() ? employerDoc.data() : {};
+  };
+  
   const fetchUsers = async () => {
     try {
       const usersCollection = collection(db, 'users');
       const userSnapshot = await getDocs(usersCollection);
-      const userList = userSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          displayName: data.displayName || data.name || 'לא צוין'
-        };
-      });
+      const userList = await Promise.all(userSnapshot.docs.map(async (userDoc) => {
+        const userData = userDoc.data();
+        const employerDetails = userData.pendingEmployer || userData.isEmployer ? await getEmployerDetails(userDoc) : {};
+        return { id: userDoc.id, ...userData, ...employerDetails, displayName: userData.displayName || userData.name || 'לא צוין' };
+      }));
+  
       setUsers(userList);
       setFilteredUsers(userList);
     } catch (error) {
@@ -68,45 +58,32 @@ export default function AdminUsersPage() {
       setLoading(false);
     }
   };
-
+  
   const handlePermissionToggle = async (userId, permission, currentValue) => {
     try {
       const userRef = doc(db, 'users', userId);
       const updates = { [permission]: !currentValue };
-      
+  
       if (permission === 'isEmployer') {
         updates.pendingEmployer = false;
         updates.role = !currentValue ? 'employer' : 'user';
       }
-
+  
       await updateDoc(userRef, updates);
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, ...updates } : user
-      ));
+  
+      setUsers(prevUsers => {
+        const updatedUsers = [...prevUsers];
+        const index = updatedUsers.findIndex(user => user.id === userId);
+        if (index !== -1) {
+          updatedUsers[index] = { ...updatedUsers[index], ...updates };
+        }
+        return updatedUsers;
+      });
     } catch (error) {
       console.error(`Error updating user ${permission}:`, error);
     }
   };
-
-  const handleEmployerApproval = async (userId, approved) => {
-    try {
-      const userRef = doc(db, 'users', userId);
-      const updates = { 
-        isEmployer: approved,
-        pendingEmployer: false,
-        role: approved ? 'employer' : 'user'
-      };
-
-      await updateDoc(userRef, updates);
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, ...updates } : user
-      ));
-      alert(approved ? 'המעסיק אושר בהצלחה' : 'בקשת המעסיק נדחתה');
-    } catch (error) {
-      console.error('Error updating employer status:', error);
-      alert('שגיאה בעדכון סטטוס המעסיק');
-    }
-  };
+  
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
@@ -158,9 +135,16 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredUsers.map((user) => (
+            {filteredUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} align="center">
+                  לא נמצאו משתמשים
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredUsers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>{user.displayName}</TableCell>
+                  <TableCell>{user.displayName || 'Unknown'}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Switch
@@ -192,65 +176,22 @@ export default function AdminUsersPage() {
                     </Button>
                     {user.pendingEmployer && (
                       <Button
-                        onClick={() => setSelectedUser(user)}
+                        onClick={() => setTab(1)} 
                         variant="contained"
                         size="small"
                         color="primary"
                       >
-                        אישור בקשת מעסיק
+                        בקשה לאישור
                       </Button>
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
+              ))
+            )}
+          </TableBody>
           </Table>
         </TableContainer>
       </Paper>
-
-      <Dialog open={!!selectedUser} onClose={() => setSelectedUser(null)}>
-        <DialogTitle>אישור בקשת מעסיק</DialogTitle>
-        <DialogContent>
-          {selectedUser && (
-            <>
-              <Typography variant="h6" gutterBottom>
-                <Business sx={{ mr: 1, verticalAlign: 'middle' }} />
-                {selectedUser.employerDetails?.companyName}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                <Category sx={{ mr: 1, verticalAlign: 'middle' }} />
-                סוג עסק: {selectedUser.employerDetails?.businessType}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                <Description sx={{ mr: 1, verticalAlign: 'middle' }} />
-                תיאור: {selectedUser.employerDetails?.companyDescription}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                <Email sx={{ mr: 1, verticalAlign: 'middle' }} />
-                אימייל: {selectedUser.employerDetails?.contactEmail}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                <Phone sx={{ mr: 1, verticalAlign: 'middle' }} />
-                טלפון: {selectedUser.employerDetails?.contactPhone}
-              </Typography>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {
-            handleEmployerApproval(selectedUser.id, true);
-            setSelectedUser(null);
-          }} color="primary">
-            אישור
-          </Button>
-          <Button onClick={() => {
-            handleEmployerApproval(selectedUser.id, false);
-            setSelectedUser(null);
-          }} color="secondary">
-            דחייה
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Container>
   );
 }

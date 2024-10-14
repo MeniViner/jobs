@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { getFirestore, collection, query, where, doc, updateDoc, deleteDoc, getDoc, onSnapshot  } from 'firebase/firestore';
-import { getAuth, deleteUser } from 'firebase/auth';
+import { getFirestore, collection, query, where, doc, updateDoc, getDocs, onSnapshot } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { 
-  Container, Typography, Grid, Button, Card, CardContent, CardActions, CircularProgress,
-  Box, Tabs, Tab, Badge, Snackbar, Alert 
+  Container, Typography, Grid, Button, Card, CardContent, CardActions, CircularProgress, Box,
+  Tabs, Tab, Badge, Snackbar, Alert, TextField, InputAdornment
 } from '@mui/material';
-import { Business, Category, Description, Email, Phone, Person, Delete } from '@mui/icons-material';
+import { Search, Business, Category, Description, Email, Phone, Person, Delete } from '@mui/icons-material';
 
 export default function ApprovalRequests({ onCountUpdate }) {
   const [pendingEmployers, setPendingEmployers] = useState([]);
   const [pendingDeletions, setPendingDeletions] = useState([]);
+  const [filteredEmployers, setFilteredEmployers] = useState([]);
+  const [filteredDeletions, setFilteredDeletions] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tabValue, setTabValue] = useState(0);
+  const [processing, setProcessing] = useState(false);
   const db = getFirestore();
-  const auth = getAuth();
 
   useEffect(() => {
     setLoading(true);
@@ -24,10 +27,12 @@ export default function ApprovalRequests({ onCountUpdate }) {
     const employerQuery = query(collection(db, 'employers'), where('status', '==', 'pending'));
     const deletionQuery = query(collection(db, 'users'), where('pendingDeletion', '==', true));
 
-    const unsubscribeEmployers = onSnapshot(employerQuery, 
+    const unsubscribeEmployers = onSnapshot(
+      employerQuery,
       (snapshot) => {
-        const employers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const employers = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setPendingEmployers(employers);
+        setFilteredEmployers(employers); // Set initially to the full list
         updateTotalCount(employers.length, pendingDeletions.length);
         setLoading(false);
       },
@@ -38,10 +43,12 @@ export default function ApprovalRequests({ onCountUpdate }) {
       }
     );
 
-    const unsubscribeDeletions = onSnapshot(deletionQuery,
+    const unsubscribeDeletions = onSnapshot(
+      deletionQuery,
       (snapshot) => {
-        const deletions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const deletions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setPendingDeletions(deletions);
+        setFilteredDeletions(deletions); // Set initially to the full list
         updateTotalCount(pendingEmployers.length, deletions.length);
         setLoading(false);
       },
@@ -58,69 +65,76 @@ export default function ApprovalRequests({ onCountUpdate }) {
     };
   }, [db, onCountUpdate]);
 
+  const reFetchPendingEmployers = async () => {
+    const employerQuery = query(collection(db, 'employers'), where('status', '==', 'pending'));
+    const snapshot = await getDocs(employerQuery);
+    const employers = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    setPendingEmployers(employers);
+  };
+
   const updateTotalCount = (employersCount, deletionsCount) => {
     const totalCount = employersCount + deletionsCount;
     onCountUpdate(totalCount);
   };
 
-  const handleApproval = async (userId, approved, isEmployerRequest) => {
+  const handleApproval = async (userId, approved) => {
     try {
-      if (isEmployerRequest) {
-        const employerRequestRef = doc(db, 'employers', userId);
-        const userRef = doc(db, 'users', userId);
-        
-        if (approved) {
-          await updateDoc(employerRequestRef, { status: 'approved', approved: true });
-          await updateDoc(userRef, {
-            isEmployer: true,
-            employerRequestStatus: 'approved',
-            role: 'employer'
-          });
-        } else {
-          await updateDoc(employerRequestRef, { status: 'rejected', approved: false });
-          await updateDoc(userRef, { employerRequestStatus: 'rejected' });
-        }
-        
-        setPendingEmployers(prevState => prevState.filter(employer => employer.id !== userId));
-        setSnackbar({ open: true, message: approved ? 'המעסיק אושר בהצלחה' : 'בקשת המעסיק נדחתה', severity: approved ? 'success' : 'info' });
-      } else {
-        if (approved) {
-          // Delete user from Firebase Authentication
-          try {
-            const user = await auth.getUser(userId);
-            await deleteUser(user);
-          } catch (error) {
-            console.error('Error deleting user from Authentication:', error);
-            setSnackbar({ open: true, message: 'שגיאה במחיקת המשתמש מהאימות', severity: 'error' });
-            return;
-          }
-          
-          // Delete user document from Firestore
-          await deleteDoc(doc(db, 'users', userId));
-          
-          // Delete from employers collection if exists
-          const employerDoc = await getDoc(doc(db, 'employers', userId));
-          if (employerDoc.exists()) {
-            await deleteDoc(doc(db, 'employers', userId));
-          }
-          
-          setPendingDeletions(prevState => prevState.filter(user => user.id !== userId));
-          setSnackbar({ open: true, message: 'החשבון נמחק בהצלחה', severity: 'success' });
-        } else {
-          await updateDoc(doc(db, 'users', userId), { pendingDeletion: false });
-          setPendingDeletions(prevState => prevState.filter(user => user.id !== userId));
-          setSnackbar({ open: true, message: 'בקשת מחיקת החשבון נדחתה', severity: 'info' });
-        }
-      }
+      setProcessing(true);
+      const userRef = doc(db, 'users', userId);
+      const employerRef = doc(db, 'employers', userId);
+  
+      const updates = {
+        isEmployer: approved,
+        role: approved ? 'employer' : 'user',
+        pendingEmployer: false,
+      };
+  
+      const employerUpdates = {
+        approved: approved,
+        status: approved ? 'approved' : 'rejected',
+      };
+  
+      await updateDoc(userRef, updates);
+      await updateDoc(employerRef, employerUpdates);
+  
+      await reFetchPendingEmployers();
+  
+      setSnackbar({
+        open: true,
+        message: approved ? 'המעסיק אושר בהצלחה' : 'בקשת המעסיק נדחתה',
+        severity: 'success',
+      });
     } catch (error) {
-      console.error('Error updating request status:', error);
-      setSnackbar({ open: true, message: 'שגיאה בעדכון סטטוס הבקשה', severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: 'שגיאה בעדכון סטטוס',
+        severity: 'error',
+      });
+    } finally {
+      setProcessing(false);
     }
   };
 
+  // Filter employers and deletions based on search term
+  useEffect(() => {
+    const filteredEmployers = pendingEmployers.filter(employer =>
+      employer.companyName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    const filteredDeletions = pendingDeletions.filter(user =>
+      user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredEmployers(filteredEmployers);
+    setFilteredDeletions(filteredDeletions);
+  }, [searchTerm, pendingEmployers, pendingDeletions]);
 
-  const handleTabChange = (event, newValue) => { // לא למחחוק את ה event!!
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
+    setProcessing(false);
   };
 
   if (loading) {
@@ -140,30 +154,39 @@ export default function ApprovalRequests({ onCountUpdate }) {
       <Typography variant="h5" gutterBottom align="center">
         בקשות ממתינות לאישור
       </Typography>
+
+      {/* Search Field */}
+      <TextField
+        fullWidth
+        variant="outlined"
+        placeholder="חיפוש לפי שם או אימייל"
+        value={searchTerm}
+        onChange={handleSearchChange}
+        sx={{ mb: 2 }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search />
+            </InputAdornment>
+          ),
+        }}
+      />
+
       <Tabs value={tabValue} onChange={handleTabChange} centered>
-        <Tab 
-          label={
-            <Badge badgeContent={pendingEmployers.length} color="primary" max={99}>
-              בקשות מעסיקים
-            </Badge>
-          } 
-        />
-        <Tab 
-          label={
-            <Badge badgeContent={pendingDeletions.length} color="error" max={99}>
-              בקשות מחיקת חשבון
-            </Badge>
-          } 
-        />
+        <Tab label={<Badge badgeContent={pendingEmployers.length} color="primary" max={99}>בקשות מעסיקים</Badge>} />
+        <Tab label={<Badge badgeContent={pendingDeletions.length} color="error" max={99}>בקשות מחיקת חשבון</Badge>} />
       </Tabs>
+
       {tabValue === 0 && (
         <Grid container spacing={3}>
-          {pendingEmployers.length === 0 ? (
+          {filteredEmployers.length === 0 ? (
             <Grid item xs={12}>
-              <Typography variant="body1" align="center">אין בקשות מעסיקים ממתינות לאישור</Typography>
+              <Typography variant="body1" align="center">
+                אין בקשות מעסיקים ממתינות לאישור
+              </Typography>
             </Grid>
           ) : (
-            pendingEmployers.map(employer => (
+            filteredEmployers.map((employer) => (
               <Grid item xs={12} key={employer.id}>
                 <Card elevation={3}>
                   <CardContent>
@@ -189,18 +212,10 @@ export default function ApprovalRequests({ onCountUpdate }) {
                     </Typography>
                   </CardContent>
                   <CardActions>
-                    <Button 
-                      onClick={() => handleApproval(employer.id, true, true)}
-                      variant="contained"
-                      color="success"
-                    >
+                    <Button onClick={() => handleApproval(employer.id, true)} variant="contained" color="success" disabled={processing}>
                       אישור
                     </Button>
-                    <Button 
-                      onClick={() => handleApproval(employer.id, false, true)}
-                      variant="contained"
-                      color="error"
-                    >
+                    <Button onClick={() => handleApproval(employer.id, false)} variant="contained" color="error" disabled={processing}>
                       דחייה
                     </Button>
                   </CardActions>
@@ -210,14 +225,17 @@ export default function ApprovalRequests({ onCountUpdate }) {
           )}
         </Grid>
       )}
+
       {tabValue === 1 && (
         <Grid container spacing={3}>
-          {pendingDeletions.length === 0 ? (
+          {filteredDeletions.length === 0 ? (
             <Grid item xs={12}>
-              <Typography variant="body1" align="center">אין בקשות מחיקת חשבון ממתינות לאישור</Typography>
+              <Typography variant="body1" align="center">
+                אין בקשות מחיקת חשבון ממתינות לאישור
+              </Typography>
             </Grid>
           ) : (
-            pendingDeletions.map(user => (
+            filteredDeletions.map((user) => (
               <Grid item xs={12} key={user.id}>
                 <Card elevation={3}>
                   <CardContent>
@@ -235,18 +253,10 @@ export default function ApprovalRequests({ onCountUpdate }) {
                     </Typography>
                   </CardContent>
                   <CardActions>
-                    <Button 
-                      onClick={() => handleApproval(user.id, true, false)}
-                      variant="contained"
-                      color="error"
-                    >
+                    <Button onClick={() => handleApproval(user.id, true)} variant="contained" color="error" disabled={processing}>
                       אישור מחיקה
                     </Button>
-                    <Button 
-                      onClick={() => handleApproval(user.id, false, false)}
-                      variant="contained"
-                      color="primary"
-                    >
+                    <Button onClick={() => handleApproval(user.id, false)} variant="contained" color="primary" disabled={processing}>
                       דחיית בקשת מחיקה
                     </Button>
                   </CardActions>
@@ -260,14 +270,17 @@ export default function ApprovalRequests({ onCountUpdate }) {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
-
     </Container>
   );
 }

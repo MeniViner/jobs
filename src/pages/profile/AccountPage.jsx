@@ -6,7 +6,10 @@ import { db } from '../../services/firebase';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../contexts/AuthContext';
 import UserProfile from './UserProfile';
-import { Container, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material';
+import { 
+  Container, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField,
+  Button, Switch, FormControlLabel 
+} from '@mui/material';
 
 const AccountPage = () => {
   const { t } = useTranslation();
@@ -21,6 +24,9 @@ const AccountPage = () => {
     companyDescription: '',
     businessType: '',
   });
+  const [employerSwitchedOff, setEmployerSwitchedOff] = useState(
+    user?.employerSwitchedOff || false
+  );
   const navigate = useNavigate();
   const auth = getAuth();
 
@@ -42,6 +48,30 @@ const AccountPage = () => {
       setLoading(false);
     }
   }, [user?.uid, setUser]);
+
+  useEffect(() => {
+    if (user?.uid) {
+      const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const userData = docSnapshot.data();
+          setEmployerSwitchedOff(userData.employerSwitchedOff || false); // Update the switch state
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [user?.uid]);
+
+  const handleSwitchToggle = async () => {
+    const newValue = !employerSwitchedOff;
+    setEmployerSwitchedOff(newValue);
+    try {
+      await updateDoc(doc(db, 'users', user.uid), { employerSwitchedOff: newValue });
+      setUser((prevUser) => ({ ...prevUser, employerSwitchedOff: newValue }));
+    } catch (error) {
+      console.error('Error toggling employer mode:', error);
+    }
+  };
+
 
   const handleSignOut = async () => {
     try {

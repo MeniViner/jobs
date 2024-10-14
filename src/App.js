@@ -75,15 +75,15 @@ function App() {
                   <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
                   <Route path="/job-chat" element={<JobChat />} />
                   <Route path="/user/:userId" element={<UserProfilePage />} />
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route
+                  <Route path="/admin/*" element={<AdminPage />} />
+                  {/* <Route
                     path="/admin/users"
                     element={
                       <ProtectedAdminRoute>
                         <AdminUsersPage />
                       </ProtectedAdminRoute>
                     }
-                  />
+                  /> */}
                   <Route path="/jobs" element={<JobListPage />} />
                   <Route path="/saved-jobs" element={<SavedJobsPage />} />
                   <Route path="/post-job" element={<PostJob />} />

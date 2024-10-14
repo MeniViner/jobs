@@ -1,15 +1,15 @@
 // App.js
-import React, { useContext } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import React, { useEffect, useContext } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { useMediaQuery } from '@mui/material';
+import { useMediaQuery, Box } from '@mui/material';
 import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import rtlPlugin from 'stylis-plugin-rtl';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
-import { Box } from '@mui/material';
 
+// ייבוא כל הרכיבים שלך
 import PostJob from './pages/PostJob';
 import AdminStatisticsPage from './pages/Management/AdminStatisticsPage.js';
 import AdminMessagesDashboard from './pages/Management/AdminMessagesDashboard';
@@ -50,61 +50,73 @@ const cacheRtl = createCache({
 
 function App() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // Detect if the device is mobile
+  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // זיהוי אם המכשיר הוא נייד
+  const location = useLocation(); // שימוש ב-useLocation כדי לקבל את הנתיב הנוכחי
+
+  useEffect(() => {
+    window.scrollTo(0, 0); // גולל לראש העמוד בכל פעם שהנתיב משתנה
+  }, [location.pathname]); // הפעלת useEffect כאשר הנתיב משתנה
 
   return (
     <AuthProvider>
       <CacheProvider value={cacheRtl}>
         <ThemeProvider theme={appTheme}>
           <CssBaseline />
-          <Router>
-            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-              <Header />
-              <Box
-                component="main"
-                sx={{
-                  flexGrow: 1,
-                  pt: { sm: '64px', md: '70px' }, // Adjust based on your Header's height
-                  pb: isMobile ? '64px' : 0,      // Add padding-bottom for mobile devices
-                  bgcolor: 'background.default',
-                }}
-              >
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/management/top-users" element={<TopUsersPage />} />
-                  <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
-                  <Route path="/job-chat" element={<JobChat />} />
-                  <Route path="/user/:userId" element={<UserProfilePage />} />
-                  <Route path="/admin" element={<AdminPage />} />
-                  <Route
-                    path="/admin/users"
-                    element={
-                      <ProtectedAdminRoute>
-                        <AdminUsersPage />
-                      </ProtectedAdminRoute>
-                    }
-                  />
-                  <Route path="/jobs" element={<JobListPage />} />
-                  <Route path="/saved-jobs" element={<SavedJobsPage />} />
-                  <Route path="/post-job" element={<PostJob />} />
-                  <Route path="/admin/messages" element={<AdminMessagesDashboard />} />
-                  <Route path="/ManageUsers" element={<ManageUsers />} />
-                  <Route path="/account" element={<AccountPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/chat/:jobId" element={<JobChat />} />
-                  <Route path="/my-published-jobs" element={<MyWorksPage />} />
-                  <Route path="/my-applications" element={<MyApplications />} />
-                  <Route path="/employer-registration" element={<EmployerRegistrationForm />} />
-                  <Route path="/rate-employer/:jobId" element={<JobCompletionRating />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            <Header />
+            <Box
+              component="main"
+              sx={{
+                flexGrow: 1,
+                pt: { sm: '64px', md: '70px' }, // התאמה לגובה ה-Header
+                pb: isMobile ? '64px' : 0, // הוספת מרווח תחתון למכשירים ניידים
+                bgcolor: 'background.default',
+              }}
+            >
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/management/top-users" element={<TopUsersPage />} />
+                <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
+                <Route path="/job-chat" element={<JobChat />} />
+                <Route path="/user/:userId" element={<UserProfilePage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedAdminRoute>
+                      <AdminUsersPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route path="/jobs" element={<JobListPage />} />
+                <Route path="/saved-jobs" element={<SavedJobsPage />} />
+                <Route path="/post-job" element={<PostJob />} />
+                <Route path="/admin/messages" element={<AdminMessagesDashboard />} />
+                <Route path="/ManageUsers" element={<ManageUsers />} />
+                <Route path="/account" element={<AccountPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/chat/:jobId" element={<JobChat />} />
+                <Route path="/my-published-jobs" element={<MyWorksPage />} />
+                <Route path="/my-applications" element={<MyApplications />} />
+                <Route path="/employer-registration" element={<EmployerRegistrationForm />} />
+                <Route path="/rate-employer/:jobId" element={<JobCompletionRating />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
             </Box>
-          </Router>
+          </Box>
         </ThemeProvider>
       </CacheProvider>
     </AuthProvider>
   );
 }
 
-export default App;
+// עטיפת ה-App ב-Router כדי שנוכל להשתמש ב-useLocation
+function AppWrapper() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
+
+export default AppWrapper;

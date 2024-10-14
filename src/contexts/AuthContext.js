@@ -1,3 +1,4 @@
+// AuthContext.js
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { auth, db } from '../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -18,6 +19,8 @@ export const AuthProvider = ({ children }) => {
         setUser({
           ...firebaseUser,
           isAdmin: userData?.isAdmin || false,
+          isEmployer: userData?.isEmployer || false,
+          // Include any other properties you need from userData
         });
       } else {
         setUser(null);

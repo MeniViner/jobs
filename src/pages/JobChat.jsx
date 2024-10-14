@@ -1,3 +1,4 @@
+// JobChat.js
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { 
   Box, 
@@ -15,13 +16,11 @@ import {
   Badge,
   CircularProgress,
   Button,
-  Switch,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Fab,
   Menu,
   MenuItem,
   useTheme
@@ -32,7 +31,6 @@ import {
   MoreVert as MoreVertIcon,
   Work as WorkIcon,
   Delete as DeleteIcon,
-  Add as AddIcon,
   Chat as ChatIcon,
   ExitToApp as ExitToAppIcon
 } from '@mui/icons-material';
@@ -50,7 +48,7 @@ export default function JobChat() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [isEmployerView, setIsEmployerView] = useState(true);
+  const [isEmployerView, setIsEmployerView] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [chatToDelete, setChatToDelete] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -66,11 +64,22 @@ export default function JobChat() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (user) {
+      // Ensure that isEmployer is a boolean value
+      setIsEmployerView(!!user.isEmployer);
+    } else {
+      // If the user is not logged in, redirect to login page
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (!user || isEmployerView === null) return;
 
     const fetchData = async () => {
       setLoading(true);
       if (isEmployerView) {
+        // Employer view logic
         const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', user.uid));
         const unsubscribe = onSnapshot(jobsQuery, async (snapshot) => {
           const jobsList = snapshot.docs.map(doc => ({ 
@@ -125,6 +134,7 @@ export default function JobChat() {
         });
         return () => unsubscribe();
       } else {
+        // Employee view logic
         const chatsQuery = query(collection(db, 'jobChats'), where('applicantId', '==', user.uid));
         const unsubscribe = onSnapshot(chatsQuery, async (snapshot) => {
           const chatsList = snapshot.docs.map(doc => ({ 
@@ -305,29 +315,6 @@ export default function JobChat() {
     });
   };
 
-  const handleNewChat = async (job) => {
-    const newChat = {
-      jobId: job.id,
-      jobTitle: job.title,
-      applicantId: user.uid,
-      applicantName: user.displayName || 'Anonymous',
-      employerId: job.employerId,
-      employerName: job.employerName || 'Anonymous',
-      timestamp: serverTimestamp()
-    };
-
-    const chatRef = await addDoc(collection(db, 'jobChats'), newChat);
-    setSelectedChat({ id: chatRef.id, ...newChat });
-    navigate(`/job-chat/${job.id}`);
-  };
-
-  const toggleView = () => {
-    setIsEmployerView(!isEmployerView);
-    setSelectedJob(null);
-    setSelectedChat(null);
-    setMessages([]);
-  };
-
   const handleDeleteChat = async () => {
     if (!chatToDelete) return;
 
@@ -451,11 +438,11 @@ export default function JobChat() {
           }}
         >
           <ListItemAvatar>
-            <Avatar src={`https://picsum.photos/seed/${chat.employerId}/200`} />
+            <Avatar src={`https://picsum.photos/seed/${isEmployerView ? chat.applicantId : chat.employerId}/200`} />
           </ListItemAvatar>
           <ListItemText 
             primary={chat.jobTitle} 
-            secondary={chat.employerName}
+            secondary={isEmployerView ? chat.applicantName : chat.employerName}
             primaryTypographyProps={{ fontWeight: 'medium' }}
           />
           {chat.unreadCount > 0 && (
@@ -518,9 +505,17 @@ export default function JobChat() {
     </Box>
   );
 
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="fixed" color="primary" elevation={0} sx={{ top: 56, zIndex: (theme) => theme.zIndex.drawer + 0 }}>
+      <AppBar position="fixed" color="primary" elevation={0} sx={{ top: 0, zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           {(selectedJob || selectedChat) && (
             <IconButton edge="start" color="inherit" onClick={() => {
@@ -531,21 +526,13 @@ export default function JobChat() {
             </IconButton>
           )}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {selectedChat ? (isEmployerView ? selectedChat.applicantName : selectedChat.jobTitle) : 'JobChat'}
-          </Typography>
-          <Switch 
-            checked={isEmployerView} 
-            onChange={toggleView}
-            color="default"
-          />
-          <Typography variant="body2" sx={{ ml: 1 }}>
-            {isEmployerView ? "מעסיק" : "עובד"}
+            {selectedChat ? (isEmployerView ? selectedChat.applicantName : selectedChat.employerName) : (isEmployerView ? 'צ\'אט מעסיק' : 'צ\'אט עובד')}
           </Typography>
         </Toolbar>
       </AppBar>
       <Toolbar />
 
-      <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden', mt: 2 }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden', mt: -5 }}>
         {!selectedChat ? (
           <Box sx={{ height: '100%', width: '100%' }}>
             {isEmployerView ? (
@@ -587,65 +574,54 @@ export default function JobChat() {
             height: '100%', 
             width: '100%', 
             display: 'flex', 
-            flexDirection: 'column'
+            flexDirection: 'column',
+            mt: 2,
           }}>
-            {/* אזור ההודעות */}
+            {/* Message Area */}
             {renderMessages()}
 
-            {/* תיבת ההודעה */}
+            {/* Message Input */}
             <Box sx={{ 
-  p: 2, 
-  bgcolor: 'background.paper', 
-  display: 'flex', 
-  alignItems: 'center',
-  position: 'fixed',
-  bottom: 0,
-  left: 0,
-  right: 0,
-  mt: 10 // This adds a top margin of 10
-}}>
-  <TextField
-    fullWidth
-    variant="outlined"
-    placeholder="הקלד הודעה..."
-    value={newMessage}
-    onChange={(e) => setNewMessage(e.target.value)}
-    onKeyPress={(e) => {
-      if (e.key === 'Enter') {
-        handleSendMessage();
-      }
-    }}
-    sx={{ mr: 1 }}
-  />
-  <IconButton color="primary" onClick={handleSendMessage}>
-    <SendIcon />
-  </IconButton>
-  <Button
-    variant="outlined"
-    color="primary"
-    startIcon={<ExitToAppIcon />}
-    onClick={handleExitChat}
-    sx={{ ml: 1 }}
-  >
-    צא מצ'אט
-  </Button>
-</Box>
+              p: 2, 
+              bgcolor: 'background.paper', 
+              display: 'flex', 
+              alignItems: 'center',
+              position: 'fixed',
+              bottom: 60,
+              left: 0,
+              right: 0,
+            }}>
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="הקלד הודעה..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSendMessage();
+                  }
+                }}
+                sx={{ mr: 1 }}
+              />
+              <IconButton color="primary" onClick={handleSendMessage}>
+                <SendIcon />
+              </IconButton>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<ExitToAppIcon />}
+                onClick={handleExitChat}
+                sx={{ ml: 1 }}
+              >
+                צא מצ'אט
+              </Button>
+            </Box>
           </Box>
         )}
       </Box>
 
-      {!isEmployerView && !selectedChat && (
-        <Fab 
-          color="primary" 
-          aria-label="add" 
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
-          onClick={() => {/* Handle new chat creation */}}
-        >
-          <AddIcon />
-        </Fab>
-      )}
-
-      {/* Dialog למחיקת שיחה */}
+      {/* Delete Chat Dialog */}
       <Dialog
         open={openDeleteDialog}
         onClose={() => setOpenDeleteDialog(false)}

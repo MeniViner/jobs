@@ -1,7 +1,9 @@
+// App.js
 import React, { useContext } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { useMediaQuery } from '@mui/material';
 import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import rtlPlugin from 'stylis-plugin-rtl';
 import { CacheProvider } from '@emotion/react';
@@ -28,8 +30,6 @@ import TopUsersPage from './pages/Management/TopUsersPage.js';
 import JobCompletionRating from './pages/rating/JobCompletionRating.tsx';
 import EmployerRegistrationForm from './pages/profile/EmployerRegistrationForm.jsx';
 
-
-
 const ProtectedAdminRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
   if (!user || !user.isAdmin) {
@@ -38,7 +38,7 @@ const ProtectedAdminRoute = ({ children }) => {
   return children;
 };
 
-const theme = createTheme({
+const appTheme = createTheme({
   direction: 'rtl', // תמיכה בימין לשמאל
 });
 
@@ -49,10 +49,13 @@ const cacheRtl = createCache({
 });
 
 function App() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md')); // Detect if the device is mobile
+
   return (
     <AuthProvider>
       <CacheProvider value={cacheRtl}>
-        <ThemeProvider theme={theme}>
+        <ThemeProvider theme={appTheme}>
           <CssBaseline />
           <Router>
             <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -61,7 +64,8 @@ function App() {
                 component="main"
                 sx={{
                   flexGrow: 1,
-                  pt: {  sm: '64px', md: '70px' }, // Adjust these values based on your Header's height
+                  pt: { sm: '64px', md: '70px' }, // Adjust based on your Header's height
+                  pb: isMobile ? '64px' : 0,      // Add padding-bottom for mobile devices
                   bgcolor: 'background.default',
                 }}
               >
@@ -72,7 +76,14 @@ function App() {
                   <Route path="/job-chat" element={<JobChat />} />
                   <Route path="/user/:userId" element={<UserProfilePage />} />
                   <Route path="/admin" element={<AdminPage />} />
-                  <Route path="/admin/users" element={<ProtectedAdminRoute><AdminUsersPage /></ProtectedAdminRoute>} />
+                  <Route
+                    path="/admin/users"
+                    element={
+                      <ProtectedAdminRoute>
+                        <AdminUsersPage />
+                      </ProtectedAdminRoute>
+                    }
+                  />
                   <Route path="/jobs" element={<JobListPage />} />
                   <Route path="/saved-jobs" element={<SavedJobsPage />} />
                   <Route path="/post-job" element={<PostJob />} />

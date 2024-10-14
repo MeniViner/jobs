@@ -175,10 +175,12 @@ export default function JobListPage() {
     return (
       job.title.toLowerCase().includes(filter.toLowerCase()) &&
       (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
-      (categoryFilter === '' || job.category === categoryFilter) &&
-      (job.salary >= salaryFilter[0] && job.salary <= salaryFilter[1])
+      (categoryFilter === '' || job.category === categoryFilter)
+      // Remove the salary filter for testing
+      // && (job.salary >= salaryFilter[0] && job.salary <= salaryFilter[1])
     )
   })
+  
 
   const styles = {
     container: {
@@ -371,7 +373,7 @@ export default function JobListPage() {
             }}
           >
             <Typography sx={{ flexGrow: 1, textAlign: 'right' }}>
-              מיקום? · קטגוריה · סכום מינמלי
+              מיקום? · קטגוריה · סכום
             </Typography>
             <IconButton size="small" sx={{ ml: 1 }}>
               <Search />

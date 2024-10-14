@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthContext } from '../contexts/AuthContext'
-import { getAuth } from 'firebase/auth'
+import { getAuth, signOut } from 'firebase/auth'
+
 import {
   AppBar,
   Toolbar,
@@ -37,7 +38,7 @@ import {
 } from '@mui/icons-material'
 
 export default function Header() {
-  const { user, logout } = useContext(AuthContext)
+  const { user } = useContext(AuthContext)
   const navigate = useNavigate()
   const location = useLocation()
   const [anchorEl, setAnchorEl] = useState(null)
@@ -69,11 +70,14 @@ export default function Header() {
     setAnchorEl(null)
   }
 
-  const handleLogout = async () => {
-    await logout()
-    handleMenuClose()
-    navigate('/')
-  }
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   const handlePostJobClick = () => {
     if (!user) {
@@ -110,7 +114,7 @@ export default function Header() {
           <ListItemText primary="עבודות שפרסמתי" />
         </MenuItem>
       )}
-      <MenuItem onClick={handleLogout}>
+      <MenuItem onClick={handleSignOut}>
         <ListItemIcon>
           <LogoutIcon fontSize="small" />
         </ListItemIcon>

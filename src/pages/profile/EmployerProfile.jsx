@@ -132,7 +132,7 @@ export default function EmployerProfile({
             businessType: employerData.businessType || '',
             description: employerData.description || '',
             email: employerData.email || '',
-            phone: employerData.phone || '',
+            phone: employerData.phoneNumber  || '',
           });
           setCompletionPercentage(
             calculateCompletionPercentage({ ...userData, ...employerData })

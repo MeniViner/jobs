@@ -21,7 +21,7 @@ import {
   LinearProgress,
   Menu,
   MenuItem,
-  CircularProgress,
+  CircularProgress, Switch, Tooltip, 
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -40,6 +40,7 @@ import {
   Home as HomeIcon,
   PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
+import InfoIcon from '@mui/icons-material/Info';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { RatingDisplay } from '../rating/RatingSystem';
@@ -51,6 +52,7 @@ export default function EmployeeProfile({
   snackbar,
   setSnackbar,
   onDeleteAccountRequest,
+  onSwitchToggle,
 }) {
   const navigate = useNavigate();
   const [editingPersonalInfo, setEditingPersonalInfo] = useState(false);
@@ -115,14 +117,16 @@ export default function EmployeeProfile({
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
           setNewProfilePicture(userData.profileURL);
+  
+          // Check for employer request status or similar fields
           setEmployerRequestStatus(userData.employerRequestStatus || null);
         }
       }
     };
-
+  
     fetchUserData();
   }, [auth.currentUser, db]);
-
+  
   const calculateCompletionPercentage = (data) => {
     const fields = [
       'name',
@@ -482,6 +486,18 @@ export default function EmployeeProfile({
         <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
           {Math.round(completionPercentage)}% הושלם
         </Typography>
+      </Box>
+
+      <Box display="flex" alignItems="center">
+        <Switch 
+          onChange={onSwitchToggle} 
+          inputProps={{ 'aria-label': 'Switch to employer view' }} 
+        />
+        <Tooltip title="לחץ כאן כדי לחזור לתצוגת המעסיק. אתה תמיד יכול לעבור בקלות בין תצוגות העובד והמעסיק.">
+          <IconButton>
+            <InfoIcon color="primary" />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <Typography variant="h6" sx={{ p: 2 }}>

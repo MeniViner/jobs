@@ -5,14 +5,15 @@ import { getAuth, signOut } from 'firebase/auth';
 import { db } from '../../services/firebase';
 import { AuthContext } from '../../contexts/AuthContext';
 
-import { Box, Typography, CircularProgress, Snackbar, Alert } from '@mui/material';
+import { Box, Typography, CircularProgress, Snackbar, Switch } from '@mui/material';
 import EmployeeProfile from './EmployeeProfile';
 import EmployerProfile from './EmployerProfile';
 
 const UserProfile = () => {
-  const { user, setUser } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
+  const [isEmployerView, setIsEmployerView] = useState(true); 
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
   const auth = getAuth();
@@ -40,7 +41,7 @@ const UserProfile = () => {
         setLoading(false);
       });
   
-      return () => unsubscribe(); // Clean up listener on unmount
+      return () => unsubscribe(); 
     } else {
       setLoading(false);
     }
@@ -137,6 +138,10 @@ const UserProfile = () => {
     }
   };
 
+  const handleSwitchToggle = () => {
+    setIsEmployerView(!isEmployerView);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
@@ -151,7 +156,13 @@ const UserProfile = () => {
 
   return (
     <Box>
-      {profileData.isEmployer ? (
+      {/* <Switch 
+        checked={isEmployerView} 
+        onChange={handleSwitchToggle}
+        inputProps={{ 'aria-label': 'Toggle between employer and employee views' }}
+      /> */}
+      {/* {profileData.isEmployer ? ( */}
+      {isEmployerView ?  (
         <EmployerProfile
           profileData={profileData}
           onUpdateProfile={onUpdateProfile}
@@ -159,6 +170,7 @@ const UserProfile = () => {
           handleSignOut={handleSignOut}
           snackbar={snackbar}
           setSnackbar={setSnackbar}
+          onSwitchToggle={handleSwitchToggle} 
         />
       ) : (
         <EmployeeProfile
@@ -169,6 +181,7 @@ const UserProfile = () => {
           handleUpgradeToEmployer={handleUpgradeToEmployer}
           snackbar={snackbar}
           setSnackbar={setSnackbar}
+          onSwitchToggle={handleSwitchToggle} 
         />
       )}
     </Box>

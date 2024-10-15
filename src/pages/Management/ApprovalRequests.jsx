@@ -83,22 +83,28 @@ export default function ApprovalRequests({ onCountUpdate }) {
       const userRef = doc(db, 'users', userId);
       const employerRef = doc(db, 'employers', userId);
   
+      // Define the updates for the user
       const updates = {
         isEmployer: approved,
         role: approved ? 'employer' : 'user',
         pendingEmployer: false,
+        employerRequestStatus: approved ? 'approved' : 'rejected', // Add this field
       };
   
+      // Define the updates for the employer
       const employerUpdates = {
         approved: approved,
         status: approved ? 'approved' : 'rejected',
       };
   
+      // Update the Firestore documents
       await updateDoc(userRef, updates);
       await updateDoc(employerRef, employerUpdates);
   
+      // Re-fetch the updated list of pending employers
       await reFetchPendingEmployers();
   
+      // Set snackbar to notify the user
       setSnackbar({
         open: true,
         message: approved ? 'המעסיק אושר בהצלחה' : 'בקשת המעסיק נדחתה',
@@ -114,6 +120,7 @@ export default function ApprovalRequests({ onCountUpdate }) {
       setProcessing(false);
     }
   };
+  
 
   // Filter employers and deletions based on search term
   useEffect(() => {

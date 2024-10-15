@@ -263,6 +263,11 @@ const AccountPage = () => {
         </DialogActions>
       </Dialog>
 
+      <FormControlLabel
+        control={<Switch checked={!employerSwitchedOff} onChange={handleSwitchToggle} />}
+        label="Switch to Employer Mode"
+      />
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

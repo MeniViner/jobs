@@ -6,6 +6,7 @@ import AdminJobsDashboard from './AdminMessagesDashboard';
 import ApprovalRequests from './ApprovalRequests';
 import AdminStatisticsPage from './AdminStatisticsPage';
 import TopUsersPage from './TopUsersPage';
+import NotificationsPanel from './NotificationsPanel';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
@@ -40,6 +41,7 @@ const tabComponents = [
   { label: "ניהול משרות", component: AdminJobsDashboard },
   { label: "סטטיסטיקות", component: AdminStatisticsPage },
   { label: "משתמשים מובילים", component: TopUsersPage },
+  { label: "פאנל התראות", component: NotificationsPanel },
 ];
 
 export default function AdminPage() {

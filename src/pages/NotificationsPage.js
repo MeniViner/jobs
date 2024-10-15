@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { getFirestore, collection, query, where, doc, deleteDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { 
+  getFirestore, collection, query, where, doc, deleteDoc, onSnapshot, updateDoc, writeBatch, getDoc, 
+} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { 
-  Container, Typography, Box, IconButton, Snackbar, Alert, CircularProgress, Paper, ListItem, ListItemText,
-  Button, Grid
+  Container, Typography, Box, IconButton, Snackbar, Alert, CircularProgress, Paper, ListItem,
+  ListItemText, Button, Grid
 } from '@mui/material';
-import { Close as CloseIcon, Delete as DeleteIcon, History as HistoryIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, History as HistoryIcon, Archive as ArchiveIcon } from '@mui/icons-material';
 import { SwipeableList, SwipeableListItem } from '@sandstreamdev/react-swipeable-list';
 import '@sandstreamdev/react-swipeable-list/dist/styles.css';
 import NoNotificationsImage from '../images/completed.svg';
-
 
 const NotificationsPage = () => {
   const auth = getAuth();
@@ -28,14 +29,39 @@ const NotificationsPage = () => {
       setLoading(false);
       return;
     }
-
-    const notificationsQuery = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isHistory', '==', false));
-    const historyQuery = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('isHistory', '==', true));
-
+  
+    const notificationsQuery = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.uid),
+      where('isHistory', '==', false)
+    );
+  
+    const historyQuery = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.uid),
+      where('isHistory', '==', true)
+    );
+  
     const unsubscribeNotifications = onSnapshot(
       notificationsQuery,
-      (snapshot) => {
-        const notificationsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      async (snapshot) => {
+        // const notificationsPromises = snapshot.docs.map(async (doc) => {
+        //   const notificationData = doc.data();
+        //   if (notificationData.broadcastId) {
+        //     const broadcastDoc = await getDoc(doc(db, 'broadcasts', notificationData.broadcastId));
+        //     return { id: doc.id, ...notificationData, ...broadcastDoc.data() };
+        //   }
+        //   return { id: doc.id, ...notificationData };
+        // });
+        const notificationsPromises = snapshot.docs.map(async (docSnapshot) => {
+          const notificationData = docSnapshot.data();
+          if (notificationData.broadcastId) {
+            const broadcastDoc = await getDoc(doc(db, 'broadcasts', notificationData.broadcastId));
+            return { id: docSnapshot.id, ...notificationData, ...broadcastDoc.data() };
+          }
+          return { id: docSnapshot.id, ...notificationData };
+        });
+        const notificationsList = await Promise.all(notificationsPromises);
         setNotifications(notificationsList);
         setLoading(false);
       },
@@ -44,28 +70,40 @@ const NotificationsPage = () => {
         setLoading(false);
       }
     );
-
+  
     const unsubscribeHistory = onSnapshot(
       historyQuery,
-      (snapshot) => {
-        const historyList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      async (snapshot) => {
+        const historyPromises = snapshot.docs.map(async (docSnapshot) => {
+          const notificationData = docSnapshot.data();
+          if (notificationData.broadcastId) {
+            const broadcastDoc = await getDoc(doc(db, 'broadcasts', notificationData.broadcastId));
+            return { id: docSnapshot.id, ...notificationData, ...broadcastDoc.data() };
+          }
+          return { id: docSnapshot.id, ...notificationData };
+        });
+        const historyList = await Promise.all(historyPromises);
         setHistoryNotifications(historyList);
       },
       (err) => {
         console.error('Error loading history:', err);
       }
     );
-
+  
     return () => {
       unsubscribeNotifications();
       unsubscribeHistory();
     };
   }, [db, auth.currentUser]);
-
+  
+  
   const handleMoveToHistory = async (notificationId) => {
     try {
       const notificationRef = doc(db, 'notifications', notificationId);
-      await updateDoc(notificationRef, { isHistory: true });
+      await updateDoc(notificationRef, { 
+        isHistory: true,
+        userId: auth.currentUser.uid 
+      });
       setSnackbar({ open: true, message: 'Notification moved to history', severity: 'success' });
     } catch (error) {
       setSnackbar({ open: true, message: 'Error moving notification to history', severity: 'error' });
@@ -84,21 +122,28 @@ const NotificationsPage = () => {
 
   const handleClearAllNotifications = async () => {
     try {
-      const batch = db.batch();
+      const batch = writeBatch(db);
       notifications.forEach((notification) => {
         const notificationRef = doc(db, 'notifications', notification.id);
-        batch.update(notificationRef, { isHistory: true });
+        if (notification.isBroadcast) {
+          batch.update(notificationRef, { 
+            isHistory: true,
+            userId: auth.currentUser.uid 
+          });
+        } else {
+          batch.update(notificationRef, { isHistory: true });
+        }
       });
       await batch.commit();
       setSnackbar({ open: true, message: 'All notifications moved to history', severity: 'success' });
     } catch (error) {
       setSnackbar({ open: true, message: 'Error clearing notifications', severity: 'error' });
+      console.log('Error clearing notifications', error)
     }
   };
-
   const handleDeleteAllHistory = async () => {
     try {
-      const batch = db.batch();
+      const batch = writeBatch(db);
       historyNotifications.forEach((notification) => {
         const notificationRef = doc(db, 'notifications', notification.id);
         batch.delete(notificationRef);
@@ -107,6 +152,7 @@ const NotificationsPage = () => {
       setSnackbar({ open: true, message: 'All history deleted', severity: 'success' });
     } catch (error) {
       setSnackbar({ open: true, message: 'Error deleting history', severity: 'error' });
+      console.log('Error deleting history\n', error)
     }
   };
 
@@ -130,7 +176,7 @@ const NotificationsPage = () => {
                 color: 'white', 
                 height: '100%' 
               }}>
-                <HistoryIcon /> Move to History
+                <ArchiveIcon /> Move to History
               </Box>
             ),
             action: () => handleMoveToHistory(notification.id),
@@ -154,12 +200,12 @@ const NotificationsPage = () => {
         >
           <ListItem component={Paper} sx={{ mb: 2, borderRadius: 2 }}>
             <ListItemText
-              primary={notification.message}
+              primary={notification.isBroadcast ? `Broadcast: ${notification.content}` : notification.content}
               secondary={new Date(notification.timestamp?.seconds * 1000).toLocaleString()}
             />
-            {isHistory && (
-              <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteNotification(notification.id)}>
-                <DeleteIcon />
+            {!isHistory && (
+              <IconButton edge="end" aria-label="move to history" onClick={() => handleMoveToHistory(notification.id)}>
+                <ArchiveIcon />
               </IconButton>
             )}
           </ListItem>
@@ -234,12 +280,6 @@ const NotificationsPage = () => {
               <Typography variant="body1" align="center" mt={1}>
                 You will see your notifications here when they arrive.
               </Typography>
-              <Typography variant="body2" color="text.secondary" align="center">
-                You can always review your past notifications in{' '}
-                <Button color="primary" onClick={() => setShowHistory(!showHistory)}>
-                  See history
-                </Button>
-              </Typography>
             </Box>
           ) : (
             <>
@@ -251,7 +291,7 @@ const NotificationsPage = () => {
                 onClick={handleClearAllNotifications}
                 sx={{ mt: 2 }}
               >
-                Clear All Notifications
+                Move All to History
               </Button>
             </>
           )}

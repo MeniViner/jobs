@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  getFirestore, collection, query, where, doc, addDoc, updateDoc, getDocs, onSnapshot 
+  getFirestore, collection, query, where, doc, addDoc, updateDoc, getDocs, onSnapshot, serverTimestamp,
 } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
 import { 
   Container, Typography, Grid, Button, Card, CardContent, CardActions, CircularProgress, Box,
   Tabs, Tab, Badge, Snackbar, Alert, TextField, InputAdornment
@@ -87,43 +86,47 @@ export default function ApprovalRequests({ onCountUpdate }) {
       const db = getFirestore();
       const userRef = doc(db, 'users', userId);
       const employerRef = doc(db, 'employers', userId);
-  
+
       // Define the updates for the user
       const updates = {
         isEmployer: approved,
         role: approved ? 'employer' : 'user',
         pendingEmployer: false,
-        employerRequestStatus: approved ? 'approved' : 'rejected', // Add this field
+        employerRequestStatus: approved ? 'approved' : 'rejected',
       };
-  
+
       // Define the updates for the employer
       const employerUpdates = {
         approved: approved,
         status: approved ? 'approved' : 'rejected',
       };
-  
+
       // Update the Firestore documents
       await updateDoc(userRef, updates);
       await updateDoc(employerRef, employerUpdates);
-  
+
       // Re-fetch the updated list of pending employers
       await reFetchPendingEmployers();
 
-      // Add a new notification to the notifications collection
+      // Prepare notification message
       const notificationMessage = approved
         ? 'Your request to become an employer was approved!'
         : 'Your request to become an employer was rejected.';
 
+      // Add a new notification to the notifications collection
       await addDoc(collection(db, 'notifications'), {
         userId: userId,
         message: notificationMessage,
         status: 'new',
-        timestamp: new Date(),
-        type: 'EmployerRequest'
+        isGlobal: false, // Specific to the user, not global
+        isHistory: false, // This notification is active, not yet in history
+        type: 'EmployerRequest',
+        timestamp: serverTimestamp(), // Use Firebase server timestamp
       });
+
       console.log('Notification sent to user:', userId);
-  
-      // Set snackbar to notify the user
+
+      // Set snackbar to notify the admin
       setSnackbar({
         open: true,
         message: approved ? 'המעסיק אושר בהצלחה' : 'בקשת המעסיק נדחתה',
@@ -140,7 +143,7 @@ export default function ApprovalRequests({ onCountUpdate }) {
       setProcessing(false);
     }
   };
-  
+
 
   // Filter employers and deletions based on search term
   useEffect(() => {

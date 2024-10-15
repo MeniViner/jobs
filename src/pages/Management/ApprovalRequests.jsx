@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { getFirestore, collection, query, where, doc, updateDoc, getDocs, onSnapshot } from 'firebase/firestore';
+import { 
+  getFirestore, collection, query, where, doc, addDoc, updateDoc, getDocs, onSnapshot 
+} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { 
   Container, Typography, Grid, Button, Card, CardContent, CardActions, CircularProgress, Box,
   Tabs, Tab, Badge, Snackbar, Alert, TextField, InputAdornment
 } from '@mui/material';
-import { Search, Business, Category, Description, Email, Phone, Person, Delete } from '@mui/icons-material';
+import { 
+  Search, Business, Category, Description, Email, Phone, Person, Delete 
+} from '@mui/icons-material';
 
 export default function ApprovalRequests({ onCountUpdate }) {
   const [pendingEmployers, setPendingEmployers] = useState([]);
@@ -80,6 +84,7 @@ export default function ApprovalRequests({ onCountUpdate }) {
   const handleApproval = async (userId, approved) => {
     try {
       setProcessing(true);
+      const db = getFirestore();
       const userRef = doc(db, 'users', userId);
       const employerRef = doc(db, 'employers', userId);
   
@@ -103,6 +108,20 @@ export default function ApprovalRequests({ onCountUpdate }) {
   
       // Re-fetch the updated list of pending employers
       await reFetchPendingEmployers();
+
+      // Add a new notification to the notifications collection
+      const notificationMessage = approved
+        ? 'Your request to become an employer was approved!'
+        : 'Your request to become an employer was rejected.';
+
+      await addDoc(collection(db, 'notifications'), {
+        userId: userId,
+        message: notificationMessage,
+        status: 'new',
+        timestamp: new Date(),
+        type: 'EmployerRequest'
+      });
+      console.log('Notification sent to user:', userId);
   
       // Set snackbar to notify the user
       setSnackbar({
@@ -116,6 +135,7 @@ export default function ApprovalRequests({ onCountUpdate }) {
         message: 'שגיאה בעדכון סטטוס',
         severity: 'error',
       });
+      console.error('Error approving/rejecting employer:', error);
     } finally {
       setProcessing(false);
     }

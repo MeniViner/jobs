@@ -29,6 +29,8 @@ import UserProfilePage from './pages/profile/SocialProfile.js';
 import TopUsersPage from './pages/Management/TopUsersPage.js';
 import JobCompletionRating from './pages/rating/JobCompletionRating.tsx';
 import EmployerRegistrationForm from './pages/profile/EmployerRegistrationForm.jsx';
+import NotificationsPage from './pages/NotificationsPage.js';
+
 
 const ProtectedAdminRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
@@ -100,6 +102,7 @@ function App() {
                 <Route path="/my-applications" element={<MyApplications />} />
                 <Route path="/employer-registration" element={<EmployerRegistrationForm />} />
                 <Route path="/rate-employer/:jobId" element={<JobCompletionRating />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Box>

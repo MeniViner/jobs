@@ -488,17 +488,19 @@ export default function EmployeeProfile({
         </Typography>
       </Box>
 
-      <Box display="flex" alignItems="center">
-        <Switch 
-          onChange={onSwitchToggle} 
-          inputProps={{ 'aria-label': 'Switch to employer view' }} 
-        />
-        <Tooltip title="לחץ כאן כדי לחזור לתצוגת המעסיק. אתה תמיד יכול לעבור בקלות בין תצוגות העובד והמעסיק.">
-          <IconButton>
-            <InfoIcon color="primary" />
-          </IconButton>
-        </Tooltip>
-      </Box>
+      {profileData.employerSwitchOff && (
+        <Box display="flex" alignItems="center">
+          <Switch 
+            onChange={onSwitchToggle} 
+            inputProps={{ 'aria-label': 'Switch to employer view' }} 
+          />
+          <Tooltip title="לחץ כאן כדי לחזור לתצוגת המעסיק. אתה תמיד יכול לעבור בקלות בין תצוגות העובד והמעסיק.">
+            <IconButton>
+              <InfoIcon color="primary" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
 
       <Typography variant="h6" sx={{ p: 2 }}>
         הגדרות

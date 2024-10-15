@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-    getFirestore, collection, getDocs, addDoc, serverTimestamp, query, orderBy,
+    getFirestore, collection, getDocs, addDoc, serverTimestamp, query, orderBy, getDoc,
      doc, deleteDoc, onSnapshot, updateDoc, writeBatch,
 } from 'firebase/firestore';
 import { 
@@ -107,16 +107,24 @@ const NotificationsPanel = () => {
 
   const handleEditNotification = async () => {
     try {
-      await updateDoc(doc(db, 'notifications', editDialog.id), {
+      const notificationRef = doc(db, 'broadcasts', editDialog.id);
+      const notificationSnap = await getDoc(notificationRef);
+
+      if (!notificationSnap.exists()) {
+        throw new Error('Notification does not exist');
+      }
+
+      await updateDoc(notificationRef, {
         content: editDialog.content
       });
       setSnackbar({ open: true, message: 'Notification updated successfully', severity: 'success' });
       setEditDialog({ open: false, id: null, content: '' });
     } catch (error) {
-      setSnackbar({ open: true, message: 'Error updating notification', severity: 'error' });
-      console.log('Error updating notification\n', error)
+      console.error('Error updating notification:', error);
+      setSnackbar({ open: true, message: `Error updating notification: ${error.message}`, severity: 'error' });
     }
   };
+
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });

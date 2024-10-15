@@ -2,29 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search,
-  MapPin,
-  Bookmark,
-  Users,
-  Clock,
-  Briefcase,
-  X,
-  ChevronDown,
-  ChevronUp,
-  SlidersHorizontal,
+  MapPin, Bookmark, Users, Clock, Briefcase, X, ChevronDown, ChevronUp
 } from 'lucide-react';
-
 import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-  deleteDoc,
-  setDoc,
-  serverTimestamp,
+  collection, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, serverTimestamp,
+  arrayUnion, arrayRemove,
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
@@ -140,21 +122,53 @@ export default function JobListPage() {
     }
 
     const applicationRef = doc(db, 'applications', `${jobId}_${currentUser.uid}`);
+    const jobRef = doc(db, 'jobs', jobId);
 
     try {
+      const jobSnapshot = await getDoc(jobRef);
+      const jobData = jobSnapshot.data();
+
       if (appliedJobs.includes(jobId.toString())) {
-        // הסרת מועמדות
+        // Canceling application
         await deleteDoc(applicationRef);
         setAppliedJobs(appliedJobs.filter((id) => id !== jobId.toString()));
+
+        // Send cancellation notification
+        await addDoc(collection(db, 'notifications'), {
+          userId: currentUser.uid,
+          jobId: jobId,
+          jobTitle: jobData.title,
+          type: 'application_canceled',
+          message: `ביטלת את מועמדותך למשרה: ${jobData.title}`,
+          timestamp: serverTimestamp(),
+          isRead: false
+        });
       } else {
-        // הוספת מועמדות
+        // Submitting application
         await setDoc(applicationRef, {
           jobId: jobId,
           applicantId: currentUser.uid,
           timestamp: serverTimestamp(),
         });
         setAppliedJobs([...appliedJobs, jobId.toString()]);
+
+        // Send application notification
+        await addDoc(collection(db, 'notifications'), {
+          userId: currentUser.uid,
+          jobId: jobId,
+          jobTitle: jobData.title,
+          type: 'application_submitted',
+          message: `הגשת מועמדות למשרה: ${jobData.title}`,
+          timestamp: serverTimestamp(),
+          isRead: false
+        });
       }
+
+      // Show success message to the user
+      alert(appliedJobs.includes(jobId.toString()) 
+        ? 'המועמדות בוטלה בהצלחה' 
+        : 'המועמדות הוגשה בהצלחה');
+
     } catch (error) {
       console.error('Error updating application: ', error);
       alert('אירעה שגיאה בעדכון המועמדות.');

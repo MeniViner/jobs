@@ -45,14 +45,6 @@ const NotificationsPage = () => {
     const unsubscribeNotifications = onSnapshot(
       notificationsQuery,
       async (snapshot) => {
-        // const notificationsPromises = snapshot.docs.map(async (doc) => {
-        //   const notificationData = doc.data();
-        //   if (notificationData.broadcastId) {
-        //     const broadcastDoc = await getDoc(doc(db, 'broadcasts', notificationData.broadcastId));
-        //     return { id: doc.id, ...notificationData, ...broadcastDoc.data() };
-        //   }
-        //   return { id: doc.id, ...notificationData };
-        // });
         const notificationsPromises = snapshot.docs.map(async (docSnapshot) => {
           const notificationData = docSnapshot.data();
           if (notificationData.broadcastId) {

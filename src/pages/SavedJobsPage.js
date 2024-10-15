@@ -1,32 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
-  Button,
-  IconButton,
-  Chip,
-  Divider,
-  Box,
-  CircularProgress,
-  Typography,
-  Paper,
+  Container, Grid, Card, CardContent, CardActions, Button, IconButton, Chip, Divider, Box,
+  CircularProgress, Typography, Paper
 } from '@mui/material';
 import {
-  LocationOn as LocationOnIcon,
-  Bookmark as BookmarkIcon,
-  Work as WorkIcon,
-  AttachMoney as AttachMoneyIcon,
-  AccessTime as AccessTimeIcon,
-  DateRange as DateRangeIcon,
-  Group as GroupIcon,
+  LocationOn as LocationOnIcon, Bookmark as BookmarkIcon, Work as WorkIcon, Group as GroupIcon,
+  AttachMoney as AttachMoneyIcon, AccessTime as AccessTimeIcon, DateRange as DateRangeIcon,
 } from '@mui/icons-material';
 import { doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { Link } from 'react-router-dom';
+
 
 export default function SavedJobsPage() {
   const [savedJobs, setSavedJobs] = useState([]);

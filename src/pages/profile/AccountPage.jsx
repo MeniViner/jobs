@@ -28,6 +28,14 @@ const AccountPage = () => {
     user?.employerSwitchedOff || false
   );
   const navigate = useNavigate();
+  
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login'); 
+    }
+  }, [user, navigate]);
+
   const auth = getAuth();
 
   useEffect(() => {

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getFirestore, collection, query, where, doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, collection, query, where, doc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { 
-  Container, Typography, Box, IconButton, Snackbar, Alert, CircularProgress, Paper, List, ListItem,
-   ListItemText, SwipeableDrawer 
+  Container, Typography, Box, IconButton, Snackbar, Alert, CircularProgress, Paper, ListItem, ListItemText
 } from '@mui/material';
 import { Close as CloseIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { SwipeableList, SwipeableListItem } from 'react-swipeable-list';
+import 'react-swipeable-list/dist/styles.css';
 
 const NotificationsPage = () => {
   const auth = getAuth();
@@ -43,7 +44,7 @@ const NotificationsPage = () => {
   const handleDeleteNotification = async (notificationId) => {
     try {
       const notificationRef = doc(db, 'notifications', notificationId);
-      await updateDoc(notificationRef, { status: 'deleted' });
+      await deleteDoc(notificationRef);  // Deletes the notification from the collection
       setSnackbar({ open: true, message: 'Notification removed', severity: 'success' });
     } catch (error) {
       setSnackbar({ open: true, message: 'Error removing notification', severity: 'error' });
@@ -81,19 +82,38 @@ const NotificationsPage = () => {
           No notifications available.
         </Typography>
       ) : (
-        <List>
+        <SwipeableList>
           {notifications.map((notification) => (
-            <ListItem key={notification.id} component={Paper} sx={{ mb: 2, borderRadius: 2 }}>
-              <ListItemText
-                primary={notification.message}
-                secondary={new Date(notification.timestamp?.seconds * 1000).toLocaleString()}
-              />
-              <IconButton onClick={() => handleDeleteNotification(notification.id)} edge="end" aria-label="delete">
-                <DeleteIcon />
-              </IconButton>
-            </ListItem>
+            <SwipeableListItem
+              key={notification.id}
+              swipeRight={{
+                content: (
+                  <Box
+                    sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'flex-end', 
+                      alignItems: 'center', 
+                      pr: 2, 
+                      bgcolor: 'error.main', 
+                      color: 'white', 
+                      height: '100%' 
+                    }}
+                  >
+                    <DeleteIcon /> Delete
+                  </Box>
+                ),
+                action: () => handleDeleteNotification(notification.id),
+              }}
+            >
+              <ListItem component={Paper} sx={{ mb: 2, borderRadius: 2 }}>
+                <ListItemText
+                  primary={notification.message}
+                  secondary={new Date(notification.timestamp?.seconds * 1000).toLocaleString()}
+                />
+              </ListItem>
+            </SwipeableListItem>
           ))}
-        </List>
+        </SwipeableList>
       )}
 
       <Snackbar

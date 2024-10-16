@@ -6,7 +6,7 @@ import AdminJobsDashboard from './AdminMessagesDashboard';
 import ApprovalRequests from './ApprovalRequests';
 import AdminStatisticsPage from './AdminStatisticsPage';
 import TopUsersPage from './TopUsersPage';
-import NotificationsPanel from './NotificationsPanel';
+import NotificationsPanel from './BroadcastPanel';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import PropTypes from 'prop-types';

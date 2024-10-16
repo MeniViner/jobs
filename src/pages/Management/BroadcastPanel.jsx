@@ -14,7 +14,7 @@ import {
 } from '@mui/icons-material';
 
 
-const NotificationsPanel = () => {
+const BroadcastPanel = () => {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -162,7 +162,7 @@ const NotificationsPanel = () => {
         <form onSubmit={handleSendMessage}>
           <TextField
             fullWidth
-            label="Message for all users"
+            label="Message all users"
             multiline
             rows={4}
             value={message}
@@ -312,4 +312,4 @@ const NotificationsPanel = () => {
   );
 };
 
-export default NotificationsPanel;
+export default BroadcastPanel;

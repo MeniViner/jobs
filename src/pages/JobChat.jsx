@@ -1,46 +1,25 @@
 // JobChat.js
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { 
-  Box, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  ListItemAvatar, 
-  Avatar, 
-  Typography, 
-  TextField, 
-  IconButton, 
-  AppBar,
-  Toolbar,
-  Divider,
-  Badge,
-  CircularProgress,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Menu,
-  MenuItem,
-  useTheme
+import {
+  Box, List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, TextField, IconButton, AppBar,
+  Toolbar, Divider, Badge, CircularProgress, Button, Dialog, DialogActions, DialogContent,
+  DialogContentText, DialogTitle, Menu, MenuItem, useTheme 
 } from '@mui/material';
 import { 
-  Send as SendIcon, 
-  ArrowBack as ArrowBackIcon,
-  MoreVert as MoreVertIcon,
-  Work as WorkIcon,
-  Delete as DeleteIcon,
-  Chat as ChatIcon,
-  ExitToApp as ExitToAppIcon
+  Send as SendIcon, ArrowBack as ArrowBackIcon,MoreVert as MoreVertIcon,
+  Work as WorkIcon, Delete as DeleteIcon, Chat as ChatIcon, ExitToApp as ExitToAppIcon
 } from '@mui/icons-material';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { 
+  collection, query, where, onSnapshot, serverTimestamp, orderBy,
+  getDocs, updateDoc, deleteDoc, doc, addDoc, 
+} from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
 import { useParams, useNavigate } from 'react-router-dom';
 
+
 export default function JobChat() {
-  const { user } = useContext(AuthContext);
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [chats, setChats] = useState([]);
@@ -64,17 +43,20 @@ export default function JobChat() {
   };
 
   useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login'); // Only navigate after authentication is loaded
+    }
+  }, [user, authLoading, navigate]);
+  
+  useEffect(() => {
     if (user) {
       // Ensure that isEmployer is a boolean value
       setIsEmployerView(!!user.isEmployer);
-    } else {
-      // If the user is not logged in, redirect to login page
-      navigate('/login');
-    }
+    } 
   }, [user, navigate]);
 
   useEffect(() => {
-    if (!user || isEmployerView === null) return;
+    if (isEmployerView === null) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -505,9 +487,17 @@ export default function JobChat() {
     </Box>
   );
 
+  if (authLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="90vh">
+        <CircularProgress />
+      </Box>
+    );
+  }  
+
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="90vh">
         <CircularProgress />
       </Box>
     );

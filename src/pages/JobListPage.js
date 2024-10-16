@@ -11,7 +11,7 @@ import {
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { Link } from 'react-router-dom';
-import { Box, Typography, IconButton, Button } from '@mui/material';
+import { Box, CircularProgress } from '@mui/material';
 
 // עדכן את נתיב הייבוא בהתאם למיקום הקובץ SearchFilters.js
 import SearchFilters from './SearchFilters';
@@ -420,25 +420,28 @@ export default function JobListPage() {
         )}
 
         {loading ? (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '200px',
-            }}
-          >
-            <div
-              style={{
-                border: '4px solid #f3f3f3',
-                borderTop: '4px solid #0077B6',
-                borderRadius: '50%',
-                width: '50px',
-                height: '50px',
-                animation: 'spin 1s linear infinite',
-              }}
-            ></div>
-          </div>
+          // <div
+          //   style={{
+          //     display: 'flex',
+          //     justifyContent: 'center',
+          //     alignItems: 'center',
+          //     height: '200px',
+          //   }}
+          // >
+          //   <div
+          //     style={{
+          //       border: '4px solid #f3f3f3',
+          //       borderTop: '4px solid #0077B6',
+          //       borderRadius: '50%',
+          //       width: '50px',
+          //       height: '50px',
+          //       animation: 'spin 1s linear infinite',
+          //     }}
+          //   ></div>
+          // </div>
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="90vh">
+            <CircularProgress />
+          </Box>
         ) : filteredJobs.length === 0 ? (
           <div
             style={{

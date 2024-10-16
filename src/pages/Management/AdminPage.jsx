@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Container, Typography, Tabs, Tab, Box, Badge } from '@mui/material';
+import { Container, Typography, Tabs, Tab, Box, Badge, CircularProgress } from '@mui/material';
 import AdminUsersPage from './AdminUsersPage';
 import ManageUsers from './ManageUsers';
 import AdminJobsDashboard from './AdminMessagesDashboard';
@@ -45,7 +45,8 @@ const tabComponents = [
 ];
 
 export default function AdminPage() {
-  const { user } = useContext(AuthContext);
+  // const { user } = useContext(AuthContext);
+  const { user, loading: authLoading } = useContext(AuthContext); // Use loading state
   const [value, setValue] = useState(() => {
     return parseInt(localStorage.getItem('adminTabIndex') || '0', 10);
   });
@@ -66,6 +67,15 @@ export default function AdminPage() {
   const handleCountUpdate = (count) => {
     setPendingRequestsCount(count);
   };
+
+  if (authLoading) {
+    // Show a loading spinner while waiting for authentication
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   if (!user?.isAdmin) {
     return <Navigate to="/" replace />;

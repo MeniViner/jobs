@@ -4,41 +4,21 @@ import { AuthContext } from '../contexts/AuthContext'
 import { getAuth, signOut } from 'firebase/auth'
 
 import {
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Button,
-  Avatar,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Badge,
-  Tooltip,
-  useMediaQuery,
-  useTheme,
-  Box,
-  Paper,
-  BottomNavigation,
-  BottomNavigationAction,
+  AppBar, Toolbar, IconButton, Typography, Button, Avatar, Menu, MenuItem, ListItemIcon, ListItemText,
+  Badge, Tooltip, useMediaQuery, useTheme, Box, Paper, BottomNavigation, BottomNavigationAction, CircularProgress,
 } from '@mui/material'
 import {
-  Search as SearchIcon,
-  Favorite as FavoriteIcon,
-  ChatBubbleOutline as ChatIcon,
-  PersonOutline as PersonIcon,
-  Add as AddIcon,
-  Business as BusinessIcon,
-  AssignmentOutlined as AssignmentIcon,
-  BookmarkBorder as BookmarkIcon,
-  NotificationsNone as NotificationsIcon,
-  AccountCircle as AccountCircleIcon,
-  ExitToApp as LogoutIcon,
+  Search as SearchIcon, Favorite as FavoriteIcon, ChatBubbleOutline as ChatIcon,
+  PersonOutline as PersonIcon, Add as AddIcon, Business as BusinessIcon,
+  AssignmentOutlined as AssignmentIcon, BookmarkBorder as BookmarkIcon, 
+  NotificationsNone as NotificationsIcon, AccountCircle as AccountCircleIcon, ExitToApp as LogoutIcon,
 } from '@mui/icons-material'
+
 
 export default function Header() {
   const { user } = useContext(AuthContext)
+  // const { user, loading: authLoading } = useContext(AuthContext); // Use loading from AuthContext
+  // 
   const navigate = useNavigate()
   const location = useLocation()
   const [anchorEl, setAnchorEl] = useState(null)
@@ -87,7 +67,16 @@ export default function Header() {
     } else {
       navigate('/post-job')
     }
-  }
+  };
+
+  // if (authLoading) {
+  //   // Display a loading indicator while waiting for authentication
+  //   return (
+  //     <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+  //       <CircularProgress />
+  //     </Box>
+  //   );
+  // }
 
   const menuId = 'primary-search-account-menu'
   const renderMenu = (

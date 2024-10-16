@@ -8,13 +8,15 @@ import { AuthContext } from '../../contexts/AuthContext';
 import UserProfile from './UserProfile';
 import { 
   Container, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField,
-  Button, Switch, FormControlLabel 
+  Button, Box, CircularProgress 
 } from '@mui/material';
 
 const AccountPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, setUser } = useContext(AuthContext);
+  // const { user, setUser } = useContext(AuthContext);
+  const { user, setUser, loading: authLoading } = useContext(AuthContext);
+
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -30,10 +32,10 @@ const AccountPage = () => {
   // );
 
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       navigate('/login'); 
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const auth = getAuth();
 
@@ -189,6 +191,14 @@ const AccountPage = () => {
     }
   };
 
+  if (authLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+  
   if (loading) return <div>Loading...</div>;
   if (!user) return null;
 

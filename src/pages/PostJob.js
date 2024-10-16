@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Container, 
-  Typography, 
-  TextField, 
-  Button, 
-  Grid, 
-  MenuItem, 
-  Snackbar,
-  Paper,
-  IconButton,
-  InputAdornment
+  Container, Typography, TextField, Button, Grid, MenuItem, Snackbar, Paper, IconButton, InputAdornment,
+  Box, CircularProgress
 } from '@mui/material';
 import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
@@ -28,6 +20,8 @@ const jobTypes = [
 ];
 
 export default function PostJob() {
+  const [authLoading, setAuthLoading] = useState(true);
+
   const [jobData, setJobData] = useState({
     title: '',
     location: '',
@@ -44,28 +38,42 @@ export default function PostJob() {
     message: ''
   });
   const [businessName, setBusinessName] = useState('');  
+  const [businessLoading, setBusinessLoading] = useState(true);
   const navigate = useNavigate(); 
-
-
+  
   useEffect(() => {
-    fetchBusinessName();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchBusinessName();
+      }
+      setAuthLoading(false); // Auth check complete
+    });
+  
+    return () => unsubscribe(); // Cleanup listener on unmount
   }, []);
+  
 
   const fetchBusinessName = async () => {
-    const user = auth.currentUser;
-    if (user) {
-      const employerDoc = await getDoc(doc(db, 'employers', user.uid));
-      if (employerDoc.exists()) {
-        const companyName = employerDoc.data().companyName;
-        setBusinessName(companyName);
-        setJobData(prevData => ({
-          ...prevData,
-          companyName: companyName
-        }));
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const employerDoc = await getDoc(doc(db, 'employers', user.uid));
+        if (employerDoc.exists()) {
+          const companyName = employerDoc.data().companyName;
+          setBusinessName(companyName);
+          setJobData(prevData => ({
+            ...prevData,
+            companyName: companyName
+          }));
+        }
       }
+    } catch (error) {
+      console.error("Error fetching business name:", error);
+    } finally {
+      setBusinessLoading(false); // Ensure loading is set to false
     }
   };
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setJobData(prevData => ({
@@ -151,6 +159,22 @@ export default function PostJob() {
     setSnackbar({ ...snackbar, open: false });
   };
 
+  if (businessLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }  
+  if (authLoading || businessLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+  
+
   return (
     <Container dir="rtl" maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
@@ -158,7 +182,7 @@ export default function PostJob() {
           פרסום משרה חדשה
         </Typography>
         <Typography variant="h6" gutterBottom align="center">
-          {businessName ? `מפרסם: ${businessName}` : 'טוען...'}
+          {businessName ? `מפרסם: ${businessName}` : 'לא נמצא שם חברה'}
         </Typography>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>

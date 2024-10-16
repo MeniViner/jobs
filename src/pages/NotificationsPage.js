@@ -3,6 +3,7 @@ import {
   getFirestore, collection, query, where, doc, deleteDoc, onSnapshot, updateDoc, writeBatch, getDoc, 
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { useAuth } from '../contexts/AuthContext'; // Import the AuthContext
 import { 
   Container, Typography, Box, IconButton, Snackbar, Alert, CircularProgress, Paper, ListItem,
   ListItemText, Button, Grid
@@ -11,6 +12,7 @@ import { Delete as DeleteIcon, History as HistoryIcon, Archive as ArchiveIcon } 
 import { SwipeableList, SwipeableListItem } from '@sandstreamdev/react-swipeable-list';
 import '@sandstreamdev/react-swipeable-list/dist/styles.css';
 import NoNotificationsImage from '../images/completed.svg';
+
 
 const NotificationsPage = () => {
   const auth = getAuth();
@@ -21,31 +23,100 @@ const NotificationsPage = () => {
   const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [showHistory, setShowHistory] = useState(false);
+  const { user, loading: authLoading } = useAuth(); // Get user and loading state from AuthContext
 
+  // useEffect(() => {
+  //   const user = auth.currentUser;
+  //   if (!user) {
+  //     setError('No user is logged in.');
+  //     setLoading(false);
+  //     return;
+  //   }
+  
+  //   const notificationsQuery = query(
+  //     collection(db, 'notifications'),
+  //     where('userId', '==', user.uid),
+  //     where('isHistory', '==', false)
+  //   );
+  
+  //   const historyQuery = query(
+  //     collection(db, 'notifications'),
+  //     where('userId', '==', user.uid),
+  //     where('isHistory', '==', true)
+  //   );
+    
+  //   const unsubscribeNotifications = onSnapshot(
+  //     notificationsQuery,
+  //     async (snapshot) => {
+  //       console.log('Snapshot docs:', snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  //       const notificationsPromises = snapshot.docs.map(async (docSnapshot) => {
+  //         const notificationData = docSnapshot.data();
+  //         if (notificationData.broadcastId) {
+  //           const broadcastDoc = await getDoc(doc(db, 'broadcasts', notificationData.broadcastId));
+  //           return { id: docSnapshot.id, ...notificationData, ...broadcastDoc.data() };
+  //         }
+  //         return { id: docSnapshot.id, ...notificationData };
+  //       });
+  //       const notificationsList = await Promise.all(notificationsPromises);
+  //       setNotifications(notificationsList);
+  //       setLoading(false);
+  //     },
+  //     (err) => {
+        
+  //       setError('Error loading notifications.');
+  //       setLoading(false);
+  //     }
+  //   );
+  
+  //   const unsubscribeHistory = onSnapshot(
+  //     historyQuery,
+  //     async (snapshot) => {
+  //       const historyPromises = snapshot.docs.map(async (docSnapshot) => {
+  //         const notificationData = docSnapshot.data();
+  //         if (notificationData.broadcastId) {
+  //           const broadcastDoc = await getDoc(doc(db, 'broadcasts', notificationData.broadcastId));
+  //           return { id: docSnapshot.id, ...notificationData, ...broadcastDoc.data() };
+  //         }
+  //         return { id: docSnapshot.id, ...notificationData };
+  //       });
+  //       const historyList = await Promise.all(historyPromises);
+  //       setHistoryNotifications(historyList);
+  //     },
+  //     (err) => {
+  //       console.error('Error loading history:', err);
+  //     }
+  //   );
+  
+  //   return () => {
+  //     unsubscribeNotifications();
+  //     unsubscribeHistory();
+  //   };
+  // }, [db, auth.currentUser]);
+  
   useEffect(() => {
-    const user = auth.currentUser;
+    if (authLoading) return; // Wait for authentication to complete
+
     if (!user) {
       setError('No user is logged in.');
       setLoading(false);
       return;
     }
-  
+
     const notificationsQuery = query(
       collection(db, 'notifications'),
       where('userId', '==', user.uid),
       where('isHistory', '==', false)
     );
-  
+
     const historyQuery = query(
       collection(db, 'notifications'),
       where('userId', '==', user.uid),
       where('isHistory', '==', true)
     );
-    
+
     const unsubscribeNotifications = onSnapshot(
       notificationsQuery,
       async (snapshot) => {
-        console.log('Snapshot docs:', snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         const notificationsPromises = snapshot.docs.map(async (docSnapshot) => {
           const notificationData = docSnapshot.data();
           if (notificationData.broadcastId) {
@@ -59,12 +130,11 @@ const NotificationsPage = () => {
         setLoading(false);
       },
       (err) => {
-        
         setError('Error loading notifications.');
         setLoading(false);
       }
     );
-  
+
     const unsubscribeHistory = onSnapshot(
       historyQuery,
       async (snapshot) => {
@@ -83,13 +153,29 @@ const NotificationsPage = () => {
         console.error('Error loading history:', err);
       }
     );
-  
+
     return () => {
       unsubscribeNotifications();
       unsubscribeHistory();
     };
-  }, [db, auth.currentUser]);
-  
+  }, [db, user, authLoading]);
+
+  if (authLoading || loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container>
+        <Typography color="error" align="center">{error}</Typography>
+      </Container>
+    );
+  }
+
   
   const handleMoveToHistory = async (notificationId) => {
     try {
@@ -135,6 +221,7 @@ const NotificationsPage = () => {
       console.log('Error clearing notifications', error)
     }
   };
+
   const handleDeleteAllHistory = async () => {
     try {
       const batch = writeBatch(db);
@@ -217,21 +304,21 @@ const NotificationsPage = () => {
     </SwipeableList>
   );
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+  //       <CircularProgress />
+  //     </Box>
+  //   );
+  // }
 
-  if (error) {
-    return (
-      <Container>
-        <Typography color="error" align="center">{error}</Typography>
-      </Container>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <Container>
+  //       <Typography color="error" align="center">{error}</Typography>
+  //     </Container>
+  //   );
+  // }
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>

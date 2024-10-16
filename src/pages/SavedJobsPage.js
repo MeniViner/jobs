@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Container, Grid, Card, CardContent, CardActions, Button, IconButton, Chip, Divider, Box,
   CircularProgress, Typography, Paper
@@ -7,31 +7,35 @@ import {
   LocationOn as LocationOnIcon, Bookmark as BookmarkIcon, Work as WorkIcon, Group as GroupIcon,
   AttachMoney as AttachMoneyIcon, AccessTime as AccessTimeIcon, DateRange as DateRangeIcon,
 } from '@mui/icons-material';
-import { doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
+import { AuthContext } from '../contexts/AuthContext';
 import { getAuth } from 'firebase/auth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 
 export default function SavedJobsPage() {
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [savedJobs, setSavedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchSavedJobs();
-  }, []);
+    if (!authLoading && user) {
+      fetchSavedJobs();
+    }
+  }, [authLoading, user]);
 
   const fetchSavedJobs = async () => {
     setLoading(true);
     setError(null);
+
     try {
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
+      const currentUser = getAuth().currentUser;
       
       if (!currentUser) {
-        setError("עליך להתחבר כדי לצפות בעבודות השמורות");
-        setLoading(false);
+        navigate('/login'); // Redirect if no user is logged in
         return;
       }
 
@@ -80,10 +84,10 @@ export default function SavedJobsPage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
-      <Box display="flex" justifyContent="center" my={4}>
-        <CircularProgress size={60} />
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
       </Box>
     );
   }

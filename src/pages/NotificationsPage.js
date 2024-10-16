@@ -41,10 +41,11 @@ const NotificationsPage = () => {
       where('userId', '==', user.uid),
       where('isHistory', '==', true)
     );
-  
+    
     const unsubscribeNotifications = onSnapshot(
       notificationsQuery,
       async (snapshot) => {
+        console.log('Snapshot docs:', snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         const notificationsPromises = snapshot.docs.map(async (docSnapshot) => {
           const notificationData = docSnapshot.data();
           if (notificationData.broadcastId) {
@@ -58,6 +59,7 @@ const NotificationsPage = () => {
         setLoading(false);
       },
       (err) => {
+        
         setError('Error loading notifications.');
         setLoading(false);
       }
@@ -96,9 +98,9 @@ const NotificationsPage = () => {
         isHistory: true,
         userId: auth.currentUser.uid 
       });
-      setSnackbar({ open: true, message: 'Notification moved to history', severity: 'success' });
+      setSnackbar({ open: true, message: 'ההודעה הועברה להיסטוריה', severity: 'success' });
     } catch (error) {
-      setSnackbar({ open: true, message: 'Error moving notification to history', severity: 'error' });
+      setSnackbar({ open: true, message: 'שגיאה בהעברת ההתראה להיסטוריה', severity: 'error' });
     }
   };
 
@@ -106,9 +108,9 @@ const NotificationsPage = () => {
     try {
       const notificationRef = doc(db, 'notifications', notificationId);
       await deleteDoc(notificationRef);
-      setSnackbar({ open: true, message: 'Notification deleted', severity: 'success' });
+      setSnackbar({ open: true, message: 'ההתראה נמחקה', severity: 'success' });
     } catch (error) {
-      setSnackbar({ open: true, message: 'Error deleting notification', severity: 'error' });
+      setSnackbar({ open: true, message: 'שגיאה במחיקת ההתראה', severity: 'error' });
     }
   };
 
@@ -153,7 +155,7 @@ const NotificationsPage = () => {
   };
 
   const renderNotificationList = (notificationList, isHistory = false) => (
-    <SwipeableList threshold={0.5}>
+    <SwipeableList threshold={0.1}>
       {notificationList.map((notification) => (
         <SwipeableListItem
           key={notification.id}
@@ -182,7 +184,7 @@ const NotificationsPage = () => {
                 pr: 2, 
                 bgcolor: 'error.main', 
                 color: 'white', 
-                height: '100%' 
+                height: '100%'
               }}>
                 <DeleteIcon /> Delete
               </Box>
@@ -192,8 +194,17 @@ const NotificationsPage = () => {
         >
           <ListItem component={Paper} sx={{ mb: 2, borderRadius: 2 }}>
             <ListItemText
-              primary={notification.isBroadcast ? `Broadcast: ${notification.content}` : notification.content}
-              secondary={new Date(notification.timestamp?.seconds * 1000).toLocaleString()}
+              primary={
+                notification.isBroadcast 
+                  ? `Broadcast: ${notification.content}`
+                  : notification.message || notification.content
+              }
+              secondary={
+                <>
+                  {new Date(notification.timestamp?.seconds * 1000).toLocaleString()}
+                  {notification.jobTitle && ` - Job: ${notification.jobTitle}`}
+                </>
+              }
             />
             {!isHistory && (
               <IconButton edge="end" aria-label="move to history" onClick={() => handleMoveToHistory(notification.id)}>
@@ -233,15 +244,15 @@ const NotificationsPage = () => {
             onClick={() => setShowHistory(!showHistory)}
             startIcon={<HistoryIcon />}
           >
-            {showHistory ? 'Hide History' : 'Show History'}
+            {showHistory ? 'הצג היסטוריה' : 'הסתר היסטוריה'}
           </Button>
           {showHistory && (
             <Box mt={2}>
               <Typography variant="h6" gutterBottom>
-                History
+              היסטוריית ההתראות
               </Typography>
               {historyNotifications.length === 0 ? (
-                <Typography variant="body2">No history available.</Typography>
+                <Typography variant="body2">אין היסטוריה זמינה.</Typography>
               ) : (
                 <>
                   {renderNotificationList(historyNotifications, true)}
@@ -252,7 +263,7 @@ const NotificationsPage = () => {
                     onClick={handleDeleteAllHistory}
                     sx={{ mt: 2 }}
                   >
-                    Delete All History
+                    מחיקת כל ההתראות 
                   </Button>
                 </>
               )}
@@ -261,16 +272,17 @@ const NotificationsPage = () => {
         </Grid>
         <Grid item xs={12} md={9}>
           <Typography variant="h5" align="center" gutterBottom>
-            Notifications
+            התראות
           </Typography>
+          <Typography variant="body2">החלק ימינה על הודעה להעברה לארכיון ושמאלה למחיקה </Typography>
           {notifications.length === 0 ? (
             <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="50vh">
               <img src={NoNotificationsImage} alt="No notifications" style={{ width: 200, height: 200 }} />
               <Typography variant="h6" align="center" mt={2}>
-                No notifications available
+              אין התראות חדשות
               </Typography>
               <Typography variant="body1" align="center" mt={1}>
-                You will see your notifications here when they arrive.
+              כל ההתראות שלך טופלו בהצלחה. נעדכן אותך כשיגיעו עדכונים חדשים.
               </Typography>
             </Box>
           ) : (

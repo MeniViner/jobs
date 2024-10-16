@@ -40,7 +40,7 @@ import {
   Home as HomeIcon,
   PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
-import InfoIcon from '@mui/icons-material/Info';
+// import InfoIcon from '@mui/icons-material/Info';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { RatingDisplay } from '../rating/RatingSystem';
@@ -52,7 +52,7 @@ export default function EmployeeProfile({
   snackbar,
   setSnackbar,
   onDeleteAccountRequest,
-  onSwitchToggle,
+  // onSwitchToggle,
 }) {
   const navigate = useNavigate();
   const [editingPersonalInfo, setEditingPersonalInfo] = useState(false);
@@ -488,7 +488,7 @@ export default function EmployeeProfile({
         </Typography>
       </Box>
 
-      {profileData.employerSwitchOff && (
+      {/* {profileData.employerSwitchOff && (
         <Box display="flex" alignItems="center">
           <Switch 
             onChange={onSwitchToggle} 
@@ -500,7 +500,7 @@ export default function EmployeeProfile({
             </IconButton>
           </Tooltip>
         </Box>
-      )}
+      )} */}
 
       <Typography variant="h6" sx={{ p: 2 }}>
         הגדרות

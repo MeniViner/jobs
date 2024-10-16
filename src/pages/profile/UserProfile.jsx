@@ -138,9 +138,9 @@ const UserProfile = () => {
     }
   };
 
-  const handleSwitchToggle = () => {
-    setIsEmployerView(!isEmployerView);
-  };
+  // const handleSwitchToggle = () => {
+  //   setIsEmployerView(!isEmployerView);
+  // };
 
   if (loading) {
     return (
@@ -161,8 +161,8 @@ const UserProfile = () => {
         onChange={handleSwitchToggle}
         inputProps={{ 'aria-label': 'Toggle between employer and employee views' }}
       /> */}
-      {/* {profileData.isEmployer ? ( */}
-      {isEmployerView ?  (
+      {/* {isEmployerView ?  ( */}
+      {profileData.isEmployer ? (
         <EmployerProfile
           profileData={profileData}
           onUpdateProfile={onUpdateProfile}
@@ -170,7 +170,7 @@ const UserProfile = () => {
           handleSignOut={handleSignOut}
           snackbar={snackbar}
           setSnackbar={setSnackbar}
-          onSwitchToggle={handleSwitchToggle} 
+          // onSwitchToggle={handleSwitchToggle} 
         />
       ) : (
         <EmployeeProfile
@@ -181,7 +181,7 @@ const UserProfile = () => {
           handleUpgradeToEmployer={handleUpgradeToEmployer}
           snackbar={snackbar}
           setSnackbar={setSnackbar}
-          onSwitchToggle={handleSwitchToggle} 
+          // onSwitchToggle={handleSwitchToggle} 
         />
       )}
     </Box>

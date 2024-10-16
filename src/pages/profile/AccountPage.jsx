@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 
 const AccountPage = () => {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { user, setUser } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
@@ -24,11 +25,9 @@ const AccountPage = () => {
     companyDescription: '',
     businessType: '',
   });
-  const [employerSwitchedOff, setEmployerSwitchedOff] = useState(
-    user?.employerSwitchedOff || false
-  );
-  const navigate = useNavigate();
-  
+  // const [employerSwitchedOff, setEmployerSwitchedOff] = useState(
+  //   user?.employerSwitchedOff || false
+  // );
 
   useEffect(() => {
     if (!user) {
@@ -57,29 +56,28 @@ const AccountPage = () => {
     }
   }, [user?.uid, setUser]);
 
-  useEffect(() => {
-    if (user?.uid) {
-      const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (docSnapshot) => {
-        if (docSnapshot.exists()) {
-          const userData = docSnapshot.data();
-          setEmployerSwitchedOff(userData.employerSwitchedOff || false); // Update the switch state
-        }
-      });
-      return () => unsubscribe();
-    }
-  }, [user?.uid]);
+  // useEffect(() => {
+  //   if (user?.uid) {
+  //     const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (docSnapshot) => {
+  //       if (docSnapshot.exists()) {
+  //         const userData = docSnapshot.data();
+  //         setEmployerSwitchedOff(userData.employerSwitchedOff || false); // Update the switch state
+  //       }
+  //     });
+  //     return () => unsubscribe();
+  //   }
+  // }, [user?.uid]);
 
-  const handleSwitchToggle = async () => {
-    const newValue = !employerSwitchedOff;
-    setEmployerSwitchedOff(newValue);
-    try {
-      await updateDoc(doc(db, 'users', user.uid), { employerSwitchedOff: newValue });
-      setUser((prevUser) => ({ ...prevUser, employerSwitchedOff: newValue }));
-    } catch (error) {
-      console.error('Error toggling employer mode:', error);
-    }
-  };
-
+  // const handleSwitchToggle = async () => {
+  //   const newValue = !employerSwitchedOff;
+  //   setEmployerSwitchedOff(newValue);
+  //   try {
+  //     await updateDoc(doc(db, 'users', user.uid), { employerSwitchedOff: newValue });
+  //     setUser((prevUser) => ({ ...prevUser, employerSwitchedOff: newValue }));
+  //   } catch (error) {
+  //     console.error('Error toggling employer mode:', error);
+  //   }
+  // };
 
   const handleSignOut = async () => {
     try {
@@ -263,10 +261,10 @@ const AccountPage = () => {
         </DialogActions>
       </Dialog>
 
-      <FormControlLabel
+      {/* <FormControlLabel
         control={<Switch checked={!employerSwitchedOff} onChange={handleSwitchToggle} />}
         label="Switch to Employer Mode"
-      />
+      /> */}
 
       <Snackbar
         open={snackbar.open}

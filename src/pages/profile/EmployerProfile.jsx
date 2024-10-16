@@ -40,7 +40,7 @@ import {
   PhotoCamera as PhotoCameraIcon,
   Business as BusinessIcon,
 } from '@mui/icons-material';
-import InfoIcon from '@mui/icons-material/Info';
+// import InfoIcon from '@mui/icons-material/Info';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { RatingDisplay } from '../rating/RatingSystem';
@@ -565,7 +565,7 @@ export default function EmployerProfile({
         </Typography>
       </Box>
 
-      <Box display="flex" alignItems="center">
+      {/* <Box display="flex" alignItems="center">
         <Switch 
           onChange={onSwitchToggle} 
           inputProps={{ 'aria-label': 'Switch to employee view' }} 
@@ -575,7 +575,7 @@ export default function EmployerProfile({
             <InfoIcon color="primary" />
           </IconButton>
         </Tooltip>
-      </Box>
+      </Box> */}
 
       <Typography variant="h6" sx={{ p: 2 }}>
         הגדרות

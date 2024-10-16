@@ -5,10 +5,11 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Container, Typography, Box, Snackbar, Alert, CircularProgress, Paper, ListItem,
-  ListItemText, Button, Grid
+  ListItemText, Button, IconButton, Grid,
 } from '@mui/material';
 import { 
-  Delete as DeleteIcon, History as HistoryIcon, Archive as ArchiveIcon 
+  Delete as DeleteIcon, History as HistoryIcon, Archive as ArchiveIcon,
+  Campaign as BroadcastIcon, Notifications as SystemIcon,
 } from '@mui/icons-material';
 import { SwipeableList, SwipeableListItem } from '@sandstreamdev/react-swipeable-list';
 import '@sandstreamdev/react-swipeable-list/dist/styles.css';
@@ -37,55 +38,59 @@ const NotificationsPage = () => {
   
     const fetchNotifications = async () => {
       try {
-        // Helper function to fetch broadcast content if present
-        const attachBroadcastContent = async (notification) => {
-          if (notification.broadcastId) {
-            const broadcastRef = doc(db, 'broadcasts', notification.broadcastId);
-            const broadcastDoc = await getDoc(broadcastRef);
-  
-            if (broadcastDoc.exists()) {
-              return { ...notification, content: broadcastDoc.data().content };
-            } else {
-              return { ...notification, content: 'Broadcast message not found.' };
-            }
-          }
-          return notification;
-        };
-  
-        // Fetch active notifications
-        const notificationsQuery = query(
+        // Query all notifications for the user, regardless of type
+        const allNotificationsQuery = query(
           collection(db, 'notifications'),
-          where('userId', '==', user.uid),
-          where('isHistory', '==', false)
+          where('userId', '==', user.uid)
         );
   
-        const unsubscribeNotifications = onSnapshot(notificationsQuery, async (snapshot) => {
+        const unsubscribeAll = onSnapshot(allNotificationsQuery, async (snapshot) => {
           const notificationsList = await Promise.all(
-            snapshot.docs.map((doc) => attachBroadcastContent({ id: doc.id, ...doc.data() }))
-          );
-          setNotifications(notificationsList);
-        });
+            snapshot.docs.map(async (docSnapshot) => {
+              const notification = { id: docSnapshot.id, ...docSnapshot.data() };
+              console.log('Raw notification data:', notification); // Debug log
   
-        // Fetch historical notifications
-        const historyQuery = query(
-          collection(db, 'notifications'),
-          where('userId', '==', user.uid),
-          where('isHistory', '==', true)
-        );
+              if (notification.broadcastId) {
+                const broadcastRef = doc(db, 'broadcasts', notification.broadcastId);
+                const broadcastDoc = await getDoc(broadcastRef);
   
-        const unsubscribeHistory = onSnapshot(historyQuery, async (snapshot) => {
-          const historyList = await Promise.all(
-            snapshot.docs.map((doc) => attachBroadcastContent({ id: doc.id, ...doc.data() }))
+                if (broadcastDoc.exists()) {
+                  notification.content = broadcastDoc.data().content;
+                  console.log('Broadcast notification content:', notification.content); // Debug log
+                } else {
+                  notification.content = 'Broadcast message not found.';
+                }
+              } else if (notification.type === 'application_submitted' || notification.message) {
+                // Handle system notifications
+                notification.content = notification.message || 'System notification';
+                console.log('System notification content:', notification.content); // Debug log
+              } else {
+                console.log('Unknown notification type:', notification); // Debug log
+              }
+  
+              return notification;
+            })
           );
-          setHistoryNotifications(historyList);
+  
+          console.log('All fetched notifications:', notificationsList); // Debug log
+  
+          // Sort notifications
+          notificationsList.sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds);
+  
+          // Separate active and history notifications
+          const activeNotifications = notificationsList.filter(n => !n.isHistory);
+          const historyNotifications = notificationsList.filter(n => n.isHistory);
+  
+          console.log('Active notifications:', activeNotifications); // Debug log
+          console.log('History notifications:', historyNotifications); // Debug log
+  
+          setNotifications(activeNotifications);
+          setHistoryNotifications(historyNotifications);
         });
   
         setLoading(false);
   
-        return () => {
-          unsubscribeNotifications();
-          unsubscribeHistory();
-        };
+        return () => unsubscribeAll();
       } catch (error) {
         console.error('Error fetching notifications:', error);
         setError('Error loading notifications.');
@@ -94,25 +99,60 @@ const NotificationsPage = () => {
     };
   
     fetchNotifications();
-  }, [db, user, authLoading]);
-  
+  }, [db, user, authLoading]);  
   
   const handleMoveToHistory = async (notificationId) => {
     try {
       const notificationRef = doc(db, 'notifications', notificationId);
-      await updateDoc(notificationRef, { isHistory: true });
+      const notificationSnapshot = await getDoc(notificationRef);
   
-      // Remove the notification from the active notifications state
-      setNotifications((prev) =>
-        prev.filter((notification) => notification.id !== notificationId)
-      );
+      if (notificationSnapshot.exists()) {
+        const notificationData = notificationSnapshot.data();
+        
+        // Update the notification in Firestore to mark it as history
+        await updateDoc(notificationRef, { isHistory: true });
   
-      setSnackbar({ open: true, message: 'ההודעה הועברה להיסטוריה', severity: 'success' });
+        let historyNotification = {
+          id: notificationId,
+          ...notificationData,
+          isHistory: true
+        };
+  
+        // If it's a broadcast notification, include the content
+        if (notificationData.broadcastId) {
+          const broadcastRef = doc(db, 'broadcasts', notificationData.broadcastId);
+          const broadcastDoc = await getDoc(broadcastRef);
+          
+          if (broadcastDoc.exists()) {
+            historyNotification.content = broadcastDoc.data().content;
+          } else {
+            historyNotification.content = 'Broadcast message not found.';
+          }
+        }
+  
+        // Update local state
+        setNotifications((prev) =>
+          prev.filter((notification) => notification.id !== notificationId)
+        );
+        setHistoryNotifications((prev) => {
+          // Check if the notification is already in history
+          const exists = prev.some(notification => notification.id === notificationId);
+          if (exists) {
+            return prev; // Don't add if it already exists
+          }
+          return [...prev, historyNotification];
+        });
+  
+        setSnackbar({ open: true, message: 'ההודעה הועברה להיסטוריה', severity: 'success' });
+      } else {
+        throw new Error('Notification not found');
+      }
     } catch (error) {
+      console.error('Error moving to history:', error);
       setSnackbar({ open: true, message: 'שגיאה בהעברת ההתראה להיסטוריה', severity: 'error' });
     }
   };
-    
+
   const handleDeleteNotification = async (notificationId) => {
     try {
       const notificationRef = doc(db, 'notifications', notificationId);
@@ -159,27 +199,30 @@ const NotificationsPage = () => {
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
-  };
+  };  
 
-  const renderNotificationList = (notificationList) => (
+  const renderNotificationList = (notificationList, isHistory = false) => (
     <SwipeableList threshold={0.1} fullSwipe>
       {notificationList.map((notification) => (
         <SwipeableListItem
           key={notification.id}
+          // key={`${notification.id}-${isHistory ? 'history' : 'active'}`}
           swipeLeft={{
             content: (
               <Box
                 sx={{
                   display: 'flex',
-                  justifyContent: 'start',
+                  justifyContent: 'flex-start',
                   alignItems: 'center',
                   bgcolor: 'primary.main',
                   color: 'white',
                   height: '100%',
                   width: '100%',
+                  pl: 2, // Padding to align content
                 }}
               >
-                העברה לארכיון
+                <ArchiveIcon sx={{ mr: 1 }} />
+                העבר לארכיון
               </Box>
             ),
             action: () => handleMoveToHistory(notification.id),
@@ -189,31 +232,97 @@ const NotificationsPage = () => {
               <Box
                 sx={{
                   display: 'flex',
-                  justifyContent: 'end',
+                  justifyContent: 'flex-end',
                   alignItems: 'center',
                   bgcolor: 'error.main',
                   color: 'white',
                   height: '100%',
                   width: '100%',
+                  pr: 2, // Padding to align content
                 }}
               >
                 מחיקה
+                <DeleteIcon sx={{ ml: 1 }} />
               </Box>
             ),
             action: () => handleDeleteNotification(notification.id),
           }}
         >
-          <ListItem component={Paper} sx={{ mb: 2, borderRadius: 2 }}>
+          <ListItem
+            component={Paper}
+            sx={{
+              mb: 2,
+              borderRadius: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              p: 2,
+              position: 'relative',
+            }}
+          >
+            {/* Type Header with Icon */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                position: 'absolute',
+                top: 8,
+                left: 16,
+                fontSize: '0.75rem',
+                color: 'gray',
+              }}
+            >
+              {notification.broadcastId ? (
+                <>
+                  <BroadcastIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                  <Typography variant="caption">Broadcast</Typography>
+                </>
+              ) : (
+                <>
+                  <SystemIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                  <Typography variant="caption">System Notification</Typography>
+                </>
+              )}
+            </Box>
+  
+            {/* Notification Content */}
             <ListItemText
               primary={notification.content || notification.message || 'No Content Available'}
-              secondary={new Date(notification.timestamp?.seconds * 1000).toLocaleString()}
+              secondary={
+                notification.timestamp
+                  ? new Date(notification.timestamp.seconds * 1000).toLocaleString()
+                  : 'Invalid Date'
+              }
+              sx={{ mt: 2 }}
             />
+  
+            {/* Archive/Delete Button */}
+            {!isHistory ? (
+              <IconButton
+                edge="end"
+                aria-label="archive"
+                onClick={() => handleMoveToHistory(notification.id)}
+                sx={{ alignSelf: 'flex-end' }}
+              >
+                <ArchiveIcon />
+              </IconButton>
+            ) : (
+              <IconButton
+                edge="end"
+                aria-label="delete"
+                onClick={() => handleDeleteNotification(notification.id)}
+                sx={{ alignSelf: 'flex-end' }}
+              >
+                <DeleteIcon />
+              </IconButton>
+            )}
           </ListItem>
         </SwipeableListItem>
       ))}
     </SwipeableList>
   );
 
+  
   if (authLoading || loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -271,7 +380,6 @@ const NotificationsPage = () => {
           <Typography variant="h5" align="center" gutterBottom>
             התראות
           </Typography>
-          <Typography variant="body2">החלק שמאלה על הודעה להעברה לארכיון וימינה למחיקה </Typography>
           {notifications.length === 0 ? (
             <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="50vh">
               <img src={NoNotificationsImage} alt="No notifications" style={{ width: 200, height: 200 }} />
@@ -284,6 +392,7 @@ const NotificationsPage = () => {
             </Box>
           ) : (
             <>
+              <Typography variant="body2">החלק שמאלה על הודעה להעברה לארכיון וימינה למחיקה </Typography>
               {renderNotificationList(notifications)}
               <Button 
                 variant="contained" 

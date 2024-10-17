@@ -456,7 +456,7 @@ export default function JobChat() {
         p: 2, 
         bgcolor: 'grey.100' 
       }} 
-      ref={chatContainerRef}
+      ref={chatContainerRef} 
     >
       {messages.map((message) => (
         <Box

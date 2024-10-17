@@ -1,49 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box,
-  Typography,
-  Avatar,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Snackbar,
-  Alert,
-  Divider,
-  LinearProgress,
-  Menu,
-  MenuItem,
-  CircularProgress, Switch, Tooltip, 
+  Box, Typography, Avatar, IconButton, List, ListItem, ListItemText, ListItemIcon, Button, Dialog,
+  DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, Divider, LinearProgress,
+  Menu, MenuItem, CircularProgress,
 } from '@mui/material';
 import {
-  ArrowBack as ArrowBackIcon,
-  Notifications as NotificationsIcon,
-  ChevronRight as ChevronRightIcon,
-  Edit as EditIcon,
-  Star as StarIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Security as SecurityIcon,
-  Payment as PaymentIcon,
-  Notifications as NotificationsSettingsIcon,
-  Lock as PrivacyIcon,
-  Settings as PreferencesIcon,
-  Person as PersonIcon,
-  Home as HomeIcon,
-  PhotoCamera as PhotoCameraIcon,
+  ArrowBack as ArrowBackIcon, Notifications as NotificationsIcon, ChevronRight as ChevronRightIcon,
+  Edit as EditIcon, Star as StarIcon, Add as AddIcon, Delete as DeleteIcon, Security as SecurityIcon,
+  Payment as PaymentIcon, Notifications as NotificationsSettingsIcon, Lock as PrivacyIcon,
+  Settings as PreferencesIcon, Person as PersonIcon, Home as HomeIcon, PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
-// import InfoIcon from '@mui/icons-material/Info';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { RatingDisplay } from '../rating/RatingSystem';
+
 
 export default function EmployeeProfile({
   profileData,
@@ -487,20 +458,6 @@ export default function EmployeeProfile({
           {Math.round(completionPercentage)}% הושלם
         </Typography>
       </Box>
-
-      {/* {profileData.employerSwitchOff && (
-        <Box display="flex" alignItems="center">
-          <Switch 
-            onChange={onSwitchToggle} 
-            inputProps={{ 'aria-label': 'Switch to employer view' }} 
-          />
-          <Tooltip title="לחץ כאן כדי לחזור לתצוגת המעסיק. אתה תמיד יכול לעבור בקלות בין תצוגות העובד והמעסיק.">
-            <IconButton>
-              <InfoIcon color="primary" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      )} */}
 
       <Typography variant="h6" sx={{ p: 2 }}>
         הגדרות

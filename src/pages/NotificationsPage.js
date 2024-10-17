@@ -207,7 +207,7 @@ const NotificationsPage = () => {
         <SwipeableListItem
           key={notification.id}
           // key={`${notification.id}-${isHistory ? 'history' : 'active'}`}
-          swipeLeft={{
+          swipeLeft={isHistory ? null : {
             content: (
               <Box
                 sx={{

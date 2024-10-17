@@ -141,7 +141,8 @@ export default function JobListPage() {
           type: 'application_canceled',
           message: `ביטלת את מועמדותך למשרה: ${jobData.title}`,
           timestamp: serverTimestamp(),
-          isRead: false
+          isRead: false, /* we DONT need this? */ 
+          isHistory: false,
         });
       } else {
         // Submitting application
@@ -160,7 +161,8 @@ export default function JobListPage() {
           type: 'application_submitted',
           message: `הגשת מועמדות למשרה: ${jobData.title}`,
           timestamp: serverTimestamp(),
-          isRead: false
+          isRead: false, /* we DONT need this? */ 
+          isHistory: false,
         });
       }
 

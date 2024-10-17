@@ -13,6 +13,7 @@ import {
   AssignmentOutlined as AssignmentIcon, NotificationsNone as NotificationsIcon,
   AccountCircle as AccountCircleIcon, ExitToApp as LogoutIcon,
 } from '@mui/icons-material'
+import { useNotificationCount } from '../pages/NotificationsPage'
 
 
 export default function Header() {
@@ -23,7 +24,7 @@ export default function Header() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const auth = getAuth()
-
+  const notificationCount = useNotificationCount();
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -160,9 +161,12 @@ export default function Header() {
               sx={{ p: '10px' }}
               aria-label="notifications"
             >
-              <Badge badgeContent={4} color="error">
+              {/* <Badge badgeContent={4} color="error">
                 <NotificationsIcon />
               </Badge>
+              <Badge badgeContent={notificationCount} color="error">
+                <NotificationsIcon />
+              </Badge> */}
             </IconButton>
           </Toolbar>
         </AppBar>
@@ -312,7 +316,7 @@ export default function Header() {
                   },
                 }}
               >
-                <Badge badgeContent={4} color="error">
+                <Badge badgeContent={notificationCount} color="error">
                   <NotificationsIcon />
                 </Badge>
               </IconButton>

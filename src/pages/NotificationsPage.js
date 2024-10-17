@@ -5,7 +5,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Container, Typography, Box, Snackbar, Alert, CircularProgress, Paper, ListItem,
-  ListItemText, Button, IconButton, Grid,
+  ListItemText, Button, IconButton, Grid, 
 } from '@mui/material';
 import { 
   Delete as DeleteIcon, History as HistoryIcon, Archive as ArchiveIcon,
@@ -48,7 +48,6 @@ const NotificationsPage = () => {
           const notificationsList = await Promise.all(
             snapshot.docs.map(async (docSnapshot) => {
               const notification = { id: docSnapshot.id, ...docSnapshot.data() };
-              console.log('Raw notification data:', notification); // Debug log
   
               if (notification.broadcastId) {
                 const broadcastRef = doc(db, 'broadcasts', notification.broadcastId);
@@ -56,14 +55,12 @@ const NotificationsPage = () => {
   
                 if (broadcastDoc.exists()) {
                   notification.content = broadcastDoc.data().content;
-                  console.log('Broadcast notification content:', notification.content); // Debug log
                 } else {
                   notification.content = 'Broadcast message not found.';
                 }
               } else if (notification.type === 'application_submitted' || notification.message) {
                 // Handle system notifications
                 notification.content = notification.message || 'System notification';
-                console.log('System notification content:', notification.content); // Debug log
               } else {
                 console.log('Unknown notification type:', notification); // Debug log
               }
@@ -71,8 +68,7 @@ const NotificationsPage = () => {
               return notification;
             })
           );
-  
-          console.log('All fetched notifications:', notificationsList); // Debug log
+          // console.log('All fetched notifications:', notificationsList); // Debug log
   
           // Sort notifications
           notificationsList.sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds);
@@ -80,10 +76,7 @@ const NotificationsPage = () => {
           // Separate active and history notifications
           const activeNotifications = notificationsList.filter(n => !n.isHistory);
           const historyNotifications = notificationsList.filter(n => n.isHistory);
-  
-          console.log('Active notifications:', activeNotifications); // Debug log
-          console.log('History notifications:', historyNotifications); // Debug log
-  
+    
           setNotifications(activeNotifications);
           setHistoryNotifications(historyNotifications);
         });
@@ -421,3 +414,30 @@ const NotificationsPage = () => {
 };
 
 export default NotificationsPage;
+
+
+
+export const useNotificationCount = () => {
+  const [notificationCount, setNotificationCount] = useState(0);
+  const db = getFirestore();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    const notificationsQuery = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.uid),
+      where('isHistory', '==', false)
+    );
+
+    const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
+      setNotificationCount(snapshot.size);
+    });
+    console.log(notificationCount);
+
+    return () => unsubscribe();
+  }, [db, user, authLoading]);
+
+  return notificationCount;
+};

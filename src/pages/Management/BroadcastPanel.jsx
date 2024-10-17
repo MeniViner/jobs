@@ -63,7 +63,7 @@ const BroadcastPanel = () => {
         batch.set(notificationRef, {
           broadcastId: broadcastRef.id,
           userId: userDoc.id,
-          isRead: false,
+          isRead: false, /* we DONT need this. (?) */ 
           isHistory: false,
         });
       });

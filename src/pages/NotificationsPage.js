@@ -307,13 +307,20 @@ const NotificationsPage = () => {
                   >
                     {notification.broadcastId ? (
                       <>
-                        <BroadcastIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        <Typography variant="caption">Broadcast</Typography>
+                        <BroadcastIcon   
+                          sx={{ 
+                            fontSize: 16, 
+                            mr: 0.5, 
+                            transform: 'rotateY(180deg)', // Flip horizontally tor rtl
+                            display: 'inline-block', // Ensure proper rendering
+                          }}  
+                        />
+                        <Typography variant="caption">ברודקאסט</Typography>
                       </>
                     ) : (
                       <>
                         <SystemIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        <Typography variant="caption">System Notification</Typography>
+                        <Typography variant="caption">התראת מערכת</Typography>
                       </>
                     )}
                   </Box>

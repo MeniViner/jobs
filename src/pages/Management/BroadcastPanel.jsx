@@ -65,6 +65,7 @@ const BroadcastPanel = () => {
           userId: userDoc.id,
           isRead: false, /* we DONT need this. (?) */ 
           isHistory: false,
+          timestamp: serverTimestamp(),
         });
       });
   

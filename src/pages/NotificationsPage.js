@@ -192,129 +192,175 @@ const NotificationsPage = () => {
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
-  };  
+  }; 
 
-  const renderNotificationList = (notificationList, isHistory = false) => (
-    <SwipeableList threshold={0.1} fullSwipe>
-      {notificationList.map((notification) => (
-        <SwipeableListItem
-          key={notification.id}
-          // key={`${notification.id}-${isHistory ? 'history' : 'active'}`}
-          swipeLeft={isHistory ? null : {
-            content: (
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  height: '100%',
-                  width: '100%',
-                  pl: 2, // Padding to align content
-                }}
-              >
-                <ArchiveIcon sx={{ mr: 1 }} />
-                העבר לארכיון
-              </Box>
-            ),
-            action: () => handleMoveToHistory(notification.id),
-          }}
-          swipeRight={{
-            content: (
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  alignItems: 'center',
-                  bgcolor: 'error.main',
-                  color: 'white',
-                  height: '100%',
-                  width: '100%',
-                  pr: 2, // Padding to align content
-                }}
-              >
-                מחיקה
-                <DeleteIcon sx={{ ml: 1 }} />
-              </Box>
-            ),
-            action: () => handleDeleteNotification(notification.id),
-          }}
-        >
-          <ListItem
-            component={Paper}
-            sx={{
-              mb: 2,
-              borderRadius: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              p: 2,
-              position: 'relative',
-            }}
-          >
-            {/* Type Header with Icon */}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                position: 'absolute',
-                top: 8,
-                left: 16,
-                fontSize: '0.75rem',
-                color: 'gray',
-              }}
-            >
-              {notification.broadcastId ? (
-                <>
-                  <BroadcastIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                  <Typography variant="caption">Broadcast</Typography>
-                </>
-              ) : (
-                <>
-                  <SystemIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                  <Typography variant="caption">System Notification</Typography>
-                </>
+  const renderNotificationList = (notificationList, isHistory = false) => {
+    const formatDate = (timestamp) => {
+      const date = new Date(timestamp.seconds * 1000);
+      return date.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    };
+  
+    let lastDate = ''; // Track the last rendered date
+  
+    return (
+      <SwipeableList threshold={0.9} fullSwipe>
+        {notificationList.map((notification) => {
+          const notificationDate = formatDate(notification.timestamp);
+  
+          // Check if we need to show a new date divider
+          const showDateDivider = notificationDate !== lastDate;
+          lastDate = notificationDate; // Update last rendered date
+  
+          return (
+            <React.Fragment key={notification.id}>
+              {showDateDivider && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: 'block',
+                    textAlign: 'center',
+                    color: 'gray',
+                    fontWeight: 'bold',
+                    marginBottom: 1,
+                    marginTop: 2,
+                  }}
+                >
+                  {notificationDate}
+                </Typography>
               )}
-            </Box>
   
-            {/* Notification Content */}
-            <ListItemText
-              primary={notification.content || notification.message || 'No Content Available'}
-              secondary={
-                notification.timestamp
-                  ? new Date(notification.timestamp.seconds * 1000).toLocaleString()
-                  : 'Invalid Date'
-              }
-              sx={{ mt: 2 }}
-            />
-  
-            {/* Archive/Delete Button */}
-            {!isHistory ? (
-              <IconButton
-                edge="end"
-                aria-label="archive"
-                onClick={() => handleMoveToHistory(notification.id)}
-                sx={{ alignSelf: 'flex-end' }}
+              <SwipeableListItem
+                swipeLeft={
+                  isHistory
+                    ? null
+                    : {
+                        content: (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'flex-start',
+                              alignItems: 'center',
+                              bgcolor: 'primary.main',
+                              color: 'white',
+                              height: '100%',
+                              width: '100%',
+                              pl: 2,
+                            }}
+                          >
+                            <ArchiveIcon sx={{ mr: 1 }} />
+                            העבר לארכיון
+                          </Box>
+                        ),
+                        action: () => handleMoveToHistory(notification.id),
+                      }
+                }
+                swipeRight={{
+                  content: (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        alignItems: 'center',
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        height: '100%',
+                        width: '100%',
+                        pr: 2,
+                      }}
+                    >
+                      מחיקה
+                      <DeleteIcon sx={{ ml: 1 }} />
+                    </Box>
+                  ),
+                  action: () => handleDeleteNotification(notification.id),
+                }}
               >
-                <ArchiveIcon />
-              </IconButton>
-            ) : (
-              <IconButton
-                edge="end"
-                aria-label="delete"
-                onClick={() => handleDeleteNotification(notification.id)}
-                sx={{ alignSelf: 'flex-end' }}
-              >
-                <DeleteIcon />
-              </IconButton>
-            )}
-          </ListItem>
-        </SwipeableListItem>
-      ))}
-    </SwipeableList>
-  );
+                <ListItem
+                  component={Paper}
+                  sx={{
+                    mb: 2,
+                    borderRadius: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between', // Align content horizontally
+                    alignItems: 'center', // Ensure vertical alignment
+                    p: 2,
+                    pb: 0,
+                    position: 'relative',
+                  }}
+                >
+                    {/* Left Section: Type Header with Icon */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      position: 'absolute',
+                      top: 8,
+                      left: 16,
+                      fontSize: '0.75rem',
+                      color: 'gray',
+                    }}
+                  >
+                    {notification.broadcastId ? (
+                      <>
+                        <BroadcastIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        <Typography variant="caption">Broadcast</Typography>
+                      </>
+                    ) : (
+                      <>
+                        <SystemIcon sx={{ fontSize: 16, mr: 0.5 }} />
+                        <Typography variant="caption">System Notification</Typography>
+                      </>
+                    )}
+                  </Box>
 
+                  {/* Notification Content */}
+                  <ListItemText
+                    primary={notification.content || notification.message || 'No Content Available'}
+                    secondary={
+                      notification.timestamp
+                      ? new Date(notification.timestamp.seconds * 1000).toLocaleTimeString('en-GB', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                        : 'Invalid Date'
+                    }
+                    // sx={{ mt: 2 }}
+                    sx={{ flexGrow: 1, marginRight: 1, marginTop: 2 }} // Make the text take available space
+                  />
+  
+                  {/* Archive/Delete Button Section */}
+                  <Box sx={{ display: 'flex', gap: 1 }}> {/* Align buttons horizontally */}
+                  {!isHistory ? (
+                    <IconButton
+                      edge="end"
+                      aria-label="archive"
+                      onClick={() => handleMoveToHistory(notification.id)}
+                    >
+                      <ArchiveIcon />
+                    </IconButton>
+                  ) : (
+                    <IconButton
+                      edge="end"
+                      aria-label="delete"
+                      onClick={() => handleDeleteNotification(notification.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  )}
+                  </Box>
+                </ListItem>
+              </SwipeableListItem>
+            </React.Fragment>
+          );
+        })}
+      </SwipeableList>
+    );
+  };
   
   if (authLoading || loading) {
     return (
@@ -343,7 +389,7 @@ const NotificationsPage = () => {
             onClick={() => setShowHistory(!showHistory)}
             startIcon={<HistoryIcon />}
           >
-            {showHistory ? 'הצג היסטוריה' : 'הסתר היסטוריה'}
+            {showHistory ? 'הסתר היסטוריה' : 'הצג היסטוריה'}
           </Button>
           {showHistory && (
             <Box mt={2}>

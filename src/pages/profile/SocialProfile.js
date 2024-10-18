@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
-  Box, Typography, Avatar, Paper, Stack, Button, Chip, CircularProgress, Rating, IconButton 
+  Box, Typography, Avatar, Paper, Stack, Button, Chip, CircularProgress, Rating, IconButton, Divider
 } from '@mui/material';
 import {
   Verified, Language, LocationOn, Work, School, Email, Phone, Business
 } from '@mui/icons-material';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-
+import { 
+  getFirestore, doc, getDoc, collection, query, where, getDocs 
+} from 'firebase/firestore';
 
 export default function UserProfilePage() {
   const { userId } = useParams();
@@ -15,25 +16,52 @@ export default function UserProfilePage() {
   const [profileData, setProfileData] = useState(null);
   const [isEmployer, setIsEmployer] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const userDocRef = doc(db, 'users', userId);
-  
         const userDocSnap = await getDoc(userDocRef);
-  
+
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
-  
-          // Check if the user has the 'isEmployer' field to determine if they're an employer
-          const isEmployer = userData.isEmployer || false;
-  
-          setIsEmployer(isEmployer);
-  
-          setProfileData({
-            ...userData,
+          setIsEmployer(userData.isEmployer || false);
+          setProfileData(userData);
+
+          // Fetch reviews
+          const reviewsQuery = query(collection(db, 'ratings'), where('ratedUser', '==', userId));
+          const reviewsSnapshot = await getDocs(reviewsQuery);
+          const reviewsData = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          // Extract unique rater IDs
+          const raterIds = [...new Set(reviewsData.map(review => review.ratedBy))];
+          
+          // Fetch rater profiles
+          const raterProfilesPromises = raterIds.map(async (raterId) => {
+            const raterDocRef = doc(db, 'users', raterId);
+            const raterDocSnap = await getDoc(raterDocRef);
+            if (raterDocSnap.exists()) {
+              const raterData = raterDocSnap.data();
+              return { id: raterId, name: raterData.name || 'משתמש אנונימי', photoURL: raterData.photoURL || '/placeholder.svg?height=40&width=40' };
+            } else {
+              return { id: raterId, name: 'משתמש אנונימי', photoURL: '/placeholder.svg?height=40&width=40' };
+            }
           });
+
+          const raterProfiles = await Promise.all(raterProfilesPromises);
+          const raterProfilesMap = raterProfiles.reduce((acc, profile) => {
+            acc[profile.id] = profile;
+            return acc;
+          }, {});
+
+          // Attach rater profiles to reviews
+          const reviewsWithProfiles = reviewsData.map(review => ({
+            ...review,
+            raterProfile: raterProfilesMap[review.ratedBy] || { name: 'משתמש אנונימי', photoURL: '/placeholder.svg?height=40&width=40' }
+          }));
+
+          setReviews(reviewsWithProfiles);
         } else {
           console.error('User does not exist');
         }
@@ -43,21 +71,13 @@ export default function UserProfilePage() {
         setLoading(false);
       }
     };
-  
+
     fetchUserData();
   }, [db, userId]);
-  
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
+      <Box sx={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <CircularProgress />
       </Box>
     );
@@ -74,26 +94,28 @@ export default function UserProfilePage() {
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', p: 2 }}>
       {isEmployer ? (
-        <EmployerProfile profileData={profileData} />
+        <EmployerProfile profileData={profileData} reviews={reviews} />
       ) : (
-        <EmployeeProfile profileData={profileData} />
+        <EmployeeProfile profileData={profileData} reviews={reviews} />
       )}
     </Box>
   );
 }
 
+function ProfileHeader({ profileData, isEmployer, reviews }) {
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+    : 0;
 
-function EmployerProfile({ profileData }) {
   return (
-    <Box>
-      {/* גרסת המעסיק */}
-      <Paper elevation={3} sx={{ borderRadius: 4, overflow: 'hidden' }}>
-        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Box sx={{ position: 'relative' }}>
-            <Avatar
-              src={profileData.profileURL || '/placeholder.svg?height=120&width=120'}
-              sx={{ width: 120, height: 120, border: '4px solid white' }}
-            />
+    <Paper elevation={3} sx={{ borderRadius: 4, overflow: 'hidden', mb: 3 }}>
+      <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Box sx={{ position: 'relative' }}>
+          <Avatar
+            src={profileData.profileURL || '/placeholder.svg?height=120&width=120'}
+            sx={{ width: 120, height: 120, border: '4px solid white' }}
+          />
+          {profileData.isVerified && (
             <IconButton
               sx={{
                 position: 'absolute',
@@ -105,37 +127,40 @@ function EmployerProfile({ profileData }) {
             >
               <Verified sx={{ color: 'error.main' }} />
             </IconButton>
-          </Box>
-          <Typography variant="h4" sx={{ mt: 2, fontWeight: 'bold' }}>
-            {profileData.name || 'שם המשתמש'}
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            {profileData.companyName || 'שם העסק'}
-          </Typography>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
-            <Rating
-              value={profileData.averageRating || 5}
-              readOnly
-              precision={0.1}
-              sx={{
-                '& .MuiRating-iconFilled': {
-                  color: 'gold',
-                },
-              }}
-            />
-            <Typography variant="body2" color="text.secondary">
-              ({profileData.totalReviews || '0'} ביקורות)
-            </Typography>
-          </Stack>
-          {profileData.businessType && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              {profileData.businessType}
-            </Typography>
           )}
         </Box>
-      </Paper>
+        <Typography variant="h4" sx={{ mt: 2, fontWeight: 'bold' }}>
+          {profileData.name || 'שם המשתמש'}
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          {isEmployer ? (profileData.companyName || 'שם העסק') : (profileData.profession || 'מקצוע לא צוין')}
+        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+          <Rating
+            value={averageRating}
+            readOnly
+            precision={0.1}
+            sx={{
+              '& .MuiRating-iconFilled': {
+                color: 'gold',
+              },
+            }}
+          />
+          <Typography variant="body2" color="text.secondary">
+            ({averageRating.toFixed(1)}) על פי {reviews.length} ביקורות
+          </Typography>
+        </Stack>
+      </Box>
+    </Paper>
+  );
+}
 
-      <Stack spacing={2} sx={{ mt: 3 }}>
+function EmployerProfile({ profileData, reviews }) {
+  return (
+    <Box>
+      <ProfileHeader profileData={profileData} isEmployer={true} reviews={reviews} />
+
+      <Stack spacing={2}>
         {profileData.businessType && (
           <InfoItem icon={<Business />} text={`סוג העסק: ${profileData.businessType}`} />
         )}
@@ -149,7 +174,6 @@ function EmployerProfile({ profileData }) {
           <InfoItem icon={<Phone />} text={`טלפון: ${profileData.phone}`} />
         )}
 
-        {/* כותרת "פירוט על החברה" */}
         {profileData.description && (
           <>
             <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 3 }}>
@@ -161,107 +185,32 @@ function EmployerProfile({ profileData }) {
           </>
         )}
 
-        {/* ביקורות */}
-        <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 3 }}>
+        <Divider sx={{ my: 3 }} />
+
+        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
           הביקורות של {profileData.name}
         </Typography>
 
-        {profileData.reviews && profileData.reviews.length > 0 ? (
-          profileData.reviews.slice(0, 1).map((review, index) => (
-            <Paper key={index} elevation={1} sx={{ p: 2, borderRadius: 2 }}>
-              <Typography variant="body1">"{review.text}"</Typography>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }}>
-                <Avatar
-                  src={review.reviewerProfileURL || '/placeholder.svg?height=40&width=40'}
-                  sx={{ width: 40, height: 40 }}
-                />
-                <Box>
-                  <Typography variant="subtitle2">{review.reviewerName}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {review.date}
-                  </Typography>
-                </Box>
-              </Stack>
-            </Paper>
+        {reviews.length > 0 ? (
+          reviews.map((review) => (
+            <ReviewCard key={review.id} review={review} />
           ))
         ) : (
           <Typography variant="body2" color="text.secondary">
             אין ביקורות להצגה.
           </Typography>
         )}
-
-        {profileData.reviews && profileData.reviews.length > 1 && (
-          <Button variant="contained" fullWidth>
-            הצגת ביקורות נוספות
-          </Button>
-        )}
       </Stack>
     </Box>
   );
 }
 
-function EmployeeProfile({ profileData }) {
+function EmployeeProfile({ profileData, reviews }) {
   return (
     <Box>
-      {/* גרסת העובד */}
-      <Paper elevation={3} sx={{ borderRadius: 4, overflow: 'hidden' }}>
-        <Box
-          sx={{
-            p: 3,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          <Box sx={{ position: 'relative' }}>
-            <Avatar
-              src={
-                profileData.profileURL ||
-                '/placeholder.svg?height=120&width=120'
-              }
-              sx={{ width: 120, height: 120, border: '4px solid white' }}
-            />
-            <Verified
-              sx={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                color: 'error.main',
-                bgcolor: 'background.paper',
-                borderRadius: '50%',
-              }}
-            />
-          </Box>
-          <Typography variant="h4" sx={{ mt: 2, fontWeight: 'bold' }}>
-            {profileData.name}
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            {profileData.profession || 'מקצוע לא צוין'}
-          </Typography>
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ mt: 1 }}
-          >
-            <Rating
-              value={profileData.averageRating || 5}
-              readOnly
-              precision={0.1}
-              sx={{
-                '& .MuiRating-iconFilled': {
-                  color: 'gold',
-                },
-              }}
-            />
-            <Typography variant="body2" color="text.secondary">
-              ({profileData.totalReviews || '0'} ביקורות)
-            </Typography>
-          </Stack>
-        </Box>
-      </Paper>
+      <ProfileHeader profileData={profileData} isEmployer={false} reviews={reviews} />
 
-      <Stack spacing={2} sx={{ mt: 3 }}>
+      <Stack spacing={2}>
         <InfoItem
           icon={<Work />}
           text={`מקצוע: ${profileData.profession || 'לא צוין'}`}
@@ -287,7 +236,6 @@ function EmployeeProfile({ profileData }) {
           text={`טלפון: ${profileData.phone || 'לא צוין'}`}
         />
 
-        {/* כותרת "כישורים" בדיוק כמו ב"פירוט על החברה" */}
         {profileData.skills && (
           <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
             <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
@@ -310,53 +258,57 @@ function EmployeeProfile({ profileData }) {
           </Paper>
         )}
 
+        <Divider sx={{ my: 3 }} />
 
-        {/* ביקורות */}
-        <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
           הביקורות של {profileData.name}
         </Typography>
 
-        {profileData.reviews && profileData.reviews.length > 0 ? (
-          profileData.reviews.slice(0, 1).map((review, index) => (
-            <Paper key={index} elevation={1} sx={{ p: 2, borderRadius: 2 }}>
-              <Typography variant="body1">"{review.text}"</Typography>
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                sx={{ mt: 2 }}
-              >
-                <Avatar
-                  src={
-                    review.reviewerProfileURL ||
-                    '/placeholder.svg?height=40&width=40'
-                  }
-                  sx={{ width: 40, height: 40 }}
-                />
-                <Box>
-                  <Typography variant="subtitle2">
-                    {review.reviewerName}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {review.date}
-                  </Typography>
-                </Box>
-              </Stack>
-            </Paper>
+        {reviews.length > 0 ? (
+          reviews.map((review) => (
+            <ReviewCard key={review.id} review={review} />
           ))
         ) : (
           <Typography variant="body2" color="text.secondary">
             אין ביקורות להצגה.
           </Typography>
         )}
-
-        {profileData.reviews && profileData.reviews.length > 1 && (
-          <Button variant="contained" fullWidth>
-            הצגת ביקורות נוספות
-          </Button>
-        )}
       </Stack>
     </Box>
+  );
+}
+
+function ReviewCard({ review }) {
+  return (
+    <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
+      <Typography variant="body1" sx={{ fontStyle: 'italic' }}>"{review.review}"</Typography>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }}>
+        <Avatar
+          src={review.raterProfile?.photoURL || '/placeholder.svg?height=40&width=40'}
+          alt={review.raterProfile?.name || 'משתמש אנונימי'}
+          sx={{ width: 40, height: 40 }}
+        />
+        <Box>
+          <Typography variant="subtitle2">{review.raterProfile?.name || 'משתמש אנונימי'}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {review.createdAt instanceof Date 
+              ? review.createdAt.toLocaleDateString() 
+              : review.createdAt?.toDate().toLocaleDateString() || ''}
+          </Typography>
+        </Box>
+        <Rating
+          value={review.rating}
+          readOnly
+          precision={0.5}
+          sx={{
+            ml: 'auto',
+            '& .MuiRating-iconFilled': {
+              color: 'gold',
+            },
+          }}
+        />
+      </Stack>
+    </Paper>
   );
 }
 

@@ -76,7 +76,7 @@ function App() {
               }}
             >
               <Routes>
-                <Route path="/" element={<HomePage />} />
+                <Route path="/" element={<JobListPage />} />
                 <Route path="/management/top-users" element={<TopUsersPage />} />
                 <Route path="/admin/statistics" element={<AdminStatisticsPage />} />
                 <Route path="/job-chat" element={<JobChat />} />

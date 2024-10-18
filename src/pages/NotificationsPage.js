@@ -434,7 +434,6 @@ export const useNotificationCount = () => {
     const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
       setNotificationCount(snapshot.size);
     });
-    console.log(notificationCount);
 
     return () => unsubscribe();
   }, [db, user, authLoading]);

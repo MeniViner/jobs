@@ -12,7 +12,7 @@ import {
   Rating,
 } from '@mui/material';
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db } from '../../services/firebase';
 
 export default function EmployerRatingDialog({ job, onClose }) {
   const [rating, setRating] = useState(0);

@@ -660,49 +660,6 @@ export default function EmployerProfile({
           {snackbar.message}
         </Alert>
       </Snackbar>
-
-      <Box
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          bgcolor: 'background.paper',
-          borderTop: 1,
-          borderColor: 'divider',
-          display: 'flex',
-          justifyContent: 'space-around',
-          py: 1,
-        }}
-      >
-        <IconButton color="primary">
-          <Avatar sx={{ width: 24, height: 24 }} />
-        </IconButton>
-        <IconButton>
-          <NotificationsIcon />
-        </IconButton>
-        <IconButton>
-          <img
-            src="/placeholder.svg?height=24&width=24"
-            alt="Trips"
-            style={{ width: 24, height: 24 }}
-          />
-        </IconButton>
-        <IconButton>
-          <img
-            src="/placeholder.svg?height=24&width=24"
-            alt="Wishlist"
-            style={{ width: 24, height: 24 }}
-          />
-        </IconButton>
-        <IconButton>
-          <img
-            src="/placeholder.svg?height=24&width=24"
-            alt="Search"
-            style={{ width: 24, height: 24 }}
-          />
-        </IconButton>
-      </Box>
     </Box>
   );
 }

@@ -163,10 +163,10 @@ export default function Header() {
             >
               {/* <Badge badgeContent={4} color="error">
                 <NotificationsIcon />
-              </Badge>
+              </Badge> */}
               <Badge badgeContent={notificationCount} color="error">
                 <NotificationsIcon />
-              </Badge> */}
+              </Badge>
             </IconButton>
           </Toolbar>
         </AppBar>
@@ -241,6 +241,7 @@ export default function Header() {
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between', py: 1, direction: 'rtl' }}>
+        
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Typography
             variant="h5"

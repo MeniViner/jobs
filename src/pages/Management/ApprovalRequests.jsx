@@ -35,7 +35,7 @@ export default function ApprovalRequests({ onCountUpdate }) {
       (snapshot) => {
         const employers = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setPendingEmployers(employers);
-        setFilteredEmployers(employers); // Set initially to the full list
+        setFilteredEmployers(employers);
         updateTotalCount(employers.length, pendingDeletions.length);
         setLoading(false);
       },
@@ -51,7 +51,7 @@ export default function ApprovalRequests({ onCountUpdate }) {
       (snapshot) => {
         const deletions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setPendingDeletions(deletions);
-        setFilteredDeletions(deletions); // Set initially to the full list
+        setFilteredDeletions(deletions);
         updateTotalCount(pendingEmployers.length, deletions.length);
         setLoading(false);
       },
@@ -87,7 +87,6 @@ export default function ApprovalRequests({ onCountUpdate }) {
       const userRef = doc(db, 'users', userId);
       const employerRef = doc(db, 'employers', userId);
 
-      // Define the updates for the user
       const updates = {
         isEmployer: approved,
         role: approved ? 'employer' : 'user',
@@ -95,38 +94,32 @@ export default function ApprovalRequests({ onCountUpdate }) {
         employerRequestStatus: approved ? 'approved' : 'rejected',
       };
 
-      // Define the updates for the employer
       const employerUpdates = {
         approved: approved,
         status: approved ? 'approved' : 'rejected',
       };
 
-      // Update the Firestore documents
       await updateDoc(userRef, updates);
       await updateDoc(employerRef, employerUpdates);
 
-      // Re-fetch the updated list of pending employers
       await reFetchPendingEmployers();
 
-      // Prepare notification message
       const notificationMessage = approved
         ? 'Your request to become an employer was approved!'
         : 'Your request to become an employer was rejected.';
 
-      // Add a new notification to the notifications collection
       await addDoc(collection(db, 'notifications'), {
         userId: userId,
         message: notificationMessage,
         status: 'new',
-        isGlobal: false, // Specific to the user, not global
-        isHistory: false, // This notification is active, not yet in history
+        isGlobal: false,
+        isHistory: false,
         type: 'EmployerRequest',
-        timestamp: serverTimestamp(), // Use Firebase server timestamp
+        timestamp: serverTimestamp(),
       });
 
       console.log('Notification sent to user:', userId);
 
-      // Set snackbar to notify the admin
       setSnackbar({
         open: true,
         message: approved ? 'המעסיק אושר בהצלחה' : 'בקשת המעסיק נדחתה',
@@ -144,15 +137,13 @@ export default function ApprovalRequests({ onCountUpdate }) {
     }
   };
 
-
-  // Filter employers and deletions based on search term
   useEffect(() => {
     const filteredEmployers = pendingEmployers.filter(employer =>
-      employer.companyName.toLowerCase().includes(searchTerm.toLowerCase())
+      employer.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) || false
     );
     const filteredDeletions = pendingDeletions.filter(user =>
-      user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      (user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
     );
     setFilteredEmployers(filteredEmployers);
     setFilteredDeletions(filteredDeletions);
@@ -185,7 +176,6 @@ export default function ApprovalRequests({ onCountUpdate }) {
         בקשות ממתינות לאישור
       </Typography>
 
-      {/* Search Field */}
       <TextField
         fullWidth
         variant="outlined"
@@ -230,7 +220,7 @@ export default function ApprovalRequests({ onCountUpdate }) {
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       <Description sx={{ mr: 1, verticalAlign: 'middle' }} />
-                      תיאור: {employer.description}
+                      תיאו��: {employer.description}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       <Email sx={{ mr: 1, verticalAlign: 'middle' }} />

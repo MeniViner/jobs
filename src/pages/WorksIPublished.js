@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Paper, List, ListItem, ListItemText, ListItemButton, ListItemAvatar, Avatar,
   Divider, Button, TextField, Box, Card, CardContent, Chip, LinearProgress, Dialog, DialogActions,
-  DialogContent, DialogContentText, DialogTitle, Collapse, Tab, Tabs,
+  DialogContent, DialogContentText, DialogTitle, Collapse, Tab, Tabs, CircularProgress
 } from '@mui/material';
 import { 
   Work, LocationOn, AttachMoney, AccessTime, DateRange, Person, CheckCircle, Group, DoneAll, 
   Delete, Undo, Flag, ExpandMore, ExpandLess, Chat, Edit 
 } from '@mui/icons-material';
-import { collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { 
+  collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp
+} from 'firebase/firestore';
 import { db } from '../services/firebase.js';
 import { getAuth } from 'firebase/auth';
+import { useAuth } from '../contexts/AuthContext'; // Import AuthContext
 import { Link, useNavigate} from 'react-router-dom';
 import { RatingInput } from './rating/RatingSystem.jsx';
 import JobCompletionRating from './rating/JobCompletionRating.tsx';
@@ -161,6 +164,7 @@ function EditJobDialog({ open, handleClose, job, handleSave }) {
 
 
 export default function MyWorksPage() {
+  const { user, loading: authLoading } = useAuth(); // Use the context
   const [jobs, setJobs] = useState([]);
   const [expandedJob, setExpandedJob] = useState(null);
   const [applicants, setApplicants] = useState([]);
@@ -176,6 +180,8 @@ export default function MyWorksPage() {
   const [openRatingDialog, setOpenRatingDialog] = useState(false);
   const [jobToRate, setJobToRate] = useState(null);
   const auth = getAuth();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   auth.onAuthStateChanged(async (user) => {
     if (user) {
@@ -194,101 +200,23 @@ export default function MyWorksPage() {
   });
 
   useEffect(() => {
+    if (authLoading) return; // Wait for auth to complete
+
+    if (!user) {
+      setError('No user is logged in.');
+      setLoading(false);
+      return;
+    }
+
     fetchEmployerJobs();
-  }, []);
+  }, [authLoading, user]);
 
-  // const fetchEmployerJobs = async () => {
-  //   if (!auth.currentUser) return;
-  
-  //   const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', auth.currentUser.uid));
-  //   const jobsSnapshot = await getDocs(jobsQuery);
-  //   const jobsList = [];
-  
-  //   for (const jobDoc of jobsSnapshot.docs) {
-  //     const jobData = jobDoc.data();
-  
-  //     const employerDocRef = doc(db, 'employers', jobData.employerId);
-  //     const employerDoc = await getDoc(employerDocRef);
-  
-  //     let companyName = 'Unknown Company'; // Default value in case employer data is not found
-  //     if (employerDoc.exists()) {
-  //       const employerData = employerDoc.data();
-  //       companyName = employerData.companyName || companyName;
-  //     }
-  
-  //     jobsList.push({
-  //       id: jobDoc.id,
-  //       ...jobData,
-  //       companyName, // Use the fetched companyName instead of the one from jobs collection
-  //     });
-  //   }
-  
-  //   setJobs(jobsList);
-  
-  //   // const allApplicants = new Map();
-  //   // for (const job of jobsList) {
-  //   //   const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
-  //   //   const applicantsSnapshot = await getDocs(applicantsQuery);
-  //   //   for (const applicantDoc of applicantsSnapshot.docs) {
-  //   //     const applicantData = applicantDoc.data();
-  //   //     const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
-  //   //     if (!allApplicants.has(applicantData.applicantId)) {
-  //   //       const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
-  //   //       allApplicants.set(applicantData.applicantId, {
-  //   //         id: applicantDoc.id,
-  //   //         ...applicantData,
-  //   //         userData: userData.data(),
-  //   //         appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
-  //   //       });
-  //   //     } else {
-  //   //       allApplicants.get(applicantData.applicantId).appliedJobs.push({
-  //   //         jobId: job.id,
-  //   //         hired: applicantData.hired || false,
-  //   //       });
-  //   //     }
-  //   //   }
-  //   // }
-  //   // setApplicants(Array.from(allApplicants.values()));
-
-  //   const allApplicants = new Map();
-  //   for (const job of jobsList) {
-  //     const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
-  //     const applicantsSnapshot = await getDocs(applicantsQuery);
-
-  //     for (const applicantDoc of applicantsSnapshot.docs) {
-  //       const applicantData = applicantDoc.data();
-  //       const userDoc = await getDoc(doc(db, 'users', applicantData.applicantId));
-  //       const userData = userDoc.exists() ? userDoc.data() : {};
-
-  //       if (!allApplicants.has(applicantData.applicantId)) {
-  //         allApplicants.set(applicantData.applicantId, {
-  //           id: applicantDoc.id,
-  //           ...applicantData,
-  //           userData: {
-  //             ...userData,
-  //             // Ensure you are getting the photoURL from Firestore
-  //             avatarUrl: userData.avatarUrl || null, 
-  //             photoURL: userData.photoURL || null, 
-  //             profileURL: userData.profileURL || null, 
-  //           },
-  //           appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
-  //         });
-  //       } else {
-  //         allApplicants.get(applicantData.applicantId).appliedJobs.push({
-  //           jobId: job.id,
-  //           hired: applicantData.hired || false,
-  //         });
-  //       }
-  //     }
-  //   }
-  //   setApplicants(Array.from(allApplicants.values()));
-
-  // };
 
   const fetchEmployerJobs = async () => {
     const auth = getAuth();
   
     if (!auth.currentUser) return;
+    setLoading(false);
   
     try {
       // Query to fetch jobs posted by the current employer
@@ -330,15 +258,11 @@ export default function MyWorksPage() {
     }
   };
         
-
   const handleToggleExpand = (jobId) => {
     setExpandedJob(expandedJob === jobId ? null : jobId);
   };
 
   const handleSendMessage = async (applicantId, jobId) => {
-
-    console.log('applicantId:', applicantId);
-    console.log('jobId:', jobId);
 
     const applicant = applicants.find(app => app.applicantId === applicantId);
     if (!applicant) {
@@ -396,18 +320,8 @@ export default function MyWorksPage() {
     }
   };
 
-  let xx= 8;
-
   const handleToggleHired = async (jobId, applicantId, currentHiredStatus) => {
     try {
-      console.log('Job ID:', jobId);
-      console.log('Applicant ID:', applicantId);
-      console.log('Current Hired Status:', currentHiredStatus);
-
-      if (!jobId || !applicantId) {
-        alert('חסר זיהוי עבודה או מועמד. אנא נסה שוב.');
-        return;
-      }
 
       const applicantRef = doc(db, 'jobs', jobId, 'applicants', applicantId);
       const jobRef = doc(db, 'jobs', jobId);
@@ -429,6 +343,7 @@ export default function MyWorksPage() {
       await updateDoc(applicantRef, {
         hired: !currentHiredStatus,
       });
+      fetchEmployerJobs();
   
       // Add notification to Firestore
       await addDoc(collection(db, 'notifications'), {
@@ -467,12 +382,6 @@ export default function MyWorksPage() {
       alert('אירעה שגיאה בעדכון הסטטוס.');
     }
   };
-  
-  const getHiredCount = (jobId) => {
-    return applicants.filter((applicant) =>
-      applicant.appliedJobs.some((job) => job.jobId === jobId && job.hired)
-    ).length;
-  };
 
   const handleToggleFullyStaffed = async (jobId) => {
     try {
@@ -509,6 +418,12 @@ export default function MyWorksPage() {
       console.error('Error toggling fully staffed status:', error);
       alert('אירעה שגיאה בעת עדכון סטטוס האיוש של העבודה');
     }
+  };
+  
+  const getHiredCount = (jobId) => {
+    return applicants.filter((applicant) =>
+      applicant.appliedJobs.some((job) => job.jobId === jobId && job.hired)
+    ).length;
   };
 
   const handleMarkJobCompleted = (jobId) => {
@@ -907,8 +822,19 @@ export default function MyWorksPage() {
     );
   };
 
-  
-  
+  if (loading || authLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="90vh">
+        <CircularProgress />
+      </Box>
+    );
+  } 
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom>
@@ -986,27 +912,27 @@ export default function MyWorksPage() {
         </DialogActions>
       </Dialog>
       <Dialog
-  open={openRatingDialog}
-  onClose={() => setOpenRatingDialog(false)}
-  aria-labelledby="rating-dialog-title"
-  aria-describedby="rating-dialog-description"
->
-  <DialogTitle id="rating-dialog-title">סיום עבודה ודירוג עובדים</DialogTitle>
-  <DialogContent>
-    <DialogContentText id="rating-dialog-description">
-      האם אתה מעוניין לדרג את העובדים שהשתתפו בעבודה זו? תוכל לדרג אותם מיד לאחר סימון העבודה כהושלמה.
-    </DialogContentText>
-  </DialogContent>
-  <DialogActions>
-    <Button onClick={() => setOpenRatingDialog(false)} color="primary">
-      ביטול
-    </Button>
-    <Button onClick={handleConfirmJobCompletion} color="primary" autoFocus>
-      סיים עבודה ודרג עובדים
-    </Button>
-  </DialogActions>
-</Dialog>
-<JobCompletionRating
+        open={openRatingDialog}
+        onClose={() => setOpenRatingDialog(false)}
+        aria-labelledby="rating-dialog-title"
+        aria-describedby="rating-dialog-description"
+      >
+        <DialogTitle id="rating-dialog-title">סיום עבודה ודירוג עובדים</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="rating-dialog-description">
+            האם אתה מעוניין לדרג את העובדים שהשתתפו בעבודה זו? תוכל לדרג אותם מיד לאחר סימון העבודה כהושלמה.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenRatingDialog(false)} color="primary">
+            ביטול
+          </Button>
+          <Button onClick={handleConfirmJobCompletion} color="primary" autoFocus>
+            סיים עבודה ודרג עובדים
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <JobCompletionRating
         open={openRatingDialog}
         onClose={handleJobCompletionRatingClose}
         jobId={jobToRate}

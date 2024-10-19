@@ -6,12 +6,12 @@ import {
 } from 'lucide-react';
 import {
   collection, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, serverTimestamp,
-  arrayUnion, arrayRemove,
+  arrayUnion, arrayRemove, query, where
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { Link } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, Snackbar, Alert } from '@mui/material';
 
 // עדכן את נתיב הייבוא בהתאם למיקום הקובץ SearchFilters.js
 import SearchFilters from './SearchFilters';
@@ -22,12 +22,15 @@ export default function JobListPage() {
   const [locationFilter, setLocationFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [salaryFilter, setSalaryFilter] = useState([40, 3400]);
+  const [experienceFilter, setExperienceFilter] = useState('');
+  const [jobTypeFilter, setJobTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [savedJobs, setSavedJobs] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [expandedJob, setExpandedJob] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
   const [appliedJobs, setAppliedJobs] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     fetchJobs();
@@ -45,6 +48,7 @@ export default function JobListPage() {
       setJobs(filteredJobList);
     } catch (error) {
       console.error('Error fetching jobs: ', error);
+      setSnackbar({ open: true, message: 'שגיאה בשליפת משרות.', severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -62,6 +66,7 @@ export default function JobListPage() {
         }
       } catch (error) {
         console.error('Error fetching saved jobs: ', error);
+        setSnackbar({ open: true, message: 'שגיאה בשליפת משרות שמורות.', severity: 'error' });
       }
     }
   };
@@ -79,6 +84,7 @@ export default function JobListPage() {
         setAppliedJobs(appliedJobsList.map(String)); // המרת ה-IDs למחרוזות
       } catch (error) {
         console.error('Error fetching applied jobs: ', error);
+        setSnackbar({ open: true, message: 'שגיאה בשליפת מועמדויות.', severity: 'error' });
       }
     }
   };
@@ -100,15 +106,17 @@ export default function JobListPage() {
           savedJobs: arrayRemove(jobId),
         });
         setSavedJobs(savedJobs.filter((id) => id !== jobId));
+        setSnackbar({ open: true, message: 'המשרה הוסרה מהמשרות השמורות.', severity: 'info' });
       } else {
         await updateDoc(userRef, {
           savedJobs: arrayUnion(jobId),
         });
         setSavedJobs([...savedJobs, jobId]);
+        setSnackbar({ open: true, message: 'המשרה נוספה למשרות השמורות.', severity: 'success' });
       }
     } catch (error) {
       console.error('Error updating saved jobs: ', error);
-      alert('אירעה שגיאה בעדכון העבודות השמורות.');
+      setSnackbar({ open: true, message: 'שגיאה בעדכון המשרות השמורות.', severity: 'error' });
     }
   };
 
@@ -132,6 +140,7 @@ export default function JobListPage() {
         // Canceling application
         await deleteDoc(applicationRef);
         setAppliedJobs(appliedJobs.filter((id) => id !== jobId.toString()));
+        setSnackbar({ open: true, message: 'המועמדות בוטלה בהצלחה.', severity: 'info' });
 
         // Send cancellation notification
         await addDoc(collection(db, 'notifications'), {
@@ -141,7 +150,7 @@ export default function JobListPage() {
           type: 'application_canceled',
           message: `ביטלת את מועמדותך למשרה: ${jobData.title}`,
           timestamp: serverTimestamp(),
-          isRead: false, /* we DONT need this? */ 
+          isRead: false, 
           isHistory: false,
         });
       } else {
@@ -152,6 +161,7 @@ export default function JobListPage() {
           timestamp: serverTimestamp(),
         });
         setAppliedJobs([...appliedJobs, jobId.toString()]);
+        setSnackbar({ open: true, message: 'המועמדות הוגשה בהצלחה.', severity: 'success' });
 
         // Send application notification
         await addDoc(collection(db, 'notifications'), {
@@ -161,19 +171,13 @@ export default function JobListPage() {
           type: 'application_submitted',
           message: `הגשת מועמדות למשרה: ${jobData.title}`,
           timestamp: serverTimestamp(),
-          isRead: false, /* we DONT need this? */ 
+          isRead: false, 
           isHistory: false,
         });
       }
-
-      // Show success message to the user
-      alert(appliedJobs.includes(jobId.toString()) 
-        ? 'המועמדות בוטלה בהצלחה' 
-        : 'המועמדות הוגשה בהצלחה');
-
     } catch (error) {
       console.error('Error updating application: ', error);
-      alert('אירעה שגיאה בעדכון המועמדות.');
+      setSnackbar({ open: true, message: 'שגיאה בעדכון המועמדות.', severity: 'error' });
     }
   };
 
@@ -203,6 +207,30 @@ export default function JobListPage() {
           setActiveFilters(activeFilters.filter((f) => f.type !== 'location'));
         }
         break;
+      case 'experience':
+        setExperienceFilter(value);
+        if (value) {
+          setActiveFilters([...activeFilters.filter((f) => f.type !== 'experience'), { type: 'experience', value }]);
+        } else {
+          setActiveFilters(activeFilters.filter((f) => f.type !== 'experience'));
+        }
+        break;
+      case 'jobType':
+        setJobTypeFilter(value);
+        if (value) {
+          setActiveFilters([...activeFilters.filter((f) => f.type !== 'jobType'), { type: 'jobType', value }]);
+        } else {
+          setActiveFilters(activeFilters.filter((f) => f.type !== 'jobType'));
+        }
+        break;
+      case 'title':
+        setFilter(value);
+        if (value) {
+          setActiveFilters([...activeFilters.filter((f) => f.type !== 'title'), { type: 'title', value }]);
+        } else {
+          setActiveFilters(activeFilters.filter((f) => f.type !== 'title'));
+        }
+        break;
       default:
         break;
     }
@@ -220,18 +248,29 @@ export default function JobListPage() {
       case 'location':
         setLocationFilter('');
         break;
+      case 'experience':
+        setExperienceFilter('');
+        break;
+      case 'jobType':
+        setJobTypeFilter('');
+        break;
+      case 'title':
+        setFilter('');
+        break;
       default:
         break;
     }
   };
 
   const filteredJobs = jobs.filter((job) => {
-    return (
-      job.title.toLowerCase().includes(filter.toLowerCase()) &&
-      (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
-      (categoryFilter === '' || job.category === categoryFilter)
-      // ניתן להוסיף את סינון השכר אם תרצה
-    );
+    const matchesTitle = filter === '' || job.title.toLowerCase().includes(filter.toLowerCase());
+    const matchesLocation = locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase());
+    const matchesCategory = categoryFilter === '' || job.category === categoryFilter;
+    const matchesExperience = experienceFilter === '' || job.experience === experienceFilter;
+    const matchesJobType = jobTypeFilter === '' || job.jobType === jobTypeFilter;
+    const matchesSalary = job.salary >= salaryFilter[0] && job.salary <= salaryFilter[1];
+
+    return matchesTitle && matchesLocation && matchesCategory && matchesExperience && matchesJobType && matchesSalary;
   });
 
   const styles = {
@@ -263,6 +302,8 @@ export default function JobListPage() {
       fontWeight: '600',
       display: 'flex',
       alignItems: 'center',
+      marginRight: '0.5rem',
+      flex: '0 0 auto',
     },
     removeFilterButton: {
       background: 'none',
@@ -384,6 +425,10 @@ export default function JobListPage() {
           setCategoryFilter={setCategoryFilter}
           salaryFilter={salaryFilter}
           setSalaryFilter={setSalaryFilter}
+          experienceFilter={experienceFilter}
+          setExperienceFilter={setExperienceFilter}
+          jobTypeFilter={jobTypeFilter}
+          setJobTypeFilter={setJobTypeFilter}
           showFilters={showFilters}
           setShowFilters={setShowFilters}
           handleFilterChange={handleFilterChange}
@@ -396,19 +441,13 @@ export default function JobListPage() {
         {activeFilters.length > 0 && (
           <div style={styles.activeFiltersContainer}>
             {activeFilters.map((filter, index) => (
-              <span
-                key={index}
-                style={{
-                  ...styles.activeFilter,
-                  marginRight: '0.5rem',
-                  flex: '0 0 auto',
-                  backgroundColor: 'lightblue',
-                  color: 'black',
-                }}
-              >
+              <span key={index} style={styles.activeFilter}>
                 {filter.type === 'category' && `קטגוריה: ${filter.value}`}
-                {filter.type === 'salary' && `שכר מינימלי: ₪${filter.value[0]}`}
+                {filter.type === 'salary' && `שכר: ₪${filter.value[0]} - ₪${filter.value[1]}`}
                 {filter.type === 'location' && `מיקום: ${filter.value}`}
+                {filter.type === 'experience' && `ניסיון: ${filter.value}`}
+                {filter.type === 'jobType' && `סוג עבודה: ${filter.value}`}
+                {filter.type === 'title' && `תפקיד: ${filter.value}`}
                 <button
                   onClick={() => removeFilter(filter.type)}
                   style={styles.removeFilterButton}
@@ -422,25 +461,6 @@ export default function JobListPage() {
         )}
 
         {loading ? (
-          // <div
-          //   style={{
-          //     display: 'flex',
-          //     justifyContent: 'center',
-          //     alignItems: 'center',
-          //     height: '200px',
-          //   }}
-          // >
-          //   <div
-          //     style={{
-          //       border: '4px solid #f3f3f3',
-          //       borderTop: '4px solid #0077B6',
-          //       borderRadius: '50%',
-          //       width: '50px',
-          //       height: '50px',
-          //       animation: 'spin 1s linear infinite',
-          //     }}
-          //   ></div>
-          // </div>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="90vh">
             <CircularProgress />
           </Box>
@@ -503,6 +523,16 @@ export default function JobListPage() {
                         <Clock size={14} style={{ marginLeft: '4px' }} />
                         {job.type}
                       </span>
+                      {job.experience && (
+                        <span style={{ ...styles.tag, background: '#FFF0F0', color: '#D00000' }}>
+                          ניסיון: {job.experience}
+                        </span>
+                      )}
+                      {job.jobType && (
+                        <span style={{ ...styles.tag, background: '#F0E68C', color: '#DAA520' }}>
+                          סוג עבודה: {job.jobType}
+                        </span>
+                      )}
                     </div>
                     <p style={styles.jobDescription}>{job.description}</p>
                     <div style={styles.jobDetails}>
@@ -626,6 +656,21 @@ export default function JobListPage() {
           </div>
         )}
       </div>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

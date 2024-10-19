@@ -178,8 +178,8 @@ export default function SearchFilters({
               value={salaryFilter}
               onChange={(e, newValue) => handleFilterChange('salary', newValue)}
               valueLabelDisplay="auto"
-              min={40}
-              max={3400}
+              min={20}
+              max={500}
               step={10}
               sx={{
                 '& .MuiSlider-thumb': {
@@ -206,7 +206,7 @@ export default function SearchFilters({
                 ₪ {salaryFilter[0]}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {salaryFilter[1] === 3400 ? `₪ ${salaryFilter[1]} ומעלה` : `₪ ${salaryFilter[1]}`}
+                {salaryFilter[1] === 500 ? `₪ ${salaryFilter[1]} ומעלה` : `₪ ${salaryFilter[1]}`}
               </Typography>
             </Box>
           </DialogContent>
@@ -280,7 +280,7 @@ export default function SearchFilters({
             <Button
               onClick={() => {
                 setCategoryFilter('');
-                setSalaryFilter([40, 3400]);
+                setSalaryFilter([20, 500]);
                 setLocationFilter('');
                 setActiveFilters([]);
               }}
@@ -318,3 +318,101 @@ export default function SearchFilters({
     </>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+  // const fetchEmployerJobs = async () => {
+  //   if (!auth.currentUser) return;
+  
+  //   const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', auth.currentUser.uid));
+  //   const jobsSnapshot = await getDocs(jobsQuery);
+  //   const jobsList = [];
+  
+  //   for (const jobDoc of jobsSnapshot.docs) {
+  //     const jobData = jobDoc.data();
+  
+  //     const employerDocRef = doc(db, 'employers', jobData.employerId);
+  //     const employerDoc = await getDoc(employerDocRef);
+  
+  //     let companyName = 'Unknown Company'; // Default value in case employer data is not found
+  //     if (employerDoc.exists()) {
+  //       const employerData = employerDoc.data();
+  //       companyName = employerData.companyName || companyName;
+  //     }
+  
+  //     jobsList.push({
+  //       id: jobDoc.id,
+  //       ...jobData,
+  //       companyName, // Use the fetched companyName instead of the one from jobs collection
+  //     });
+  //   }
+  
+  //   setJobs(jobsList);
+  
+  //   // const allApplicants = new Map();
+  //   // for (const job of jobsList) {
+  //   //   const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
+  //   //   const applicantsSnapshot = await getDocs(applicantsQuery);
+  //   //   for (const applicantDoc of applicantsSnapshot.docs) {
+  //   //     const applicantData = applicantDoc.data();
+  //   //     const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
+  //   //     if (!allApplicants.has(applicantData.applicantId)) {
+  //   //       const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
+  //   //       allApplicants.set(applicantData.applicantId, {
+  //   //         id: applicantDoc.id,
+  //   //         ...applicantData,
+  //   //         userData: userData.data(),
+  //   //         appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
+  //   //       });
+  //   //     } else {
+  //   //       allApplicants.get(applicantData.applicantId).appliedJobs.push({
+  //   //         jobId: job.id,
+  //   //         hired: applicantData.hired || false,
+  //   //       });
+  //   //     }
+  //   //   }
+  //   // }
+  //   // setApplicants(Array.from(allApplicants.values()));
+
+  //   const allApplicants = new Map();
+  //   for (const job of jobsList) {
+  //     const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
+  //     const applicantsSnapshot = await getDocs(applicantsQuery);
+
+  //     for (const applicantDoc of applicantsSnapshot.docs) {
+  //       const applicantData = applicantDoc.data();
+  //       const userDoc = await getDoc(doc(db, 'users', applicantData.applicantId));
+  //       const userData = userDoc.exists() ? userDoc.data() : {};
+
+  //       if (!allApplicants.has(applicantData.applicantId)) {
+  //         allApplicants.set(applicantData.applicantId, {
+  //           id: applicantDoc.id,
+  //           ...applicantData,
+  //           userData: {
+  //             ...userData,
+  //             // Ensure you are getting the photoURL from Firestore
+  //             avatarUrl: userData.avatarUrl || null, 
+  //             photoURL: userData.photoURL || null, 
+  //             profileURL: userData.profileURL || null, 
+  //           },
+  //           appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
+  //         });
+  //       } else {
+  //         allApplicants.get(applicantData.applicantId).appliedJobs.push({
+  //           jobId: job.id,
+  //           hired: applicantData.hired || false,
+  //         });
+  //       }
+  //     }
+  //   }
+  //   setApplicants(Array.from(allApplicants.values()));
+
+  // };

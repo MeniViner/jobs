@@ -89,23 +89,65 @@ export default function MyApplications() {
     }
   }, [user]);
 
+  // const fetchApplicationsAndHiredJobs = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const jobsCollection = collection(db, 'jobs');
+  //     const jobsSnapshot = await getDocs(jobsCollection);
+  //     const jobsData = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  //     // Fetch all applicants for each job in parallel
+  //     const jobsWithApplicationsPromises = jobsData.map(async (job) => {
+  //       const applicantsCollection = collection(db, 'jobChats', job.id, 'applicants');
+  //       const applicantsQuery = query(applicantsCollection, where('applicantId', '==', user.uid));
+  //       const applicantsSnapshot = await getDocs(applicantsQuery);
+  
+  //       if (!applicantsSnapshot.empty) {
+  //         const latestApplication = applicantsSnapshot.docs.reduce((latest, current) => {
+  //           return latest.data().timestamp > current.data().timestamp ? latest : current;
+  //         });
+  
+  //         return {
+  //           id: latestApplication.id,
+  //           jobId: job.id,
+  //           ...job,
+  //           appliedAt: latestApplication.data().timestamp,
+  //           status: latestApplication.data().hired ? 'התקבלת' : 'ממתין',
+  //           applicationCount: applicantsSnapshot.size,
+  //         };
+  //       }
+  //       return null;
+  //     });
+  
+  //     const jobsWithApplications = await Promise.all(jobsWithApplicationsPromises);
+  //     const filteredJobs = jobsWithApplications.filter(job => job !== null);
+  
+  //     setApplications(filteredJobs.filter(job => job.status !== 'התקבלת'));
+  //     setHiredJobs(filteredJobs.filter(job => job.status === 'התקבלת'));
+  //   } catch (error) {
+  //     console.error("Error fetching applications and hired jobs:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  
   const fetchApplicationsAndHiredJobs = async () => {
     setLoading(true);
     try {
-      const jobsCollection = collection(db, 'jobs');
+      const jobsCollection = collection(db, 'jobs'); // Correctly pointing to 'jobs' collection
       const jobsSnapshot = await getDocs(jobsCollection);
-      const jobsData = jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const jobsData = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   
       // Fetch all applicants for each job in parallel
       const jobsWithApplicationsPromises = jobsData.map(async (job) => {
-        const applicantsCollection = collection(db, 'jobChats', job.id, 'applicants');
+        const applicantsCollection = collection(db, 'jobs', job.id, 'applicants'); // Access applicants subcollection
         const applicantsQuery = query(applicantsCollection, where('applicantId', '==', user.uid));
         const applicantsSnapshot = await getDocs(applicantsQuery);
   
         if (!applicantsSnapshot.empty) {
-          const latestApplication = applicantsSnapshot.docs.reduce((latest, current) => {
-            return latest.data().timestamp > current.data().timestamp ? latest : current;
-          });
+          const latestApplication = applicantsSnapshot.docs.reduce((latest, current) =>
+            latest.data().timestamp > current.data().timestamp ? latest : current
+          );
   
           return {
             id: latestApplication.id,
@@ -120,17 +162,62 @@ export default function MyApplications() {
       });
   
       const jobsWithApplications = await Promise.all(jobsWithApplicationsPromises);
-      const filteredJobs = jobsWithApplications.filter(job => job !== null);
+      const filteredJobs = jobsWithApplications.filter((job) => job !== null);
   
-      setApplications(filteredJobs.filter(job => job.status !== 'התקבלת'));
-      setHiredJobs(filteredJobs.filter(job => job.status === 'התקבלת'));
+      setApplications(filteredJobs.filter((job) => job.status !== 'התקבלת'));
+      setHiredJobs(filteredJobs.filter((job) => job.status === 'התקבלת'));
     } catch (error) {
-      console.error("Error fetching applications and hired jobs:", error);
+      console.error('Error fetching applications and hired jobs:', error);
     } finally {
       setLoading(false);
     }
   };
   
+  // const handleSendMessage = async () => {
+  //   if (newMessage.trim() === '' || !selectedJob) return;
+  
+  //   try {
+  //     const applicantsCollection = collection(db, 'jobs', selectedJob.id, 'applicants'); // Correctly access applicants subcollection
+  //     const applicantQuery = query(applicantsCollection, where('applicantId', '==', user.uid));
+  //     const applicantSnapshot = await getDocs(applicantQuery);
+  
+  //     let chatId;
+  //     if (applicantSnapshot.empty) {
+  //       const newApplicant = {
+  //         applicantId: user.uid,
+  //         applicantName: user.displayName || 'Anonymous',
+  //         jobId: selectedJob.id,
+  //         jobTitle: selectedJob.title,
+  //         employerId: selectedJob.employerId,
+  //         employerName: selectedJob.employerName || 'Anonymous',
+  //         createdAt: serverTimestamp(),
+  //       };
+  
+  //       const applicantRef = await addDoc(applicantsCollection, newApplicant); // Add new applicant document
+  //       chatId = applicantRef.id;
+  //     } else {
+  //       chatId = applicantSnapshot.docs[0].id;
+  //     }
+  
+  //     await addDoc(collection(db, 'jobChats', selectedJob.id, 'applicants', chatId, 'messages'), {
+  //       text: newMessage,
+  //       senderId: user.uid,
+  //       senderName: user.displayName || 'Anonymous',
+  //       timestamp: serverTimestamp(),
+  //     });
+  
+  //     setChatDialogOpen(false);
+  //     setNewMessage('');
+  //     alert('message sended')
+  //     navigate(`/job-chat`);
+
+  //     // navigate(`/job-chat/${selectedJob.id}`);
+  //   } catch (error) {
+  //     console.error('Error sending message:', error);
+  //   }
+  // };
+  
+
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -211,7 +298,9 @@ export default function MyApplications() {
 
       setChatDialogOpen(false);
       setNewMessage('');
-      navigate(`/job-chat/${selectedJob.id}`);
+      alert('הודעתך נשלחה למעסיק.')
+      navigate(`/job-chat`);
+      // navigate(`/job-chat/${selectedJob.id}`);
     } catch (error) {
       console.error("Error starting chat:", error);
     }

@@ -11,14 +11,13 @@ import {
 import { collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase.js';
 import { getAuth } from 'firebase/auth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate} from 'react-router-dom';
 import { RatingInput } from './rating/RatingSystem.jsx';
 import JobCompletionRating from './rating/JobCompletionRating.tsx';
 
 
 function EditJobDialog({ open, handleClose, job, handleSave }) {
   const [editedJob, setEditedJob] = useState(job || {});
-  
 
   useEffect(() => {
     if (job) {
@@ -165,6 +164,7 @@ export default function MyWorksPage() {
   const [jobs, setJobs] = useState([]);
   const [expandedJob, setExpandedJob] = useState(null);
   const [applicants, setApplicants] = useState([]);
+  const navigate = useNavigate();
   const [message, setMessage] = useState('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [jobToDelete, setJobToDelete] = useState(null);
@@ -197,108 +197,160 @@ export default function MyWorksPage() {
     fetchEmployerJobs();
   }, []);
 
+  // const fetchEmployerJobs = async () => {
+  //   if (!auth.currentUser) return;
+  
+  //   const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', auth.currentUser.uid));
+  //   const jobsSnapshot = await getDocs(jobsQuery);
+  //   const jobsList = [];
+  
+  //   for (const jobDoc of jobsSnapshot.docs) {
+  //     const jobData = jobDoc.data();
+  
+  //     const employerDocRef = doc(db, 'employers', jobData.employerId);
+  //     const employerDoc = await getDoc(employerDocRef);
+  
+  //     let companyName = 'Unknown Company'; // Default value in case employer data is not found
+  //     if (employerDoc.exists()) {
+  //       const employerData = employerDoc.data();
+  //       companyName = employerData.companyName || companyName;
+  //     }
+  
+  //     jobsList.push({
+  //       id: jobDoc.id,
+  //       ...jobData,
+  //       companyName, // Use the fetched companyName instead of the one from jobs collection
+  //     });
+  //   }
+  
+  //   setJobs(jobsList);
+  
+  //   // const allApplicants = new Map();
+  //   // for (const job of jobsList) {
+  //   //   const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
+  //   //   const applicantsSnapshot = await getDocs(applicantsQuery);
+  //   //   for (const applicantDoc of applicantsSnapshot.docs) {
+  //   //     const applicantData = applicantDoc.data();
+  //   //     const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
+  //   //     if (!allApplicants.has(applicantData.applicantId)) {
+  //   //       const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
+  //   //       allApplicants.set(applicantData.applicantId, {
+  //   //         id: applicantDoc.id,
+  //   //         ...applicantData,
+  //   //         userData: userData.data(),
+  //   //         appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
+  //   //       });
+  //   //     } else {
+  //   //       allApplicants.get(applicantData.applicantId).appliedJobs.push({
+  //   //         jobId: job.id,
+  //   //         hired: applicantData.hired || false,
+  //   //       });
+  //   //     }
+  //   //   }
+  //   // }
+  //   // setApplicants(Array.from(allApplicants.values()));
+
+  //   const allApplicants = new Map();
+  //   for (const job of jobsList) {
+  //     const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
+  //     const applicantsSnapshot = await getDocs(applicantsQuery);
+
+  //     for (const applicantDoc of applicantsSnapshot.docs) {
+  //       const applicantData = applicantDoc.data();
+  //       const userDoc = await getDoc(doc(db, 'users', applicantData.applicantId));
+  //       const userData = userDoc.exists() ? userDoc.data() : {};
+
+  //       if (!allApplicants.has(applicantData.applicantId)) {
+  //         allApplicants.set(applicantData.applicantId, {
+  //           id: applicantDoc.id,
+  //           ...applicantData,
+  //           userData: {
+  //             ...userData,
+  //             // Ensure you are getting the photoURL from Firestore
+  //             avatarUrl: userData.avatarUrl || null, 
+  //             photoURL: userData.photoURL || null, 
+  //             profileURL: userData.profileURL || null, 
+  //           },
+  //           appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
+  //         });
+  //       } else {
+  //         allApplicants.get(applicantData.applicantId).appliedJobs.push({
+  //           jobId: job.id,
+  //           hired: applicantData.hired || false,
+  //         });
+  //       }
+  //     }
+  //   }
+  //   setApplicants(Array.from(allApplicants.values()));
+
+  // };
+
   const fetchEmployerJobs = async () => {
+    const auth = getAuth();
+  
     if (!auth.currentUser) return;
   
-    const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', auth.currentUser.uid));
-    const jobsSnapshot = await getDocs(jobsQuery);
-    const jobsList = [];
+    try {
+      // Query to fetch jobs posted by the current employer
+      const jobsQuery = query(
+        collection(db, 'jobs'),
+        where('employerId', '==', auth.currentUser.uid)
+      );
   
-    for (const jobDoc of jobsSnapshot.docs) {
-      const jobData = jobDoc.data();
-  
-      const employerDocRef = doc(db, 'employers', jobData.employerId);
-      const employerDoc = await getDoc(employerDocRef);
-  
-      let companyName = 'Unknown Company'; // Default value in case employer data is not found
-      if (employerDoc.exists()) {
-        const employerData = employerDoc.data();
-        companyName = employerData.companyName || companyName;
-      }
-  
-      jobsList.push({
+      const jobsSnapshot = await getDocs(jobsQuery);
+      const jobsList = jobsSnapshot.docs.map((jobDoc) => ({
         id: jobDoc.id,
-        ...jobData,
-        companyName, // Use the fetched companyName instead of the one from jobs collection
-      });
-    }
+        ...jobDoc.data(),
+      }));
   
-    setJobs(jobsList);
+      const allApplicants = new Map();
   
-    // const allApplicants = new Map();
-    // for (const job of jobsList) {
-    //   const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
-    //   const applicantsSnapshot = await getDocs(applicantsQuery);
-    //   for (const applicantDoc of applicantsSnapshot.docs) {
-    //     const applicantData = applicantDoc.data();
-    //     const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
-    //     if (!allApplicants.has(applicantData.applicantId)) {
-    //       const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
-    //       allApplicants.set(applicantData.applicantId, {
-    //         id: applicantDoc.id,
-    //         ...applicantData,
-    //         userData: userData.data(),
-    //         appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
-    //       });
-    //     } else {
-    //       allApplicants.get(applicantData.applicantId).appliedJobs.push({
-    //         jobId: job.id,
-    //         hired: applicantData.hired || false,
-    //       });
-    //     }
-    //   }
-    // }
-    // setApplicants(Array.from(allApplicants.values()));
-
-    const allApplicants = new Map();
-    for (const job of jobsList) {
-      const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
-      const applicantsSnapshot = await getDocs(applicantsQuery);
-
-      for (const applicantDoc of applicantsSnapshot.docs) {
-        const applicantData = applicantDoc.data();
-        const userDoc = await getDoc(doc(db, 'users', applicantData.applicantId));
-        const userData = userDoc.exists() ? userDoc.data() : {};
-
-        if (!allApplicants.has(applicantData.applicantId)) {
+      // Fetch applicants from the 'applicants' subcollection for each job
+      for (const job of jobsList) {
+        const applicantsRef = collection(db, 'jobs', job.id, 'applicants');
+        const applicantsSnapshot = await getDocs(applicantsRef);
+  
+        for (const applicantDoc of applicantsSnapshot.docs) {
+          const applicantData = applicantDoc.data();
+          const userDoc = await getDoc(doc(db, 'users', applicantData.applicantId));
+          const userData = userDoc.exists() ? userDoc.data() : {};
+  
           allApplicants.set(applicantData.applicantId, {
-            id: applicantDoc.id,
             ...applicantData,
-            userData: {
-              ...userData,
-              // Ensure you are getting the photoURL from Firestore
-              avatarUrl: userData.avatarUrl || null, 
-              photoURL: userData.photoURL || null, 
-              profileURL: userData.profileURL || null, 
-            },
+            userData,
             appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
-          });
-        } else {
-          allApplicants.get(applicantData.applicantId).appliedJobs.push({
-            jobId: job.id,
-            hired: applicantData.hired || false,
           });
         }
       }
+  
+      setJobs(jobsList);
+      setApplicants(Array.from(allApplicants.values()));
+    } catch (error) {
+      console.error('Error fetching jobs or applicants:', error);
     }
-    setApplicants(Array.from(allApplicants.values()));
-
   };
-
-  const getGoogleProfilePicture = (email) => {
-    const auth = getAuth();
-    const users = auth.currentUser.providerData;
-  
-    const user = users.find((provider) => provider.email === email);
-    return user ? user.photoURL : null;
-  };
-  
+        
 
   const handleToggleExpand = (jobId) => {
     setExpandedJob(expandedJob === jobId ? null : jobId);
   };
 
   const handleSendMessage = async (applicantId, jobId) => {
+
+    console.log('applicantId:', applicantId);
+    console.log('jobId:', jobId);
+
+    const applicant = applicants.find(app => app.applicantId === applicantId);
+    if (!applicant) {
+      console.error('Applicant not found');
+      return;
+    } else {
+      console.log('ou ok founded', applicant);
+    }
+    const applicantName = applicant.userData?.name || 'שם לא זמין';
+    console.log('applicantName:', applicantName);
+    
+
     if (!message.trim()) return;
 
     try {
@@ -315,7 +367,7 @@ export default function MyWorksPage() {
           jobId: jobId,
           jobTitle: jobs.find((job) => job.id === jobId).title,
           applicantId: applicantId,
-          applicantName: applicants.find((app) => app.applicantId === applicantId).name,
+          applicantName: applicantName,
           employerId: auth.currentUser.uid,
           employerName: auth.currentUser.displayName || 'מעסיק',
           createdAt: serverTimestamp(),
@@ -336,19 +388,62 @@ export default function MyWorksPage() {
       setMessage('');
       setOpenChatDialog(false);
       alert('ההודעה נשלחה בהצלחה');
+      navigate(`/job-chat`);
+
     } catch (error) {
       console.error('Error sending message:', error);
       alert('אירעה שגיאה בשליחת ההודעה');
     }
   };
 
+  let xx= 8;
+
   const handleToggleHired = async (jobId, applicantId, currentHiredStatus) => {
     try {
-      const applicantRef = doc(db, 'jobChats', jobId, 'applicants', applicantId);
+      console.log('Job ID:', jobId);
+      console.log('Applicant ID:', applicantId);
+      console.log('Current Hired Status:', currentHiredStatus);
+
+      if (!jobId || !applicantId) {
+        alert('חסר זיהוי עבודה או מועמד. אנא נסה שוב.');
+        return;
+      }
+
+      const applicantRef = doc(db, 'jobs', jobId, 'applicants', applicantId);
+      const jobRef = doc(db, 'jobs', jobId);
+  
+      // Check if the applicant document exists
+      const applicantSnapshot = await getDoc(applicantRef);
+      if (!applicantSnapshot.exists()) {
+        alert('המסמך לא נמצא, לא ניתן לעדכן סטטוס מועמד.');
+        console.error('Applicant document does not exist.');
+        return;
+      }
+  
+      // Fetch the job data
+      const jobSnapshot = await getDoc(jobRef);
+      const jobData = jobSnapshot.data();
+      console.log('Job Data:', jobData);
+  
+      // Update the hired status
       await updateDoc(applicantRef, {
         hired: !currentHiredStatus,
       });
-
+  
+      // Add notification to Firestore
+      await addDoc(collection(db, 'notifications'), {
+        userId: applicantId,
+        jobId: jobId,
+        jobTitle: jobData?.title || 'Unknown Job',
+        type: currentHiredStatus ? 'hired_status_revoked' : 'hired_status_updated',
+        message: currentHiredStatus
+          ? `הסטטוס שלך למשרה: ${jobData?.title} בוטל.`
+          : `התקבלת למשרה: ${jobData?.title}!`,
+        timestamp: serverTimestamp(),
+        isHistory: false,
+      });
+  
+      // Update local state
       setApplicants(
         applicants.map((applicant) => {
           if (applicant.id === applicantId) {
@@ -360,11 +455,19 @@ export default function MyWorksPage() {
           return applicant;
         })
       );
+  
+      // Show success message
+      alert(
+        currentHiredStatus
+          ? 'הסטטוס שונה - המועמד כבר לא התקבל למשרה.'
+          : 'המועמד התקבל למשרה בהצלחה!'
+      );
     } catch (error) {
       console.error('Error updating hired status:', error);
+      alert('אירעה שגיאה בעדכון הסטטוס.');
     }
   };
-
+  
   const getHiredCount = (jobId) => {
     return applicants.filter((applicant) =>
       applicant.appliedJobs.some((job) => job.jobId === jobId && job.hired)
@@ -736,7 +839,7 @@ export default function MyWorksPage() {
                                       to={`/user/${applicant.applicantId}`}
                                       style={{ textDecoration: 'none', color: 'inherit' }}
                                     >
-                                      {applicant.name}
+                                      {applicant.userData?.name || 'שם לא זמין'}
                                     </Link>
                                   }
                                   secondary={
@@ -768,7 +871,7 @@ export default function MyWorksPage() {
                                     color={appliedJob.hired ? 'success' : 'primary'}
                                     size="small"
                                     onClick={() =>
-                                      handleToggleHired(job.id, applicant.id, appliedJob.hired)
+                                      handleToggleHired(job.id, applicant.applicantId, appliedJob.hired)
                                     }
                                     startIcon={appliedJob.hired ? <CheckCircle /> : null}
                                   >
@@ -804,6 +907,8 @@ export default function MyWorksPage() {
     );
   };
 
+  
+  
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom>

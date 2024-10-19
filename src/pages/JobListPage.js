@@ -10,78 +10,159 @@ import {
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
+import { useAuth } from '../contexts/AuthContext'; // Import AuthContext
 import { Link } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
+import { debounce } from 'lodash';
+
 
 // עדכן את נתיב הייבוא בהתאם למיקום הקובץ SearchFilters.js
 import SearchFilters from './SearchFilters';
 
 export default function JobListPage() {
+  const { user, loading: authLoading } = useAuth(); // Use the context
   const [jobs, setJobs] = useState([]);
   const [filter, setFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [salaryFilter, setSalaryFilter] = useState([40, 3400]);
+  const [salaryFilter, setSalaryFilter] = useState([20, 500]);
+  const [loadingAppliedJobs, setLoadingAppliedJobs] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [savedJobs, setSavedJobs] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [expandedJob, setExpandedJob] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
   const [appliedJobs, setAppliedJobs] = useState([]);
 
-  useEffect(() => {
-    fetchJobs();
-    fetchSavedJobs();
-    fetchAppliedJobs();
-  }, []);
+  // useEffect(() => {
+  //   fetchJobs();
+  //   fetchSavedJobs();
+  //   fetchAppliedJobs();
+  // }, []);
 
-  const fetchJobs = async () => {
+  useEffect(() => {
+    if (authLoading) return; // Wait for auth to complete
+
+    if (!user) {
+      setError('No user is logged in.');
+      setLoading(false);
+      return;
+    }
+
+    fetchAllData(); // Fetch all the date
+  }, [authLoading, user]);
+  
+  
+  const fetchAllData = async () => {
     setLoading(true);
     try {
-      const jobsCollection = collection(db, 'jobs');
-      const jobSnapshot = await getDocs(jobsCollection);
-      const jobList = jobSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const [jobsSnapshot, savedJobsSnapshot, applicationsSnapshot] = await Promise.all([
+        getDocs(collection(db, 'jobs')),
+        getDoc(doc(db, 'users', user.uid)),
+        getDocs(collection(db, 'applications')),
+      ]);
+
+      const jobList = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const filteredJobList = jobList.filter((job) => !job.isCompleted && !job.isFullyStaffed);
       setJobs(filteredJobList);
+
+      const savedJobsData = savedJobsSnapshot.exists() ? savedJobsSnapshot.data().savedJobs || [] : [];
+      setSavedJobs(savedJobsData);
+
+      const appliedJobsList = applicationsSnapshot.docs
+        .filter((doc) => doc.data().applicantId === user.uid)
+        .map((doc) => doc.data().jobId);
+      setAppliedJobs(appliedJobsList.map(String));
     } catch (error) {
-      console.error('Error fetching jobs: ', error);
+      console.error('Error fetching data:', error);
+      setError('Failed to load data.');
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
-  const fetchSavedJobs = async () => {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      try {
-        const userDocRef = doc(db, 'users', currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          setSavedJobs(userDocSnap.data().savedJobs || []);
-        }
-      } catch (error) {
-        console.error('Error fetching saved jobs: ', error);
-      }
-    }
-  };
+  // const fetchJobs = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const jobsCollection = collection(db, 'jobs');
+  //     const jobSnapshot = await getDocs(jobsCollection);
+  //     const jobList = jobSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  //     const filteredJobList = jobList.filter((job) => !job.isCompleted && !job.isFullyStaffed);
+  //     setJobs(filteredJobList);
+  //   } catch (error) {
+  //     console.error('Error fetching jobs: ', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  const fetchAppliedJobs = async () => {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      try {
-        const applicationsRef = collection(db, 'applications');
-        const applicationsSnapshot = await getDocs(applicationsRef);
-        const appliedJobsList = applicationsSnapshot.docs
-          .filter((doc) => doc.data().applicantId === currentUser.uid)
-          .map((doc) => doc.data().jobId);
-        setAppliedJobs(appliedJobsList.map(String)); // המרת ה-IDs למחרוזות
-      } catch (error) {
-        console.error('Error fetching applied jobs: ', error);
-      }
-    }
-  };
+  let x2 = 0;
+
+  // const fetchSavedJobs = async () => {
+  //   const auth = getAuth();
+  //   const currentUser = auth.currentUser;
+  //   if (currentUser) {
+  //     try {
+  //       const userDocRef = doc(db, 'users', currentUser.uid);
+  //       const userDocSnap = await getDoc(userDocRef);
+  //       if (userDocSnap.exists()) {
+  //         setSavedJobs(userDocSnap.data().savedJobs || []);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching saved jobs: ', error);
+  //     }
+  //   }
+  // };
+
+  let x1 = 0;
+
+  // const fetchAppliedJobs = async () => {
+  //   const auth = getAuth();
+  //   const currentUser = auth.currentUser;
+  
+  //   if (currentUser) {
+  //     try {
+  //       const applicationsRef = collection(db, 'applications');
+  //       const applicationsSnapshot = await getDocs(applicationsRef);
+  
+  //       console.log('Fetched Applications:', applicationsSnapshot.docs.map((doc) => doc.data())); // Debugging
+  
+  //       const appliedJobsList = applicationsSnapshot.docs
+  //         .filter((doc) => doc.data().applicantId === currentUser.uid)
+  //         .map((doc) => doc.data().jobId);
+  
+  //       console.log('Applied Jobs List:', appliedJobsList); // Debugging
+  //       setAppliedJobs(appliedJobsList.map(String)); // Ensure they are strings
+  //     } catch (error) {
+  //       console.error('Error fetching applied jobs: ', error);
+  //     }
+  //   }
+  // };
+  
+  let x = 0;
+  
+  // const fetchAppliedJobs = async () => {
+  //   const auth = getAuth();
+  //   const currentUser = auth.currentUser;
+
+  //   if (currentUser) {
+  //     try {
+  //       const applicationsRef = collection(db, 'applications');
+  //       const applicationsSnapshot = await getDocs(applicationsRef);
+
+  //       const appliedJobsList = applicationsSnapshot.docs
+  //         .filter((doc) => doc.data().applicantId === currentUser.uid)
+  //         .map((doc) => doc.data().jobId);
+
+  //       setAppliedJobs(appliedJobsList.map(String));
+  //     } catch (error) {
+  //       console.error('Error fetching applied jobs: ', error);
+  //     } finally {
+  //       setLoadingAppliedJobs(false); // Mark loading complete
+  //     }
+  //   }
+  // };
 
   const handleSaveJob = async (jobId) => {
     const auth = getAuth();
@@ -111,102 +192,154 @@ export default function JobListPage() {
       alert('אירעה שגיאה בעדכון העבודות השמורות.');
     }
   };
+  
+  let y = 9;
+  
+  //work
+  // const handleApplyForJob = async (jobId) => {
+  //   const auth = getAuth();
+  //   const currentUser = auth.currentUser;
+
+  //   if (!currentUser) {
+  //     alert('עליך להתחבר כדי להגיש מועמדות');
+  //     return;
+  //   }
+
+  //   const applicationRef = doc(db, 'applications', `${jobId}_${currentUser.uid}`);
+  //   const jobRef = doc(db, 'jobs', jobId);
+
+  //   try {
+  //     const jobSnapshot = await getDoc(jobRef);
+  //     const jobData = jobSnapshot.data();
+
+  //     if (appliedJobs.includes(jobId.toString())) {
+  //       // Canceling application
+  //       await deleteDoc(applicationRef);
+  //       setAppliedJobs(appliedJobs.filter((id) => id !== jobId.toString()));
+
+  //       // Send cancellation notification
+  //       await addDoc(collection(db, 'notifications'), {
+  //         userId: currentUser.uid,
+  //         jobId: jobId,
+  //         jobTitle: jobData.title,
+  //         type: 'application_canceled',
+  //         message: `ביטלת את מועמדותך למשרה: ${jobData.title}`,
+  //         timestamp: serverTimestamp(),
+  //         isHistory: false,
+  //       });
+  //     } else {
+  //       // Submitting application
+  //       await setDoc(applicationRef, {
+  //         jobId: jobId,
+  //         applicantId: currentUser.uid,
+  //         timestamp: serverTimestamp(),
+  //       });
+  //       setAppliedJobs([...appliedJobs, jobId.toString()]);
+
+  //       // Send application notification
+  //       await addDoc(collection(db, 'notifications'), {
+  //         userId: currentUser.uid,
+  //         jobId: jobId,
+  //         jobTitle: jobData.title,
+  //         type: 'application_submitted',
+  //         message: `הגשת מועמדות למשרה: ${jobData.title}`,
+  //         timestamp: serverTimestamp(),
+  //         isHistory: false,
+  //       });
+  //     }
+
+  //     // Show success message to the user
+  //     alert(appliedJobs.includes(jobId.toString()) 
+  //       ? 'המועמדות בוטלה בהצלחה' 
+  //       : 'המועמדות הוגשה בהצלחה');
+
+  //   } catch (error) {
+  //     console.error('Error updating application: ', error);
+  //     alert('אירעה שגיאה בעדכון המועמדות.');
+  //   }
+  // };
 
   const handleApplyForJob = async (jobId) => {
     const auth = getAuth();
     const currentUser = auth.currentUser;
-
+  
     if (!currentUser) {
       alert('עליך להתחבר כדי להגיש מועמדות');
       return;
     }
-
-    const applicationRef = doc(db, 'applications', `${jobId}_${currentUser.uid}`);
-    const jobRef = doc(db, 'jobs', jobId);
-
+  
     try {
-      const jobSnapshot = await getDoc(jobRef);
-      const jobData = jobSnapshot.data();
-
-      if (appliedJobs.includes(jobId.toString())) {
-        // Canceling application
-        await deleteDoc(applicationRef);
-        setAppliedJobs(appliedJobs.filter((id) => id !== jobId.toString()));
-
-        // Send cancellation notification
-        await addDoc(collection(db, 'notifications'), {
-          userId: currentUser.uid,
-          jobId: jobId,
-          jobTitle: jobData.title,
-          type: 'application_canceled',
-          message: `ביטלת את מועמדותך למשרה: ${jobData.title}`,
-          timestamp: serverTimestamp(),
-          isRead: false, /* we DONT need this? */ 
-          isHistory: false,
-        });
-      } else {
-        // Submitting application
-        await setDoc(applicationRef, {
-          jobId: jobId,
-          applicantId: currentUser.uid,
-          timestamp: serverTimestamp(),
-        });
-        setAppliedJobs([...appliedJobs, jobId.toString()]);
-
-        // Send application notification
-        await addDoc(collection(db, 'notifications'), {
-          userId: currentUser.uid,
-          jobId: jobId,
-          jobTitle: jobData.title,
-          type: 'application_submitted',
-          message: `הגשת מועמדות למשרה: ${jobData.title}`,
-          timestamp: serverTimestamp(),
-          isRead: false, /* we DONT need this? */ 
-          isHistory: false,
-        });
+      // Reference to the applicant's document inside the 'applicants' subcollection
+      const applicantRef = doc(db, 'jobs', jobId, 'applicants', currentUser.uid);
+  
+      // Check if the application already exists
+      const applicantSnapshot = await getDoc(applicantRef);
+      if (applicantSnapshot.exists()) {
+        alert('כבר הגשת מועמדות למשרה זו.');
+        return;
       }
-
-      // Show success message to the user
-      alert(appliedJobs.includes(jobId.toString()) 
-        ? 'המועמדות בוטלה בהצלחה' 
-        : 'המועמדות הוגשה בהצלחה');
-
+  
+      // Add the applicant to the job's 'applicants' subcollection
+      await setDoc(applicantRef, {
+        applicantId: currentUser.uid,
+        timestamp: serverTimestamp(),
+      });
+  
+      alert('המועמדות הוגשה בהצלחה!');
     } catch (error) {
-      console.error('Error updating application: ', error);
-      alert('אירעה שגיאה בעדכון המועמדות.');
+      console.error('Error applying for job: ', error);
+      alert('אירעה שגיאה בהגשת המועמדות.');
     }
   };
+  
+  
+  // const handleFilterChange = (filterType, value) => {
+  //   switch (filterType) {
+  //     case 'category':
+  //       setCategoryFilter(value);
+  //       if (value) {
+  //         setActiveFilters([...activeFilters.filter((f) => f.type !== 'category'), { type: 'category', value }]);
+  //       } else {
+  //         setActiveFilters(activeFilters.filter((f) => f.type !== 'category'));
+  //       }
+  //       break;
+  //     case 'salary':
+  //       setSalaryFilter(value);
+  //       if (value[0] > 40 || value[1] < 3400) {
+  //         setActiveFilters([...activeFilters.filter((f) => f.type !== 'salary'), { type: 'salary', value }]);
+  //       } else {
+  //         setActiveFilters(activeFilters.filter((f) => f.type !== 'salary'));
+  //       }
+  //       break;
+  //     case 'location':
+  //       setLocationFilter(value);
+  //       if (value) {
+  //         setActiveFilters([...activeFilters.filter((f) => f.type !== 'location'), { type: 'location', value }]);
+  //       } else {
+  //         setActiveFilters(activeFilters.filter((f) => f.type !== 'location'));
+  //       }
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  // };
 
-  const handleFilterChange = (filterType, value) => {
+  const handleFilterChange = debounce((filterType, value) => {
     switch (filterType) {
       case 'category':
         setCategoryFilter(value);
-        if (value) {
-          setActiveFilters([...activeFilters.filter((f) => f.type !== 'category'), { type: 'category', value }]);
-        } else {
-          setActiveFilters(activeFilters.filter((f) => f.type !== 'category'));
-        }
         break;
       case 'salary':
         setSalaryFilter(value);
-        if (value[0] > 40 || value[1] < 3400) {
-          setActiveFilters([...activeFilters.filter((f) => f.type !== 'salary'), { type: 'salary', value }]);
-        } else {
-          setActiveFilters(activeFilters.filter((f) => f.type !== 'salary'));
-        }
         break;
       case 'location':
         setLocationFilter(value);
-        if (value) {
-          setActiveFilters([...activeFilters.filter((f) => f.type !== 'location'), { type: 'location', value }]);
-        } else {
-          setActiveFilters(activeFilters.filter((f) => f.type !== 'location'));
-        }
         break;
       default:
         break;
     }
-  };
+  }, 300); // 300ms delay
+
 
   const removeFilter = (filterType) => {
     setActiveFilters(activeFilters.filter((f) => f.type !== filterType));
@@ -215,7 +348,7 @@ export default function JobListPage() {
         setCategoryFilter('');
         break;
       case 'salary':
-        setSalaryFilter([40, 3400]);
+        setSalaryFilter([20, 500]);
         break;
       case 'location':
         setLocationFilter('');
@@ -372,6 +505,18 @@ export default function JobListPage() {
     },
   };
 
+    if (loading || authLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="90vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
   return (
     <div style={styles.container}>
       <div style={styles.content}>
@@ -421,30 +566,7 @@ export default function JobListPage() {
           </div>
         )}
 
-        {loading ? (
-          // <div
-          //   style={{
-          //     display: 'flex',
-          //     justifyContent: 'center',
-          //     alignItems: 'center',
-          //     height: '200px',
-          //   }}
-          // >
-          //   <div
-          //     style={{
-          //       border: '4px solid #f3f3f3',
-          //       borderTop: '4px solid #0077B6',
-          //       borderRadius: '50%',
-          //       width: '50px',
-          //       height: '50px',
-          //       animation: 'spin 1s linear infinite',
-          //     }}
-          //   ></div>
-          // </div>
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="90vh">
-            <CircularProgress />
-          </Box>
-        ) : filteredJobs.length === 0 ? (
+        {filteredJobs.length === 0 ? (
           <div
             style={{
               textAlign: 'center',

@@ -1,4 +1,3 @@
-// SearchFilters.js
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, SlidersHorizontal } from 'lucide-react';
@@ -8,11 +7,15 @@ import {
   IconButton,
   Button,
   Slider,
-  Dialog,
-  DialogContent,
-  DialogActions,
   ToggleButton,
   ToggleButtonGroup,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  DialogContent,
+  DialogActions, // ודא ש-DialogActions מיובא כאן
 } from '@mui/material';
 
 export default function SearchFilters({
@@ -24,6 +27,10 @@ export default function SearchFilters({
   setCategoryFilter,
   salaryFilter,
   setSalaryFilter,
+  experienceFilter,
+  setExperienceFilter,
+  jobTypeFilter,
+  setJobTypeFilter,
   showFilters,
   setShowFilters,
   handleFilterChange,
@@ -45,6 +52,28 @@ export default function SearchFilters({
     // שאר הסגנונות...
   };
 
+  // הגדרות האנימציה
+  const backdropVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+  };
+
+  const modalVariants = {
+    hidden: { y: '100vh', opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } },
+    exit: { y: '100vh', opacity: 0, transition: { ease: 'easeInOut' } },
+  };
+
+  // פונקציה לסגירת הסינון כאשר לוחצים על backdrop
+  const handleBackdropClick = () => {
+    setShowFilters(false);
+  };
+
+  // פונקציה למניעת סגירה כאשר לוחצים בתוך המודאל
+  const handleModalClick = (e) => {
+    e.stopPropagation();
+  };
+
   return (
     <>
       <Box sx={{ width: '100%', mb: 2, display: 'flex', gap: '2%' }}>
@@ -61,10 +90,17 @@ export default function SearchFilters({
             cursor: 'pointer',
           }}
         >
-          <Typography sx={{ flexGrow: 1, textAlign: 'right' }}>מיקום? · קטגוריה · סכום</Typography>
-          <IconButton size="small" sx={{ ml: 1 }}>
-            <Search />
-          </IconButton>
+          <TextField
+            variant="standard"
+            placeholder="חפש משרות"
+            value={filter}
+            onChange={(e) => handleFilterChange('title', e.target.value)}
+            InputProps={{
+              disableUnderline: true,
+              startAdornment: <Search color="#829AB1" />,
+            }}
+            fullWidth
+          />
         </Box>
         <Box
           sx={{
@@ -77,244 +113,352 @@ export default function SearchFilters({
             border: '1px solid #e0e0e0',
             boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
             cursor: 'pointer',
+            justifyContent: 'center',
           }}
           onClick={() => setShowFilters(true)}
         >
-          <SlidersHorizontal sx={{ mr: 1 }} />
+          <SlidersHorizontal />
         </Box>
+      </Box>
 
-        <Dialog
-          open={showFilters}
-          onClose={() => setShowFilters(false)}
-          fullWidth
-          maxWidth="xs"
-          PaperProps={{
-            sx: {
-              borderRadius: '12px',
-              m: 0,
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            className="backdrop"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            onClick={handleBackdropClick} // הוספת אירוע onClick ל-backdrop
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
               width: '100%',
-              maxHeight: '100%',
-            },
-          }}
-        >
-          <DialogContent sx={{ p: 3 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 3,
+              height: '100%',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1300, // גבוה ממסגרת Material-UI Dialog
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-end', // ההתאמה למכשירים ניידים
+            }}
+          >
+            <motion.div
+              className="modal"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={handleModalClick} // מניעת סגירה כאשר לוחצים בתוך המודאל
+              style={{
+                background: '#fff',
+                width: '100%',
+                borderTopLeftRadius: '20px',
+                borderTopRightRadius: '20px',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                position: 'relative', // כדי לאפשר מיקום אבסולוטי של הכפתור
               }}
             >
-              <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
-                מסננים
-              </Typography>
-              <IconButton edge="end" color="inherit" onClick={() => setShowFilters(false)} aria-label="close">
-                <X />
-              </IconButton>
-            </Box>
-
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-              סוג משרה
-            </Typography>
-            <ToggleButtonGroup
-              value={categoryFilter}
-              exclusive
-              onChange={(e, value) => handleFilterChange('category', value)}
-              aria-label="job type"
-              sx={{ mb: 3, width: '100%' }}
-            >
-              <ToggleButton
-                value="fullTime"
-                aria-label="full time"
+              {/* כותרת עם כפתור הסגירה */}
+              <Box
                 sx={{
-                  flex: 1,
-                  borderRadius: '100px',
-                  mr: 1,
-                  border: '1px solid #e0e0e0',
-                  '&.Mui-selected': {
-                    bgcolor: '#E0F2FE',
-                    color: '#0077B6',
-                    '&:hover': {
-                      bgcolor: '#E0F2FE',
-                    },
-                  },
+                  position: 'sticky',
+                  top: 0,
+                  background: '#fff',
+                  zIndex: 1,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px 24px',
+                  borderBottom: '1px solid #E4E7EB',
                 }}
               >
-                משרה מלאה
-              </ToggleButton>
-              <ToggleButton
-                value="partTime"
-                aria-label="part time"
-                sx={{
-                  flex: 1,
-                  borderRadius: '100px',
-                  border: '1px solid #e0e0e0',
-                  '&.Mui-selected': {
-                    bgcolor: '#E0F2FE',
-                    color: '#0077B6',
+                <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
+                  מסננים
+                </Typography>
+                <IconButton
+                  edge="end"
+                  color="inherit"
+                  onClick={() => setShowFilters(false)}
+                  aria-label="close"
+                >
+                  <X />
+                </IconButton>
+              </Box>
+
+              <Box sx={{ p: 3 }}>
+                {/* סינון קטגוריה */}
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  קטגוריה
+                </Typography>
+                <ToggleButtonGroup
+                  value={categoryFilter}
+                  exclusive
+                  onChange={(e, value) => handleFilterChange('category', value)}
+                  aria-label="job category"
+                  sx={{ mb: 3, width: '100%' }}
+                >
+                  <ToggleButton
+                    value="fullTime"
+                    aria-label="full time"
+                    sx={{
+                      flex: 1,
+                      borderRadius: '100px',
+                      mr: 1,
+                      border: '1px solid #e0e0e0',
+                      '&.Mui-selected': {
+                        bgcolor: '#E0F2FE',
+                        color: '#0077B6',
+                        '&:hover': {
+                          bgcolor: '#E0F2FE',
+                        },
+                      },
+                    }}
+                  >
+                    משרה מלאה
+                  </ToggleButton>
+                  <ToggleButton
+                    value="partTime"
+                    aria-label="part time"
+                    sx={{
+                      flex: 1,
+                      borderRadius: '100px',
+                      border: '1px solid #e0e0e0',
+                      '&.Mui-selected': {
+                        bgcolor: '#E0F2FE',
+                        color: '#0077B6',
+                        '&:hover': {
+                          bgcolor: '#E0F2FE',
+                        },
+                      },
+                    }}
+                  >
+                    משרה חלקית
+                  </ToggleButton>
+                  <ToggleButton
+                    value="contract"
+                    aria-label="contract"
+                    sx={{
+                      flex: 1,
+                      borderRadius: '100px',
+                      ml: 1,
+                      border: '1px solid #e0e0e0',
+                      '&.Mui-selected': {
+                        bgcolor: '#E0F2FE',
+                        color: '#0077B6',
+                        '&:hover': {
+                          bgcolor: '#E0F2FE',
+                        },
+                      },
+                    }}
+                  >
+                    חוזה
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
+                {/* סינון שכר */}
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  טווח שכר (₪)
+                </Typography>
+                <Box sx={{ px: 2 }}>
+                  <Slider
+                    value={salaryFilter}
+                    onChange={(e, newValue) => handleFilterChange('salary', newValue)}
+                    valueLabelDisplay="auto"
+                    min={40}
+                    max={3400}
+                    step={10}
+                    sx={{
+                      '& .MuiSlider-thumb': {
+                        height: 24,
+                        width: 24,
+                        backgroundColor: '#fff',
+                        border: '2px solid currentColor',
+                        '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
+                          boxShadow: 'inherit',
+                        },
+                      },
+                      '& .MuiSlider-track': {
+                        height: 4,
+                      },
+                      '& .MuiSlider-rail': {
+                        height: 4,
+                        opacity: 0.5,
+                        backgroundColor: '#bfbfbf',
+                      },
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      ₪ {salaryFilter[0]}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {salaryFilter[1] === 3400 ? `₪ ${salaryFilter[1]} ומעלה` : `₪ ${salaryFilter[1]}`}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* סינון רמת ניסיון */}
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 3, mb: 1 }}>
+                  רמת ניסיון
+                </Typography>
+                <FormControl fullWidth>
+                  <InputLabel id="experience-label">בחר רמת ניסיון</InputLabel>
+                  <Select
+                    labelId="experience-label"
+                    id="experience"
+                    value={experienceFilter}
+                    label="בחר רמת ניסיון"
+                    onChange={(e) => handleFilterChange('experience', e.target.value)}
+                  >
+                    <MenuItem value=""><em>כל הרמות</em></MenuItem>
+                    <MenuItem value="entry">חדשים</MenuItem>
+                    <MenuItem value="mid">בינוניים</MenuItem>
+                    <MenuItem value="senior">בכירים</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* סינון סוג עבודה */}
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 3, mb: 1 }}>
+                  סוג עבודה
+                </Typography>
+                <ToggleButtonGroup
+                  value={jobTypeFilter}
+                  exclusive
+                  onChange={(e, value) => handleFilterChange('jobType', value)}
+                  aria-label="job type"
+                  sx={{ mb: 3, width: '100%' }}
+                >
+                  <ToggleButton
+                    value="remote"
+                    aria-label="remote"
+                    sx={{
+                      flex: 1,
+                      borderRadius: '100px',
+                      mr: 1,
+                      border: '1px solid #e0e0e0',
+                      '&.Mui-selected': {
+                        bgcolor: '#E0F2FE',
+                        color: '#0077B6',
+                        '&:hover': {
+                          bgcolor: '#E0F2FE',
+                        },
+                      },
+                    }}
+                  >
+                    מרחוק
+                  </ToggleButton>
+                  <ToggleButton
+                    value="onsite"
+                    aria-label="onsite"
+                    sx={{
+                      flex: 1,
+                      borderRadius: '100px',
+                      border: '1px solid #e0e0e0',
+                      '&.Mui-selected': {
+                        bgcolor: '#E0F2FE',
+                        color: '#0077B6',
+                        '&:hover': {
+                          bgcolor: '#E0F2FE',
+                        },
+                      },
+                    }}
+                  >
+                    במשרד
+                  </ToggleButton>
+                  <ToggleButton
+                    value="hybrid"
+                    aria-label="hybrid"
+                    sx={{
+                      flex: 1,
+                      borderRadius: '100px',
+                      ml: 1,
+                      border: '1px solid #e0e0e0',
+                      '&.Mui-selected': {
+                        bgcolor: '#E0F2FE',
+                        color: '#0077B6',
+                        '&:hover': {
+                          bgcolor: '#E0F2FE',
+                        },
+                      },
+                    }}
+                  >
+                    היברידי
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
+                {/* סינון מיקום */}
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 3, mb: 1 }}>
+                  מיקום
+                </Typography>
+                <TextField
+                  variant="outlined"
+                  placeholder="הזן מיקום"
+                  value={locationFilter}
+                  onChange={(e) => handleFilterChange('location', e.target.value)}
+                  fullWidth
+                  sx={{ mb: 3 }}
+                />
+
+                {/* סינון תפקיד */}
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mt: 3, mb: 1 }}>
+                  תפקיד
+                </Typography>
+                <TextField
+                  variant="outlined"
+                  placeholder="הזן תפקיד"
+                  value={filter}
+                  onChange={(e) => handleFilterChange('title', e.target.value)}
+                  fullWidth
+                  sx={{ mb: 3 }}
+                />
+              </Box>
+
+              <DialogActions sx={{ p: 3, pt: 0 }}>
+                <Button
+                  onClick={() => {
+                    setCategoryFilter('');
+                    setSalaryFilter([40, 3400]);
+                    setLocationFilter('');
+                    setExperienceFilter('');
+                    setJobTypeFilter('');
+                    setFilter('');
+                    setActiveFilters([]);
+                  }}
+                  sx={{
+                    color: 'text.primary',
+                    bgcolor: '#F3F4F6',
                     '&:hover': {
-                      bgcolor: '#E0F2FE',
+                      bgcolor: '#E5E7EB',
                     },
-                  },
-                }}
-              >
-                משרה חלקית
-              </ToggleButton>
-            </ToggleButtonGroup>
-
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-              טווח מחירים
-            </Typography>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                מינימום
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                מקסימום
-              </Typography>
-            </Box>
-            <Slider
-              value={salaryFilter}
-              onChange={(e, newValue) => handleFilterChange('salary', newValue)}
-              valueLabelDisplay="auto"
-              min={20}
-              max={500}
-              step={10}
-              sx={{
-                '& .MuiSlider-thumb': {
-                  height: 24,
-                  width: 24,
-                  backgroundColor: '#fff',
-                  border: '2px solid currentColor',
-                  '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
-                    boxShadow: 'inherit',
-                  },
-                },
-                '& .MuiSlider-track': {
-                  height: 4,
-                },
-                '& .MuiSlider-rail': {
-                  height: 4,
-                  opacity: 0.5,
-                  backgroundColor: '#bfbfbf',
-                },
-              }}
-            />
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                ₪ {salaryFilter[0]}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {salaryFilter[1] === 500 ? `₪ ${salaryFilter[1]} ומעלה` : `₪ ${salaryFilter[1]}`}
-              </Typography>
-            </Box>
-          </DialogContent>
-
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '1rem',
-                    marginTop: '1rem',
+                    borderRadius: '8px',
+                    px: 3,
+                    py: 1,
                   }}
                 >
-                  <div>
-                    <label
-                      htmlFor="title"
-                      style={{
-                        display: 'block',
-                        marginBottom: '0.5rem',
-                        fontSize: '0.875rem',
-                        fontWeight: '500',
-                        color: '#486581',
-                      }}
-                    >
-                      תפקיד
-                    </label>
-                    <input
-                      type="text"
-                      id="title"
-                      style={styles.input}
-                      value={filter}
-                      onChange={(e) => setFilter(e.target.value)}
-                      placeholder="הזן תפקיד"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="location"
-                      style={{
-                        display: 'block',
-                        marginBottom: '0.5rem',
-                        fontSize: '0.875rem',
-                        fontWeight: '500',
-                        color: '#486581',
-                      }}
-                    >
-                      מיקום
-                    </label>
-                    <input
-                      type="text"
-                      id="location"
-                      style={styles.input}
-                      value={locationFilter}
-                      onChange={(e) => handleFilterChange('location', e.target.value)}
-                      placeholder="הזן מיקום"
-                    />
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <DialogActions sx={{ p: 3, pt: 0 }}>
-            <Button
-              onClick={() => {
-                setCategoryFilter('');
-                setSalaryFilter([20, 500]);
-                setLocationFilter('');
-                setActiveFilters([]);
-              }}
-              sx={{
-                color: 'text.primary',
-                bgcolor: '#F3F4F6',
-                '&:hover': {
-                  bgcolor: '#E5E7EB',
-                },
-                borderRadius: '8px',
-                px: 3,
-                py: 1,
-              }}
-            >
-              לנקות הכל
-            </Button>
-            <Button
-              onClick={() => setShowFilters(false)}
-              sx={{
-                color: 'white',
-                bgcolor: 'black',
-                '&:hover': {
-                  bgcolor: '#333',
-                },
-                borderRadius: '8px',
-                px: 3,
-                py: 1,
-              }}
-            >
-              הצגת {filteredJobsCount} משרות
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+                  לנקות הכל
+                </Button>
+                <Button
+                  onClick={() => setShowFilters(false)}
+                  sx={{
+                    color: 'white',
+                    bgcolor: '#0077B6',
+                    '&:hover': {
+                      bgcolor: '#005f8d',
+                    },
+                    borderRadius: '8px',
+                    px: 3,
+                    py: 1,
+                  }}
+                >
+                  הצג {filteredJobsCount} משרות
+                </Button>
+              </DialogActions>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
@@ -322,97 +466,3 @@ export default function SearchFilters({
 
 
 
-
-
-
-
-
-
-
-  // const fetchEmployerJobs = async () => {
-  //   if (!auth.currentUser) return;
-  
-  //   const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', auth.currentUser.uid));
-  //   const jobsSnapshot = await getDocs(jobsQuery);
-  //   const jobsList = [];
-  
-  //   for (const jobDoc of jobsSnapshot.docs) {
-  //     const jobData = jobDoc.data();
-  
-  //     const employerDocRef = doc(db, 'employers', jobData.employerId);
-  //     const employerDoc = await getDoc(employerDocRef);
-  
-  //     let companyName = 'Unknown Company'; // Default value in case employer data is not found
-  //     if (employerDoc.exists()) {
-  //       const employerData = employerDoc.data();
-  //       companyName = employerData.companyName || companyName;
-  //     }
-  
-  //     jobsList.push({
-  //       id: jobDoc.id,
-  //       ...jobData,
-  //       companyName, // Use the fetched companyName instead of the one from jobs collection
-  //     });
-  //   }
-  
-  //   setJobs(jobsList);
-  
-  //   // const allApplicants = new Map();
-  //   // for (const job of jobsList) {
-  //   //   const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
-  //   //   const applicantsSnapshot = await getDocs(applicantsQuery);
-  //   //   for (const applicantDoc of applicantsSnapshot.docs) {
-  //   //     const applicantData = applicantDoc.data();
-  //   //     const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
-  //   //     if (!allApplicants.has(applicantData.applicantId)) {
-  //   //       const userData = await getDoc(doc(db, 'users', applicantData.applicantId));
-  //   //       allApplicants.set(applicantData.applicantId, {
-  //   //         id: applicantDoc.id,
-  //   //         ...applicantData,
-  //   //         userData: userData.data(),
-  //   //         appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
-  //   //       });
-  //   //     } else {
-  //   //       allApplicants.get(applicantData.applicantId).appliedJobs.push({
-  //   //         jobId: job.id,
-  //   //         hired: applicantData.hired || false,
-  //   //       });
-  //   //     }
-  //   //   }
-  //   // }
-  //   // setApplicants(Array.from(allApplicants.values()));
-
-  //   const allApplicants = new Map();
-  //   for (const job of jobsList) {
-  //     const applicantsQuery = query(collection(db, 'jobChats', job.id, 'applicants'));
-  //     const applicantsSnapshot = await getDocs(applicantsQuery);
-
-  //     for (const applicantDoc of applicantsSnapshot.docs) {
-  //       const applicantData = applicantDoc.data();
-  //       const userDoc = await getDoc(doc(db, 'users', applicantData.applicantId));
-  //       const userData = userDoc.exists() ? userDoc.data() : {};
-
-  //       if (!allApplicants.has(applicantData.applicantId)) {
-  //         allApplicants.set(applicantData.applicantId, {
-  //           id: applicantDoc.id,
-  //           ...applicantData,
-  //           userData: {
-  //             ...userData,
-  //             // Ensure you are getting the photoURL from Firestore
-  //             avatarUrl: userData.avatarUrl || null, 
-  //             photoURL: userData.photoURL || null, 
-  //             profileURL: userData.profileURL || null, 
-  //           },
-  //           appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
-  //         });
-  //       } else {
-  //         allApplicants.get(applicantData.applicantId).appliedJobs.push({
-  //           jobId: job.id,
-  //           hired: applicantData.hired || false,
-  //         });
-  //       }
-  //     }
-  //   }
-  //   setApplicants(Array.from(allApplicants.values()));
-
-  // };

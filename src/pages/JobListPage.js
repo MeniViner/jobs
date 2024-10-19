@@ -6,13 +6,13 @@ import {
 } from 'lucide-react';
 import {
   collection, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, serverTimestamp,
-  arrayUnion, arrayRemove,
+  arrayUnion, arrayRemove, query, where
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext'; // Import AuthContext
 import { Link } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { debounce } from 'lodash';
 
 
@@ -34,6 +34,7 @@ export default function JobListPage() {
   const [expandedJob, setExpandedJob] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
   const [appliedJobs, setAppliedJobs] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   // useEffect(() => {
   //   fetchJobs();
@@ -56,6 +57,14 @@ export default function JobListPage() {
   
   const fetchAllData = async () => {
     setLoading(true);
+    // const auth = getAuth();
+    // const currentUser = auth.currentUser;
+
+    // if (!currentUser) {
+    //   setLoading(false);
+    //   return; // No need to fetch data if not logged in
+    // }
+  
     try {
       const [jobsSnapshot, savedJobsSnapshot, applicationsSnapshot] = await Promise.all([
         getDocs(collection(db, 'jobs')),
@@ -189,7 +198,7 @@ export default function JobListPage() {
       }
     } catch (error) {
       console.error('Error updating saved jobs: ', error);
-      alert('אירעה שגיאה בעדכון העבודות השמורות.');
+      setSnackbar({ open: true, message: 'שגיאה בעדכון המשרות השמורות.', severity: 'error' });
     }
   };
   
@@ -625,6 +634,16 @@ export default function JobListPage() {
                         <Clock size={14} style={{ marginLeft: '4px' }} />
                         {job.type}
                       </span>
+                      {job.experience && (
+                        <span style={{ ...styles.tag, background: '#FFF0F0', color: '#D00000' }}>
+                          ניסיון: {job.experience}
+                        </span>
+                      )}
+                      {job.jobType && (
+                        <span style={{ ...styles.tag, background: '#F0E68C', color: '#DAA520' }}>
+                          סוג עבודה: {job.jobType}
+                        </span>
+                      )}
                     </div>
                     <p style={styles.jobDescription}>{job.description}</p>
                     <div style={styles.jobDetails}>
@@ -748,6 +767,21 @@ export default function JobListPage() {
           </div>
         )}
       </div>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

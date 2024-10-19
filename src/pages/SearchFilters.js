@@ -1,3 +1,4 @@
+// SearchFilters.js
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, SlidersHorizontal } from 'lucide-react';
@@ -14,8 +15,7 @@ import {
   MenuItem,
   InputLabel,
   FormControl,
-  DialogContent,
-  DialogActions, // ודא ש-DialogActions מיובא כאן
+  DialogActions, // ייבוא DialogActions
 } from '@mui/material';
 
 export default function SearchFilters({
@@ -26,7 +26,7 @@ export default function SearchFilters({
   categoryFilter,
   setCategoryFilter,
   salaryFilter,
-  setSalaryFilter,
+  setSalaryFilter, // הוספת setSalaryFilter כפרופ חדש
   experienceFilter,
   setExperienceFilter,
   jobTypeFilter,
@@ -39,19 +39,6 @@ export default function SearchFilters({
   removeFilter,
   filteredJobsCount,
 }) {
-  const styles = {
-    input: {
-      width: '100%',
-      padding: '12px 16px',
-      border: '2px solid #E4E7EB',
-      borderRadius: '8px',
-      fontSize: '1rem',
-      textAlign: 'right',
-      transition: 'all 0.3s',
-    },
-    // שאר הסגנונות...
-  };
-
   // הגדרות האנימציה
   const backdropVariants = {
     hidden: { opacity: 0 },
@@ -129,7 +116,7 @@ export default function SearchFilters({
             initial="hidden"
             animate="visible"
             exit="hidden"
-            onClick={handleBackdropClick} // הוספת אירוע onClick ל-backdrop
+            onClick={handleBackdropClick} // סגירת הסינון בלחיצה על ה-backdrop
             style={{
               position: 'fixed',
               top: 0,
@@ -149,7 +136,7 @@ export default function SearchFilters({
               initial="hidden"
               animate="visible"
               exit="exit"
-              onClick={handleModalClick} // מניעת סגירה כאשר לוחצים בתוך המודאל
+              onClick={handleModalClick} // מניעת סגירה בלחיצה בתוך המודאל
               style={{
                 background: '#fff',
                 width: '100%',
@@ -264,10 +251,10 @@ export default function SearchFilters({
                 <Box sx={{ px: 2 }}>
                   <Slider
                     value={salaryFilter}
-                    onChange={(e, newValue) => handleFilterChange('salary', newValue)}
+                    onChange={(e, newValue) => setSalaryFilter(newValue)} // עדכון מיידי של השכר
                     valueLabelDisplay="auto"
-                    min={40}
-                    max={3400}
+                    min={20}
+                    max={500}
                     step={10}
                     sx={{
                       '& .MuiSlider-thumb': {
@@ -294,7 +281,7 @@ export default function SearchFilters({
                       ₪ {salaryFilter[0]}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {salaryFilter[1] === 3400 ? `₪ ${salaryFilter[1]} ומעלה` : `₪ ${salaryFilter[1]}`}
+                      {salaryFilter[1] === 500 ? `₪ ${salaryFilter[1]} ומעלה` : `₪ ${salaryFilter[1]}`}
                     </Typography>
                   </Box>
                 </Box>
@@ -419,7 +406,7 @@ export default function SearchFilters({
                 <Button
                   onClick={() => {
                     setCategoryFilter('');
-                    setSalaryFilter([40, 3400]);
+                    setSalaryFilter([20, 500]);
                     setLocationFilter('');
                     setExperienceFilter('');
                     setJobTypeFilter('');
@@ -462,7 +449,3 @@ export default function SearchFilters({
     </>
   );
 }
-
-
-
-

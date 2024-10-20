@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MapPin, Bookmark, Users, Clock, Briefcase, X, ChevronDown, ChevronUp
+  MapPin, Bookmark, Users, Clock, Briefcase, X, ChevronDown, ChevronUp, CheckCircle
 } from 'lucide-react';
 import {
   collection, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, serverTimestamp,
@@ -16,8 +16,7 @@ import { Box, CircularProgress, Snackbar, Alert, Typography } from '@mui/materia
 import { DirectionsCar } from '@mui/icons-material';
 import { debounce } from 'lodash';
 
-
-// עדכן את נתיב הייבוא בהתאם למיקום הקובץ SearchFilters.js
+// Import SearchFilters
 import SearchFilters from './SearchFilters';
 
 export default function JobListPage() {
@@ -26,7 +25,10 @@ export default function JobListPage() {
   const [filter, setFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [salaryFilter, setSalaryFilter] = useState([20, 500]);
+  const [salaryFilter, setSalaryFilter] = useState([20, 500]); // Immediate state
+  const [debouncedSalaryFilter, setDebouncedSalaryFilter] = useState([20, 500]); // Debounced state
+  const [experienceFilter, setExperienceFilter] = useState(''); // New state
+  const [jobTypeFilter, setJobTypeFilter] = useState(''); // New state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savedJobs, setSavedJobs] = useState([]);
@@ -34,6 +36,7 @@ export default function JobListPage() {
   const [expandedJob, setExpandedJob] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
   const [appliedJobs, setAppliedJobs] = useState([]);
+  const [acceptedJobs, setAcceptedJobs] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
@@ -45,18 +48,19 @@ export default function JobListPage() {
       return;
     }
 
-    fetchAllData(); // Fetch all the date
+    fetchAllData(); // Fetch all the data
   }, [authLoading, user]);
-  
-  
+
   const fetchAllData = async () => {
     setLoading(true);
-  
+
     try {
-      const [jobsSnapshot, savedJobsSnapshot, applicationsSnapshot] = await Promise.all([
+      const userRef = doc(db, 'users', user.uid);
+      const [jobsSnapshot, savedJobsSnapshot, applicationsSnapshot, acceptedJobsSnapshot] = await Promise.all([
         getDocs(collection(db, 'jobs')),
-        getDoc(doc(db, 'users', user.uid)),
-        getDocs(collection(db, 'applications')),
+        getDoc(userRef),
+        getDocs(collection(userRef, 'applications')),
+        getDocs(collection(userRef, 'acceptedJobs')),
       ]);
 
       const jobList = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
@@ -66,17 +70,18 @@ export default function JobListPage() {
       const savedJobsData = savedJobsSnapshot.exists() ? savedJobsSnapshot.data().savedJobs || [] : [];
       setSavedJobs(savedJobsData);
 
-      const appliedJobsList = applicationsSnapshot.docs
-        .filter((doc) => doc.data().applicantId === user.uid)
-        .map((doc) => doc.data().jobId);
-      setAppliedJobs(appliedJobsList.map(String));
+      const appliedJobsList = applicationsSnapshot.docs.map((doc) => doc.id); // jobIds
+      setAppliedJobs(appliedJobsList);
+
+      const acceptedJobsList = acceptedJobsSnapshot.docs.map((doc) => doc.id); // jobIds
+      setAcceptedJobs(acceptedJobsList);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load data.');
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   const handleSaveJob = async (jobId) => {
     const auth = getAuth();
@@ -95,11 +100,13 @@ export default function JobListPage() {
           savedJobs: arrayRemove(jobId),
         });
         setSavedJobs(savedJobs.filter((id) => id !== jobId));
+        setSnackbar({ open: true, message: 'המשרה הוסרה מהמשרות השמורות.', severity: 'info' });
       } else {
         await updateDoc(userRef, {
           savedJobs: arrayUnion(jobId),
         });
         setSavedJobs([...savedJobs, jobId]);
+        setSnackbar({ open: true, message: 'המשרה נוספה למשרות השמורות.', severity: 'success' });
       }
     } catch (error) {
       console.error('Error updating saved jobs: ', error);
@@ -108,56 +115,107 @@ export default function JobListPage() {
   };
   
   const handleApplyForJob = async (jobId) => {
-
     const auth = getAuth();
     const currentUser = auth.currentUser;
-  
+
     if (!currentUser) {
       alert('עליך להתחבר כדי להגיש מועמדות');
       return;
     }
 
     const applicantRef = doc(db, 'jobs', jobId, 'applicants', currentUser.uid);
-    try {
-      if (appliedJobs.includes(jobId.toString())) {
-        // ביטול המועמדות
-        await deleteDoc(applicantRef);
-        setAppliedJobs(appliedJobs.filter((id) => id !== jobId.toString()));
+    const userApplicationsRef = doc(db, 'users', currentUser.uid, 'applications', jobId);
 
-        alert('המועמדות בוטלה בהצלחה!');
+    try {
+      if (appliedJobs.includes(jobId)) {
+        // Cancel Application
+        await deleteDoc(applicantRef);
+        await deleteDoc(userApplicationsRef);
+        setAppliedJobs(appliedJobs.filter((id) => id !== jobId));
+        setSnackbar({ open: true, message: 'המועמדות בוטלה בהצלחה!', severity: 'info' });
       } else {
-        // הוספת המועמד למשרה
+        // Apply for Job
         await setDoc(applicantRef, {
           applicantId: currentUser.uid,
           timestamp: serverTimestamp(),
         });
-        setAppliedJobs([...appliedJobs, jobId.toString()]);
-
-        alert('המועמדות הוגשה בהצלחה!');
+        await setDoc(userApplicationsRef, {
+          jobId: jobId,
+          timestamp: serverTimestamp(),
+          status: 'applied',
+        });
+        setAppliedJobs([...appliedJobs, jobId]);
+        setSnackbar({ open: true, message: 'המועמדות הוגשה בהצלחה!', severity: 'success' });
       }
     } catch (error) {
       console.error('Error applying for job: ', error);
-      alert('אירעה שגיאה בהגשת המועמדות.');
+      setSnackbar({ open: true, message: 'אירעה שגיאה בהגשת המועמדות.', severity: 'error' });
     }
   };
   
-  
+  // Debounce salary filter
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSalaryFilter(salaryFilter);
+      if (salaryFilter[0] > 20 || salaryFilter[1] < 500) {
+        setActiveFilters([...activeFilters.filter((f) => f.type !== 'salary'), { type: 'salary', value: salaryFilter }]);
+      } else {
+        setActiveFilters(activeFilters.filter((f) => f.type !== 'salary'));
+      }
+    }, 300); // 300ms delay
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [salaryFilter]);
+
+  // Handle other filter changes with debounce
   const handleFilterChange = debounce((filterType, value) => {
     switch (filterType) {
       case 'category':
         setCategoryFilter(value);
-        break;
-      case 'salary':
-        setSalaryFilter(value);
+        if (value) {
+          setActiveFilters([...activeFilters.filter((f) => f.type !== 'category'), { type: 'category', value }]);
+        } else {
+          setActiveFilters(activeFilters.filter((f) => f.type !== 'category'));
+        }
         break;
       case 'location':
         setLocationFilter(value);
+        if (value) {
+          setActiveFilters([...activeFilters.filter((f) => f.type !== 'location'), { type: 'location', value }]);
+        } else {
+          setActiveFilters(activeFilters.filter((f) => f.type !== 'location'));
+        }
+        break;
+      case 'experience':
+        setExperienceFilter(value);
+        if (value) {
+          setActiveFilters([...activeFilters.filter((f) => f.type !== 'experience'), { type: 'experience', value }]);
+        } else {
+          setActiveFilters(activeFilters.filter((f) => f.type !== 'experience'));
+        }
+        break;
+      case 'jobType':
+        setJobTypeFilter(value);
+        if (value) {
+          setActiveFilters([...activeFilters.filter((f) => f.type !== 'jobType'), { type: 'jobType', value }]);
+        } else {
+          setActiveFilters(activeFilters.filter((f) => f.type !== 'jobType'));
+        }
+        break;
+      case 'title':
+        setFilter(value);
+        if (value) {
+          setActiveFilters([...activeFilters.filter((f) => f.type !== 'title'), { type: 'title', value }]);
+        } else {
+          setActiveFilters(activeFilters.filter((f) => f.type !== 'title'));
+        }
         break;
       default:
         break;
     }
   }, 300); // 300ms delay
-
 
   const removeFilter = (filterType) => {
     setActiveFilters(activeFilters.filter((f) => f.type !== filterType));
@@ -171,6 +229,15 @@ export default function JobListPage() {
       case 'location':
         setLocationFilter('');
         break;
+      case 'experience':
+        setExperienceFilter('');
+        break;
+      case 'jobType':
+        setJobTypeFilter('');
+        break;
+      case 'title':
+        setFilter('');
+        break;
       default:
         break;
     }
@@ -178,10 +245,13 @@ export default function JobListPage() {
 
   const filteredJobs = jobs.filter((job) => {
     return (
+      !acceptedJobs.includes(job.id) && // Exclude accepted jobs
       job.title.toLowerCase().includes(filter.toLowerCase()) &&
       (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
-      (categoryFilter === '' || job.category === categoryFilter)
-      // ניתן להוסיף את סינון השכר אם תרצה
+      (categoryFilter === '' || job.category === categoryFilter) &&
+      (experienceFilter === '' || job.experience === experienceFilter) &&
+      (jobTypeFilter === '' || job.jobType === jobTypeFilter) &&
+      (job.salary >= debouncedSalaryFilter[0] && job.salary <= debouncedSalaryFilter[1])
     );
   });
 
@@ -214,6 +284,8 @@ export default function JobListPage() {
       fontWeight: '600',
       display: 'flex',
       alignItems: 'center',
+      marginRight: '0.5rem',
+      flex: '0 0 auto',
     },
     removeFilterButton: {
       background: 'none',
@@ -346,7 +418,11 @@ export default function JobListPage() {
           categoryFilter={categoryFilter}
           setCategoryFilter={setCategoryFilter}
           salaryFilter={salaryFilter}
-          setSalaryFilter={setSalaryFilter}
+          setSalaryFilter={setSalaryFilter} // Pass setSalaryFilter as prop
+          experienceFilter={experienceFilter} // Pass new props
+          setExperienceFilter={setExperienceFilter}
+          jobTypeFilter={jobTypeFilter}       // Pass new props
+          setJobTypeFilter={setJobTypeFilter}
           showFilters={showFilters}
           setShowFilters={setShowFilters}
           handleFilterChange={handleFilterChange}
@@ -370,8 +446,11 @@ export default function JobListPage() {
                 }}
               >
                 {filter.type === 'category' && `קטגוריה: ${filter.value}`}
-                {filter.type === 'salary' && `שכר מינימלי: ₪${filter.value[0]}`}
+                {filter.type === 'salary' && `שכר: ₪${filter.value[0]} - ₪${filter.value[1]}`}
                 {filter.type === 'location' && `מיקום: ${filter.value}`}
+                {filter.type === 'experience' && `ניסיון: ${filter.value}`}
+                {filter.type === 'jobType' && `סוג עבודה: ${filter.value}`}
+                {filter.type === 'title' && `תפקיד: ${filter.value}`}
                 <button
                   onClick={() => removeFilter(filter.type)}
                   style={styles.removeFilterButton}
@@ -451,6 +530,12 @@ export default function JobListPage() {
                       {job.jobType && (
                         <span style={{ ...styles.tag, background: '#F0E68C', color: '#DAA520' }}>
                           סוג עבודה: {job.jobType}
+                        </span>
+                      )}
+                      {acceptedJobs.includes(job.id) && (
+                        <span style={{ ...styles.tag, background: '#D1FAE5', color: '#065F46' }}>
+                          <CheckCircle size={14} style={{ marginLeft: '4px' }} />
+                          התקבלתי
                         </span>
                       )}
                     </div>
@@ -636,38 +721,31 @@ export default function JobListPage() {
                     <button
                       style={{
                         ...styles.applyButton,
-                        background: appliedJobs.includes(job.id.toString())
-                          ? '#99AFA3' // צבע רקע כאשר המועמדות קיימת
-                          : 'linear-gradient(135deg, #0077B6 0%, #023E8A 100%)', // גרדיינט רקע כאשר המועמדות לא קיימת
-                        opacity: 1,
+                        background: acceptedJobs.includes(job.id)
+                          ? '#4CAF50' // Green for accepted
+                          : appliedJobs.includes(job.id)
+                          ? '#99AFA3' // Grey for applied
+                          : 'linear-gradient(135deg, #0077B6 0%, #023E8A 100%)', // Blue gradient for available
+                        opacity: acceptedJobs.includes(job.id) ? 0.6 : 1,
+                        cursor: acceptedJobs.includes(job.id) ? 'not-allowed' : 'pointer',
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = 0.8}
-                      onMouseLeave={(e) => e.currentTarget.style.opacity = 1}
-                      onClick={() => handleApplyForJob(job.id)}
+                      onMouseEnter={(e) => {
+                        if (!acceptedJobs.includes(job.id)) e.currentTarget.style.opacity = 0.8;
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!acceptedJobs.includes(job.id)) e.currentTarget.style.opacity = 1;
+                      }}
+                      onClick={() => {
+                        if (!acceptedJobs.includes(job.id)) handleApplyForJob(job.id);
+                      }}
+                      disabled={acceptedJobs.includes(job.id)}
                     >
-                      {appliedJobs.includes(job.id.toString()) ? 'בטל מועמדות' : 'הגש מועמדות'}
+                      {acceptedJobs.includes(job.id)
+                        ? 'התקבלתי למשרה'
+                        : appliedJobs.includes(job.id)
+                        ? 'בטל מועמדות'
+                        : 'הגש מועמדות'}
                     </button>
-
-{/* <button
-  style={{
-    ...styles.applyButton,
-    background: appliedJobs.includes(job.id.toString())
-      ? (job.hired ? '#99AFA3' : '#6DBE8C') // צבע רקע אם התקבל או המועמדות קיימת
-      : 'linear-gradient(135deg, #0077B6 0%, #023E8A 100%)', // גרדיינט אם אין מועמדות
-    opacity: 1,
-  }}
-  onMouseEnter={(e) => e.currentTarget.style.opacity = 0.8}
-  onMouseLeave={(e) => e.currentTarget.style.opacity = 1}
-  onClick={() => !job.hired && handleApplyForJob(job.id)} // הפונקציה לא תופעל אם התקבל
-  disabled={job.hired} // הכפתור מושבת אם התקבל
->
-  {job.hired
-    ? 'התקבלת'
-    : appliedJobs.includes(job.id.toString())
-    ? 'בטל מועמדות'
-    : 'הגש מועמדות'}
-</button> */}
-
                   </div>
                 </motion.div>
               ))}

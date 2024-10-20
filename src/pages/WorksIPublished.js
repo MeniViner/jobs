@@ -1,3 +1,4 @@
+// MyWorksPage.js
 import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Paper, List, ListItem, ListItemText, ListItemButton, ListItemAvatar, Avatar,
@@ -183,21 +184,25 @@ export default function MyWorksPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      // Check if the user has signed in with Google
-      const googleUser = user.providerData.find(provider => provider.providerId === 'google.com');
-  
-      if (googleUser) {
-        // Store user's photoURL and other details in Firestore
-        await setDoc(doc(db, 'users', user.uid), {
-          displayName: googleUser.displayName,
-          email: googleUser.email,
-          photoURL: googleUser.photoURL,  // Store the Google profile picture
-        }, { merge: true });  // Merge so we don't overwrite existing fields
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        // Check if the user has signed in with Google
+        const googleUser = user.providerData.find(provider => provider.providerId === 'google.com');
+    
+        if (googleUser) {
+          // Store user's photoURL and other details in Firestore
+          await setDoc(doc(db, 'users', user.uid), {
+            displayName: googleUser.displayName,
+            email: googleUser.email,
+            photoURL: googleUser.photoURL,  // Store the Google profile picture
+          }, { merge: true });  // Merge so we don't overwrite existing fields
+        }
       }
-    }
-  });
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
 
   useEffect(() => {
     if (authLoading) return; // Wait for auth to complete
@@ -211,12 +216,11 @@ export default function MyWorksPage() {
     fetchEmployerJobs();
   }, [authLoading, user]);
 
-
   const fetchEmployerJobs = async () => {
     const auth = getAuth();
   
     if (!auth.currentUser) return;
-    setLoading(false);
+    setLoading(true);
   
     try {
       // Query to fetch jobs posted by the current employer
@@ -255,6 +259,8 @@ export default function MyWorksPage() {
       setApplicants(Array.from(allApplicants.values()));
     } catch (error) {
       console.error('Error fetching jobs or applicants:', error);
+    } finally {
+      setLoading(false);
     }
   };
         
@@ -325,7 +331,9 @@ export default function MyWorksPage() {
 
       const applicantRef = doc(db, 'jobs', jobId, 'applicants', applicantId);
       const jobRef = doc(db, 'jobs', jobId);
-  
+      const userAcceptedJobsRef = doc(db, 'users', applicantId, 'acceptedJobs', jobId);
+      const userApplicationsRef = doc(db, 'users', applicantId, 'applications', jobId);
+
       // Check if the applicant document exists
       const applicantSnapshot = await getDoc(applicantRef);
       if (!applicantSnapshot.exists()) {
@@ -333,18 +341,39 @@ export default function MyWorksPage() {
         console.error('Applicant document does not exist.');
         return;
       }
-  
+
       // Fetch the job data
       const jobSnapshot = await getDoc(jobRef);
       const jobData = jobSnapshot.data();
       console.log('Job Data:', jobData);
-  
-      // Update the hired status
-      await updateDoc(applicantRef, {
-        hired: !currentHiredStatus,
-      });
-      fetchEmployerJobs();
-  
+
+      if (!currentHiredStatus) {
+        // Mark as hired
+        await updateDoc(applicantRef, {
+          hired: true,
+        });
+        // Add to user's acceptedJobs
+        await setDoc(userAcceptedJobsRef, {
+          jobId: jobId,
+          timestamp: serverTimestamp(),
+        });
+        // Remove from user's applications
+        await deleteDoc(userApplicationsRef);
+      } else {
+        // Unmark as hired
+        await updateDoc(applicantRef, {
+          hired: false,
+        });
+        // Remove from user's acceptedJobs
+        await deleteDoc(userAcceptedJobsRef);
+        // Optionally, re-add to applications
+        await setDoc(userApplicationsRef, {
+          jobId: jobId,
+          timestamp: serverTimestamp(),
+          status: 'applied',
+        });
+      }
+
       // Add notification to Firestore
       await addDoc(collection(db, 'notifications'), {
         userId: applicantId,
@@ -357,20 +386,10 @@ export default function MyWorksPage() {
         timestamp: serverTimestamp(),
         isHistory: false,
       });
-  
+
       // Update local state
-      setApplicants(
-        applicants.map((applicant) => {
-          if (applicant.id === applicantId) {
-            const updatedAppliedJobs = applicant.appliedJobs.map((job) =>
-              job.jobId === jobId ? { ...job, hired: !currentHiredStatus } : job
-            );
-            return { ...applicant, appliedJobs: updatedAppliedJobs };
-          }
-          return applicant;
-        })
-      );
-  
+      fetchEmployerJobs();
+
       // Show success message
       alert(
         currentHiredStatus
@@ -453,6 +472,24 @@ export default function MyWorksPage() {
       setJobs(
         jobs.map((job) => (job.id === jobToRate ? { ...job, isCompleted: true, isPublic: false } : job))
       );
+
+      // Optionally, notify applicants about job completion
+      const jobSnapshot = await getDoc(jobRef);
+      const jobData = jobSnapshot.data();
+
+      for (const applicant of applicants) {
+        if (applicant.appliedJobs.some(job => job.jobId === jobToRate && job.hired)) {
+          await addDoc(collection(db, 'notifications'), {
+            userId: applicant.applicantId,
+            jobId: jobToRate,
+            jobTitle: jobData?.title || 'Unknown Job',
+            type: 'job_completed',
+            message: `המשרה: ${jobData?.title} הושלמה.`,
+            timestamp: serverTimestamp(),
+            isHistory: false,
+          });
+        }
+      }
   
       setOpenRatingDialog(false);
       setJobToRate(null);
@@ -706,8 +743,8 @@ export default function MyWorksPage() {
                             ) && !applicant.isRated
                         )
                         .map((worker) => (
-                          <Box key={worker.id} mb={2}>
-                            <Typography>{worker.name}</Typography>
+                          <Box key={worker.applicantId} mb={2}>
+                            <Typography>{worker.userData?.name || 'שם לא זמין'}</Typography>
                             <RatingInput
                               jobId={job.id}
                               targetUserId={worker.applicantId}
@@ -736,11 +773,11 @@ export default function MyWorksPage() {
                             (appliedJob) => appliedJob.jobId === job.id
                           );
                           return (
-                            <React.Fragment key={applicant.id}>
+                            <React.Fragment key={applicant.applicantId}>
                               <ListItem alignItems="flex-start">
                                 <ListItemAvatar>
                                   <Avatar
-                                    alt={applicant.name}
+                                    alt={applicant.userData?.name || 'מועמד'}
                                     src={
                                       applicant.userData?.profileURL || 
                                       applicant.userData?.photoURL ||
@@ -881,7 +918,7 @@ export default function MyWorksPage() {
         <DialogTitle>שלח הודעה למועמד</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            שלח הודעה ל{selectedApplicant?.name} עבור המשרה:{' '}
+            שלח הודעה ל{selectedApplicant?.userData?.name || 'מועמד'} עבור המשרה:{' '}
             {jobs.find((job) => job.id === selectedApplicant?.jobId)?.title}
           </DialogContentText>
           <TextField

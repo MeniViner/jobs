@@ -4,7 +4,7 @@ import {
   Box, Typography, Avatar, Paper, Stack, Button, Chip, CircularProgress, Rating, IconButton, Divider
 } from '@mui/material';
 import {
-  Verified, Language, LocationOn, Work, School, Email, Phone, Business
+  Verified, Language, LocationOn, Work, School, Email, Phone, Business, DirectionsCar
 } from '@mui/icons-material';
 import { 
   getFirestore, doc, getDoc, collection, query, where, getDocs 
@@ -28,6 +28,7 @@ export default function UserProfilePage() {
           const userData = userDocSnap.data();
           setIsEmployer(userData.isEmployer || false);
           setProfileData(userData);
+          console.log('userData:' ,userData);
 
           // Fetch reviews
           const reviewsQuery = query(collection(db, 'ratings'), where('ratedUser', '==', userId));
@@ -43,7 +44,7 @@ export default function UserProfilePage() {
             const raterDocSnap = await getDoc(raterDocRef);
             if (raterDocSnap.exists()) {
               const raterData = raterDocSnap.data();
-              return { id: raterId, name: raterData.name || 'משתמש אנונימי', photoURL: raterData.photoURL || '/placeholder.svg?height=40&width=40' };
+              return { id: raterId, name: raterData.name || 'שם משתמש', photoURL: raterData.profileURL || raterData.photoURL };
             } else {
               return { id: raterId, name: 'משתמש אנונימי', photoURL: '/placeholder.svg?height=40&width=40' };
             }
@@ -112,7 +113,7 @@ function ProfileHeader({ profileData, isEmployer, reviews }) {
       <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Box sx={{ position: 'relative' }}>
           <Avatar
-            src={profileData.profileURL || '/placeholder.svg?height=120&width=120'}
+            src={profileData.profileURL || profileData.photoURL}
             sx={{ width: 120, height: 120, border: '4px solid white' }}
           />
           {profileData.isVerified && (
@@ -220,6 +221,10 @@ function EmployeeProfile({ profileData, reviews }) {
           text={`מקום מגורים: ${profileData.location || 'לא צוין'}`}
         />
         <InfoItem
+          icon={<DirectionsCar />}
+          text={`האם יש רכב: ${profileData.hasCar ? 'כן' : 'לא'}`}
+        />
+        <InfoItem
           icon={<Language />}
           text={`שפות: ${profileData.languages || 'לא צוין'}`}
         />
@@ -233,8 +238,9 @@ function EmployeeProfile({ profileData, reviews }) {
         />
         <InfoItem
           icon={<Phone />}
-          text={`טלפון: ${profileData.phone || 'לא צוין'}`}
+          text={`טלפון: ${profileData.phoneNumber || 'לא צוין'}`}
         />
+
 
         {profileData.skills && (
           <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
@@ -284,7 +290,7 @@ function ReviewCard({ review }) {
       <Typography variant="body1" sx={{ fontStyle: 'italic' }}>"{review.review}"</Typography>
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }}>
         <Avatar
-          src={review.raterProfile?.photoURL || '/placeholder.svg?height=40&width=40'}
+          src={review.raterProfile?.profileURL || review.raterProfile?.photoURL}
           alt={review.raterProfile?.name || 'משתמש אנונימי'}
           sx={{ width: 40, height: 40 }}
         />

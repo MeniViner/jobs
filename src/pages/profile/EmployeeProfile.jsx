@@ -220,17 +220,35 @@ export default function EmployeeProfile({
       <Dialog open={!!editingField} onClose={() => setEditingField(null)}>
         <DialogTitle>עריכת {getFieldLabel(editingField)}</DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            fullWidth
-            multiline={['bio', 'skills', 'languages'].includes(editingField)}
-            rows={['bio'].includes(editingField) ? 4 : 1}
-            value={editedData[editingField] || ''}
-            onChange={(e) =>
-              setEditedData({ ...editedData, [editingField]: e.target.value })
-            }
-          />
+          {editingField === 'hasCar' ? (
+            <Box>
+              <Button
+                variant={editedData.hasCar ? 'contained' : 'outlined'}
+                onClick={() => setEditedData({ ...editedData, hasCar: true })}
+              >
+                כן
+              </Button>
+              <Button
+                variant={!editedData.hasCar ? 'contained' : 'outlined'}
+                onClick={() => setEditedData({ ...editedData, hasCar: false })}
+                sx={{ ml: 2 }}
+              >
+                לא
+              </Button>
+            </Box>
+          ) : (
+            <TextField
+              autoFocus
+              margin="dense"
+              fullWidth
+              multiline={['bio', 'skills', 'languages'].includes(editingField)}
+              rows={['bio'].includes(editingField) ? 4 : 1}
+              value={editedData[editingField] || ''}
+              onChange={(e) =>
+                setEditedData({ ...editedData, [editingField]: e.target.value })
+              }
+            />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditingField(null)}>ביטול</Button>
@@ -268,6 +286,8 @@ export default function EmployeeProfile({
         return 'שפות';
       case 'bio':
         return 'אודות';
+      case 'hasCar':
+        return 'האם יש רכב?';
       default:
         return '';
     }
@@ -304,18 +324,34 @@ export default function EmployeeProfile({
           'experience',
           'languages',
           'bio',
+          'hasCar',
         ].map((field) => (
+          // <ListItem key={field} divider>
+          //   <ListItemText
+          //     primary={getFieldLabel(field)}
+          //     secondary={editedData[field] || 'לא סופק'}
+          //   />
+          //   <ListItemIcon>
+          //     <IconButton edge="end" onClick={() => handleEdit(field)}>
+          //       {editedData[field] ? <EditIcon /> : <AddIcon />}
+          //     </IconButton>
+          //   </ListItemIcon>
+          // </ListItem>
           <ListItem key={field} divider>
-            <ListItemText
-              primary={getFieldLabel(field)}
-              secondary={editedData[field] || 'לא סופק'}
-            />
-            <ListItemIcon>
-              <IconButton edge="end" onClick={() => handleEdit(field)}>
-                {editedData[field] ? <EditIcon /> : <AddIcon />}
-              </IconButton>
-            </ListItemIcon>
-          </ListItem>
+          <ListItemText
+            primary={getFieldLabel(field)}
+            secondary={
+              field === 'hasCar'
+                ? editedData[field] ? 'כן' : 'לא'
+                : editedData[field] || 'לא סופק'
+            }
+          />
+          <ListItemIcon>
+            <IconButton edge="end" onClick={() => handleEdit(field)}>
+              {editedData[field] !== undefined ? <EditIcon /> : <AddIcon />}
+            </IconButton>
+          </ListItemIcon>
+        </ListItem>
         ))}
       </List>
     </Box>
@@ -476,7 +512,7 @@ export default function EmployeeProfile({
           <ListItemIcon>
             <StarIcon />
           </ListItemIcon>
-          <ListItemText primary="דירוג" />
+          <ListItemText primary="דירוגים" />
           <ChevronRightIcon />
         </ListItem>
         {showRating && (
@@ -553,13 +589,6 @@ export default function EmployeeProfile({
 
   return (
     <Box sx={{ bgcolor: 'background.paper', minHeight: '100vh' }}>
-      <Box
-        sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-      >
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1, textAlign: 'left' }}>
-          פרופיל
-        </Typography>
-      </Box>
 
       {editingPersonalInfo ? renderPersonalInfo() : renderMainContent()}
 

@@ -28,10 +28,12 @@ export default function PostJob() {
     type: '',
     salary: '',
     description: '',
+    fullDescription: '',
     startTime: '',
     endTime: '',
     workDates: [''],
     workersNeeded: 1, 
+    requiresCar: false, 
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -39,6 +41,9 @@ export default function PostJob() {
   });
   const [businessName, setBusinessName] = useState('');  
   const [businessLoading, setBusinessLoading] = useState(true);
+  const [isFlexibleTime, setIsFlexibleTime] = useState(false);
+  const [isFlexibleDates, setIsFlexibleDates] = useState(false);
+
   const navigate = useNavigate(); 
   
   useEffect(() => {
@@ -110,10 +115,24 @@ export default function PostJob() {
     e.preventDefault();
     console.log("Attempting to submit job:", jobData);
   
-    if (!jobData.title || !jobData.location || !jobData.type || !jobData.salary || !jobData.description || !jobData.startTime || !jobData.endTime || jobData.workDates.some(date => !date)) {
+    // if (!jobData.title || !jobData.location || !jobData.type || !jobData.salary || !jobData.description || !jobData.startTime || !jobData.endTime || jobData.workDates.some(date => !date)) {
+    //   setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
+    //   return;
+    // } 
+
+    if (
+      !jobData.title || 
+      !jobData.location || 
+      !jobData.type || 
+      !jobData.salary || 
+      !jobData.description ||
+      (!isFlexibleTime && (!jobData.startTime || !jobData.endTime)) ||
+      (!isFlexibleDates && jobData.workDates.some(date => !date))
+    ) {
       setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
       return;
     }
+    
   
     try {
       const currentUser = getAuth().currentUser;
@@ -127,6 +146,9 @@ export default function PostJob() {
         ...jobData,
         employerId: user.uid,
         companyName: businessName,
+        isFlexibleTime,
+        isFlexibleDates,
+        workDates: isFlexibleDates ? [] : jobData.workDates.filter(date => date),
       };
 
       console.log("Job to submit:", jobToSubmit);
@@ -249,9 +271,21 @@ export default function PostJob() {
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
-                required
+                select
+                label="האם דרוש רכב?"
+                name="requiresCar"
+                value={jobData.requiresCar}
+                onChange={(e) => handleChange({ target: { name: 'requiresCar', value: e.target.value === 'true' } })}
+                fullWidth
+              >
+                <MenuItem value="false">לא</MenuItem>
+                <MenuItem value="true">כן</MenuItem>
+              </TextField>
+            </Grid>
+            {/* <Grid item xs={12} sm={6}>
+              <TextField
                 fullWidth
                 label="שעת התחלה"
                 name="startTime"
@@ -268,7 +302,6 @@ export default function PostJob() {
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                required
                 fullWidth
                 label="שעת סיום"
                 name="endTime"
@@ -282,8 +315,58 @@ export default function PostJob() {
                   step: 300, // 5 min
                 }}
               />
-            </Grid>
+            </Grid> */}
             <Grid item xs={12}>
+              <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 2, mb: 1 }}
+                >
+                ניתן לבחור  <strong>שעות / זמנים גמישים</strong> לפי הצורך.
+              </Typography>
+
+              <Typography variant="h6">שעות עבודה</Typography>
+              <Button
+                variant={isFlexibleTime ? 'contained' : 'outlined'}
+                onClick={() => setIsFlexibleTime(!isFlexibleTime)}
+                sx={{ mt: 1, mb: 2 }}
+              >
+                {isFlexibleTime ? 'שעות גמישות' : 'בחר שעות ספציפיות'}
+              </Button>
+
+              {!isFlexibleTime && (
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="שעת התחלה"
+                      name="startTime"
+                      type="time"
+                      value={jobData.startTime}
+                      onChange={handleChange}
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{ step: 300 }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="שעת סיום"
+                      name="endTime"
+                      type="time"
+                      value={jobData.endTime}
+                      onChange={handleChange}
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{ step: 300 }}
+                    />
+                  </Grid>
+                </Grid>
+              )}
+            </Grid>
+
+            {/* <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
                 תאריכי עבודה
               </Typography>
@@ -312,16 +395,67 @@ export default function PostJob() {
               <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
                 הוסף תאריך עבודה
               </Button>
-            </Grid>
+            </Grid> */}
+              <Grid item xs={12}>
+                <Typography variant="h6">תאריכי עבודה</Typography>
+                <Button
+                  variant={isFlexibleDates ? 'contained' : 'outlined'}
+                  onClick={() => setIsFlexibleDates(!isFlexibleDates)}
+                  sx={{ mt: 1, mb: 2 }}
+                >
+                  {isFlexibleDates ? 'תאריכים גמישים' : 'בחר תאריכים ספציפיים'}
+                </Button>
+                  
+                {!isFlexibleDates &&
+                  jobData.workDates.map((date, index) => (
+                    <Grid container spacing={2} key={index} alignItems="center">
+                      <Grid item xs>
+                        <TextField
+                          fullWidth
+                          label={`תאריך עבודה ${index + 1}`}
+                          type="date"
+                          value={date}
+                          onChange={(e) => handleDateChange(e.target.value, index)}
+                          InputLabelProps={{ shrink: true }}
+                          margin="normal"
+                        />
+                      </Grid>
+                      <Grid item>
+                        <IconButton
+                          onClick={() => removeWorkDate(index)}
+                          disabled={jobData.workDates.length === 1}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Grid>
+                      <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
+                        הוסף תאריך עבודה
+                      </Button>    
+                    </Grid>
+                  ))
+                }
+              </Grid>
+
             <Grid item xs={12}>
               <TextField
                 required
                 fullWidth
                 multiline
-                rows={4}
-                label="תיאור המשרה"
+                rows={2}
+                label="תיאור המשרה בקצרה "
                 name="description"
                 value={jobData.description}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                label="תיאור מפורט "
+                name="fullDescription"
+                value={jobData.fullDescription}
                 onChange={handleChange}
               />
             </Grid>

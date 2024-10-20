@@ -6,13 +6,14 @@ import {
 } from 'lucide-react';
 import {
   collection, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, serverTimestamp,
-  arrayUnion, arrayRemove, query, where
+  arrayUnion, arrayRemove, query, where,
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext'; // Import AuthContext
 import { Link } from 'react-router-dom';
-import { Box, CircularProgress, Snackbar, Alert } from '@mui/material';
+import { Box, CircularProgress, Snackbar, Alert, Typography } from '@mui/material';
+import { DirectionsCar } from '@mui/icons-material';
 import { debounce } from 'lodash';
 
 
@@ -462,9 +463,14 @@ export default function JobListPage() {
                         <Users size={20} color="#0077B6" style={{ marginLeft: '8px' }} />
                         <span>{job.workersNeeded || 1} עובדים</span>
                       </div>
+                      {job.requiresCar && (
+                        <div style={styles.jobDetailItem}>
+                          <span><DirectionsCar/> למשרה זו דרוש רכב </span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <AnimatePresence>
+                  {/* <AnimatePresence>
                     {expandedJob === job.id && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
@@ -531,7 +537,80 @@ export default function JobListPage() {
                         </p>
                       </motion.div>
                     )}
-                  </AnimatePresence>
+                  </AnimatePresence> */}
+                  <AnimatePresence>
+  {expandedJob === job.id && (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3 }}
+      style={{ padding: '16px 24px', borderTop: '1px solid #E4E7EB' }}
+    >
+      <div
+        style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}
+      >
+        <div>
+          <p
+            style={{
+              fontWeight: 'bold',
+              marginBottom: '0.5rem',
+              color: '#102A43',
+            }}
+          >
+            שעות עבודה:
+          </p>
+          {job.isFlexibleTime ? (
+            <p style={{ fontSize: '0.875rem', color: '#486581' }}>שעות גמישות</p>
+          ) : Array.isArray(job.workHours) ? (
+            job.workHours.map((time, index) => (
+              <p key={index} style={{ fontSize: '0.875rem', color: '#486581' }}>
+                {time}
+              </p>
+            ))
+          ) : (
+            <p style={{ fontSize: '0.875rem', color: '#486581' }}>
+              {job.startTime} - {job.endTime}
+            </p>
+          )}
+        </div>
+        <div>
+          <p
+            style={{
+              fontWeight: 'bold',
+              marginBottom: '0.5rem',
+              color: '#102A43',
+            }}
+          >
+            תאריכי עבודה:
+          </p>
+          {job.isFlexibleDates ? (
+            <p style={{ fontSize: '0.875rem', color: '#486581' }}>תאריכים גמישים</p>
+          ) : Array.isArray(job.workDates) ? (
+            job.workDates.map((date, index) => (
+              <p key={index} style={{ fontSize: '0.875rem', color: '#486581' }}>
+                {date}
+              </p>
+            ))
+          ) : (
+            <p style={{ fontSize: '0.875rem', color: '#486581' }}>{job.workDates}</p>
+          )}
+        </div>
+      </div>
+      <p
+        style={{
+          fontSize: '0.875rem',
+          color: '#486581',
+          lineHeight: '1.6',
+        }}
+      >
+        {job.fullDescription ||
+          'תיאור מלא של המשרה לא זמין כרגע. אנא צור קשר עם המעסיק לקבלת מידע נוסף.'}
+      </p>
+    </motion.div>
+  )}
+</AnimatePresence>
+
                   <div style={styles.jobFooter}>
                     <Link to={`/user/${job.employerId}`} style={styles.link}>
                       צפיה בפרטי מעסיק

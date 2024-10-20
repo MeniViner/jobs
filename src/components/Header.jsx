@@ -11,10 +11,10 @@ import {
   Search as SearchIcon, Favorite as FavoriteIcon, ChatBubbleOutline as ChatIcon,
   PersonOutline as PersonIcon, Add as AddIcon, Business as BusinessIcon,
   AssignmentOutlined as AssignmentIcon, NotificationsNone as NotificationsIcon,
-  AccountCircle as AccountCircleIcon, ExitToApp as LogoutIcon,
+  AccountCircle as AccountCircleIcon, ExitToApp as LogoutIcon
 } from '@mui/icons-material'
 import { useNotificationCount } from '../pages/NotificationsPage'
-
+import MenuIcon from '@mui/icons-material/Menu'; 
 
 export default function Header() {
   const { user } = useContext(AuthContext)
@@ -130,7 +130,7 @@ export default function Header() {
   if (isMobile) {
     return (
       <>
-        <AppBar 
+        {/* <AppBar 
           position="fixed" 
           color="default" 
           elevation={0} 
@@ -161,15 +161,61 @@ export default function Header() {
               sx={{ p: '10px' }}
               aria-label="notifications"
             >
-              {/* <Badge badgeContent={4} color="error">
+              <Badge badgeContent={notificationCount} color="error">
                 <NotificationsIcon />
-              </Badge> */}
+              </Badge>
+            </IconButton>
+          </Toolbar>
+        </AppBar> */}
+
+
+        <AppBar 
+          position="fixed" 
+          color="default" 
+          elevation={0} 
+          sx={{ 
+            top: 0, 
+            borderBottom: '1px solid rgba(0, 0, 0, 0.12)', 
+            zIndex: theme.zIndex.drawer + 2,
+            backgroundColor: 'background.paper',
+          }}
+        >
+          <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
+            <IconButton
+              onClick={() => navigate('/mobile-menu')}
+              sx={{ p: '10px' }}
+              aria-label="open menu"
+            >
+              <MenuIcon />
+            </IconButton>
+            
+            <Typography
+              variant="h6"
+              noWrap
+              component={Link}
+              to="/"
+              sx={{
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 700,
+                color: 'primary.main',
+                textDecoration: 'none',
+              }}
+            >
+              WorkMatch
+            </Typography>
+
+            <IconButton
+              onClick={() => navigate('/notifications')}
+              sx={{ p: '10px' }}
+              aria-label="notifications"
+            >
               <Badge badgeContent={notificationCount} color="error">
                 <NotificationsIcon />
               </Badge>
             </IconButton>
           </Toolbar>
         </AppBar>
+
 
         <Box sx={{ pb: 7 }} /> {/* Spacer for content */}
 

@@ -30,6 +30,7 @@ import TopUsersPage from './pages/Management/TopUsersPage.js';
 import JobCompletionRating from './pages/rating/JobCompletionRating.tsx';
 import EmployerRegistrationForm from './pages/profile/EmployerRegistrationForm.jsx';
 import NotificationsPage from './pages/NotificationsPage.js';
+import MobileMenuPage from './pages/MobileMenuPage';
 
 
 const ProtectedAdminRoute = ({ children }) => {
@@ -103,6 +104,7 @@ function App() {
                 <Route path="/employer-registration" element={<EmployerRegistrationForm />} />
                 <Route path="/rate-employer/:jobId" element={<JobCompletionRating />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/mobile-menu" element={<MobileMenuPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Box>

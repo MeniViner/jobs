@@ -2,33 +2,32 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MapPin, Bookmark, Users, Clock, Briefcase, X, ChevronDown, ChevronUp, CheckCircle
+  MapPin, Bookmark, Users, Clock, Briefcase, X, ChevronDown, ChevronUp, CheckCircle, Calendar, Car
 } from 'lucide-react';
 import {
-  collection, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, getDocs, serverTimestamp,
-  arrayUnion, arrayRemove, query, where,
+  collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, serverTimestamp,
+  arrayUnion, arrayRemove
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
-import { useAuth } from '../contexts/AuthContext'; // Import AuthContext
+import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { Box, CircularProgress, Snackbar, Alert, Typography } from '@mui/material';
-import { DirectionsCar } from '@mui/icons-material';
+import { Box, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { debounce } from 'lodash';
 
 // Import SearchFilters
 import SearchFilters from './SearchFilters';
 
 export default function JobListPage() {
-  const { user, loading: authLoading } = useAuth(); // Use the context
+  const { user, loading: authLoading } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [filter, setFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [salaryFilter, setSalaryFilter] = useState([20, 500]); // Immediate state
-  const [debouncedSalaryFilter, setDebouncedSalaryFilter] = useState([20, 500]); // Debounced state
-  const [experienceFilter, setExperienceFilter] = useState(''); // New state
-  const [jobTypeFilter, setJobTypeFilter] = useState(''); // New state
+  const [salaryFilter, setSalaryFilter] = useState([20, 500]);
+  const [debouncedSalaryFilter, setDebouncedSalaryFilter] = useState([20, 500]);
+  const [experienceFilter, setExperienceFilter] = useState('');
+  const [jobTypeFilter, setJobTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savedJobs, setSavedJobs] = useState([]);
@@ -40,7 +39,7 @@ export default function JobListPage() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
-    if (authLoading) return; // Wait for auth to complete
+    if (authLoading) return;
 
     if (!user) {
       setError('No user is logged in.');
@@ -48,7 +47,7 @@ export default function JobListPage() {
       return;
     }
 
-    fetchAllData(); // Fetch all the data
+    fetchAllData();
   }, [authLoading, user]);
 
   const fetchAllData = async () => {
@@ -70,10 +69,10 @@ export default function JobListPage() {
       const savedJobsData = savedJobsSnapshot.exists() ? savedJobsSnapshot.data().savedJobs || [] : [];
       setSavedJobs(savedJobsData);
 
-      const appliedJobsList = applicationsSnapshot.docs.map((doc) => doc.id); // jobIds
+      const appliedJobsList = applicationsSnapshot.docs.map((doc) => doc.id);
       setAppliedJobs(appliedJobsList);
 
-      const acceptedJobsList = acceptedJobsSnapshot.docs.map((doc) => doc.id); // jobIds
+      const acceptedJobsList = acceptedJobsSnapshot.docs.map((doc) => doc.id);
       setAcceptedJobs(acceptedJobsList);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -113,7 +112,7 @@ export default function JobListPage() {
       setSnackbar({ open: true, message: 'שגיאה בעדכון המשרות השמורות.', severity: 'error' });
     }
   };
-  
+
   const handleApplyForJob = async (jobId) => {
     const auth = getAuth();
     const currentUser = auth.currentUser;
@@ -128,13 +127,11 @@ export default function JobListPage() {
 
     try {
       if (appliedJobs.includes(jobId)) {
-        // Cancel Application
         await deleteDoc(applicantRef);
         await deleteDoc(userApplicationsRef);
         setAppliedJobs(appliedJobs.filter((id) => id !== jobId));
         setSnackbar({ open: true, message: 'המועמדות בוטלה בהצלחה!', severity: 'info' });
       } else {
-        // Apply for Job
         await setDoc(applicantRef, {
           applicantId: currentUser.uid,
           timestamp: serverTimestamp(),
@@ -152,7 +149,7 @@ export default function JobListPage() {
       setSnackbar({ open: true, message: 'אירעה שגיאה בהגשת המועמדות.', severity: 'error' });
     }
   };
-  
+
   // Debounce salary filter
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -162,7 +159,7 @@ export default function JobListPage() {
       } else {
         setActiveFilters(activeFilters.filter((f) => f.type !== 'salary'));
       }
-    }, 300); // 300ms delay
+    }, 300);
 
     return () => {
       clearTimeout(handler);
@@ -215,7 +212,7 @@ export default function JobListPage() {
       default:
         break;
     }
-  }, 300); // 300ms delay
+  }, 300);
 
   const removeFilter = (filterType) => {
     setActiveFilters(activeFilters.filter((f) => f.type !== filterType));
@@ -245,7 +242,7 @@ export default function JobListPage() {
 
   const filteredJobs = jobs.filter((job) => {
     return (
-      !acceptedJobs.includes(job.id) && // Exclude accepted jobs
+      !acceptedJobs.includes(job.id) &&
       job.title.toLowerCase().includes(filter.toLowerCase()) &&
       (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
       (categoryFilter === '' || job.category === categoryFilter) &&
@@ -401,7 +398,7 @@ export default function JobListPage() {
         <CircularProgress />
       </Box>
     );
-  } 
+  }
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -418,10 +415,10 @@ export default function JobListPage() {
           categoryFilter={categoryFilter}
           setCategoryFilter={setCategoryFilter}
           salaryFilter={salaryFilter}
-          setSalaryFilter={setSalaryFilter} // Pass setSalaryFilter as prop
-          experienceFilter={experienceFilter} // Pass new props
+          setSalaryFilter={setSalaryFilter}
+          experienceFilter={experienceFilter}
           setExperienceFilter={setExperienceFilter}
-          jobTypeFilter={jobTypeFilter}       // Pass new props
+          jobTypeFilter={jobTypeFilter}
           setJobTypeFilter={setJobTypeFilter}
           showFilters={showFilters}
           setShowFilters={setShowFilters}
@@ -532,6 +529,24 @@ export default function JobListPage() {
                           סוג עבודה: {job.jobType}
                         </span>
                       )}
+                      {job.requiresCar && (
+                        <span style={{ ...styles.tag, background: '#FFEDCC', color: '#D2691E' }}>
+                          <Car size={14} style={{ marginLeft: '4px' }} />
+                          דרוש רכב
+                        </span>
+                      )}
+                      {job.isFlexibleTime && (
+                        <span style={{ ...styles.tag, background: '#E0FFE0', color: '#008000' }}>
+                          <Clock size={14} style={{ marginLeft: '4px' }} />
+                          שעות גמישות
+                        </span>
+                      )}
+                      {job.isFlexibleDates && (
+                        <span style={{ ...styles.tag, background: '#E0FFE0', color: '#008000' }}>
+                          <Calendar size={14} style={{ marginLeft: '4px' }} />
+                          תאריכים גמישים
+                        </span>
+                      )}
                       {acceptedJobs.includes(job.id) && (
                         <span style={{ ...styles.tag, background: '#D1FAE5', color: '#065F46' }}>
                           <CheckCircle size={14} style={{ marginLeft: '4px' }} />
@@ -548,14 +563,9 @@ export default function JobListPage() {
                         <Users size={20} color="#0077B6" style={{ marginLeft: '8px' }} />
                         <span>{job.workersNeeded || 1} עובדים</span>
                       </div>
-                      {job.requiresCar && (
-                        <div style={styles.jobDetailItem}>
-                          <span><DirectionsCar/> למשרה זו דרוש רכב </span>
-                        </div>
-                      )}
                     </div>
                   </div>
-                  {/* <AnimatePresence>
+                  <AnimatePresence>
                     {expandedJob === job.id && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
@@ -577,7 +587,9 @@ export default function JobListPage() {
                             >
                               שעות עבודה:
                             </p>
-                            {Array.isArray(job.workHours) ? (
+                            {job.isFlexibleTime ? (
+                              <p style={{ fontSize: '0.875rem', color: '#486581' }}>שעות גמישות</p>
+                            ) : Array.isArray(job.workHours) ? (
                               job.workHours.map((time, index) => (
                                 <p key={index} style={{ fontSize: '0.875rem', color: '#486581' }}>
                                   {time}
@@ -599,7 +611,9 @@ export default function JobListPage() {
                             >
                               תאריכי עבודה:
                             </p>
-                            {Array.isArray(job.workDates) ? (
+                            {job.isFlexibleDates ? (
+                              <p style={{ fontSize: '0.875rem', color: '#486581' }}>תאריכים גמישים</p>
+                            ) : Array.isArray(job.workDates) ? (
                               job.workDates.map((date, index) => (
                                 <p key={index} style={{ fontSize: '0.875rem', color: '#486581' }}>
                                   {date}
@@ -622,80 +636,7 @@ export default function JobListPage() {
                         </p>
                       </motion.div>
                     )}
-                  </AnimatePresence> */}
-                  <AnimatePresence>
-  {expandedJob === job.id && (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      style={{ padding: '16px 24px', borderTop: '1px solid #E4E7EB' }}
-    >
-      <div
-        style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}
-      >
-        <div>
-          <p
-            style={{
-              fontWeight: 'bold',
-              marginBottom: '0.5rem',
-              color: '#102A43',
-            }}
-          >
-            שעות עבודה:
-          </p>
-          {job.isFlexibleTime ? (
-            <p style={{ fontSize: '0.875rem', color: '#486581' }}>שעות גמישות</p>
-          ) : Array.isArray(job.workHours) ? (
-            job.workHours.map((time, index) => (
-              <p key={index} style={{ fontSize: '0.875rem', color: '#486581' }}>
-                {time}
-              </p>
-            ))
-          ) : (
-            <p style={{ fontSize: '0.875rem', color: '#486581' }}>
-              {job.startTime} - {job.endTime}
-            </p>
-          )}
-        </div>
-        <div>
-          <p
-            style={{
-              fontWeight: 'bold',
-              marginBottom: '0.5rem',
-              color: '#102A43',
-            }}
-          >
-            תאריכי עבודה:
-          </p>
-          {job.isFlexibleDates ? (
-            <p style={{ fontSize: '0.875rem', color: '#486581' }}>תאריכים גמישים</p>
-          ) : Array.isArray(job.workDates) ? (
-            job.workDates.map((date, index) => (
-              <p key={index} style={{ fontSize: '0.875rem', color: '#486581' }}>
-                {date}
-              </p>
-            ))
-          ) : (
-            <p style={{ fontSize: '0.875rem', color: '#486581' }}>{job.workDates}</p>
-          )}
-        </div>
-      </div>
-      <p
-        style={{
-          fontSize: '0.875rem',
-          color: '#486581',
-          lineHeight: '1.6',
-        }}
-      >
-        {job.fullDescription ||
-          'תיאור מלא של המשרה לא זמין כרגע. אנא צור קשר עם המעסיק לקבלת מידע נוסף.'}
-      </p>
-    </motion.div>
-  )}
-</AnimatePresence>
-
+                  </AnimatePresence>
                   <div style={styles.jobFooter}>
                     <Link to={`/user/${job.employerId}`} style={styles.link}>
                       צפיה בפרטי מעסיק
@@ -722,10 +663,10 @@ export default function JobListPage() {
                       style={{
                         ...styles.applyButton,
                         background: acceptedJobs.includes(job.id)
-                          ? '#4CAF50' // Green for accepted
+                          ? '#4CAF50'
                           : appliedJobs.includes(job.id)
-                          ? '#99AFA3' // Grey for applied
-                          : 'linear-gradient(135deg, #0077B6 0%, #023E8A 100%)', // Blue gradient for available
+                          ? '#99AFA3'
+                          : 'linear-gradient(135deg, #0077B6 0%, #023E8A 100%)',
                         opacity: acceptedJobs.includes(job.id) ? 0.6 : 1,
                         cursor: acceptedJobs.includes(job.id) ? 'not-allowed' : 'pointer',
                       }}

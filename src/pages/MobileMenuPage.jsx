@@ -1,119 +1,63 @@
 import React, { useContext } from 'react';
+import { Drawer, List, ListItem, ListItemText, IconButton, Box } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Box, List, ListItem, ListItemText, Typography, IconButton, Button, Divider 
-} from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
 import { AuthContext } from '../contexts/AuthContext';
+
+interface SimpleSideDrawerProps {
+  open: boolean;
+  onClose: () => void;
+}
 
 const menuItems = [
   { label: 'דף הבית', path: '/' },
   { label: 'עבודות', path: '/jobs' },
-  { label: 'עבודות שמורות', path: '/saved-jobs', authRequired: true },
-  { label: 'המועמדויות שלי', path: '/my-applications', authRequired: true },
-  { label: "צ'אט", path: '/job-chat', authRequired: true },
-  { label: 'פרופיל', path: '/account', authRequired: true },
+  { label: 'עבודות שמורות', path: '/saved-jobs' },
+  { label: 'המועמדויות שלי', path: '/my-applications' },
+  { label: "צ'אט", path: '/job-chat' },
 ];
 
-const adminItems = [
-  { label: 'ניהול משתמשים', path: '/ManageUsers' },
-  { label: 'הודעות מנהלים', path: '/admin/messages' },
-  { label: 'סטטיסטיקות', path: '/admin/statistics' },
-  { label: 'משתמשי על', path: '/management/top-users' },
-];
-
-export default function MobileMenuPage() {
+export default function SimpleSideDrawer({ open, onClose }: SimpleSideDrawerProps) {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext); // Access user data
+  const { user } = useContext(AuthContext);
 
-  const handleNavigation = (path) => {
+  const handleNavigation = (path: string) => {
     navigate(path);
+    onClose();
   };
 
   return (
-    <Box
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={onClose}
       sx={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100vh',
-        bgcolor: 'background.paper',
-        zIndex: 1300,
-        p: 2,
-        display: 'flex',
-        flexDirection: 'column',
+        '& .MuiDrawer-paper': {
+          width: '50%',
+          maxWidth: 300,
+          bgcolor: 'background.paper',
+        },
       }}
     >
-      {/* Close Button */}
-      <IconButton
-        onClick={() => navigate(-1)}
-        sx={{ alignSelf: 'flex-end', mb: 2 }}
-      >
-        <CloseIcon />
-      </IconButton>
-
-      {/* Title */}
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-        תפריט ניווט
-      </Typography>
-
-      {/* Main Menu Items */}
-      <List sx={{ width: '100%', flexGrow: 1 }}>
-        {menuItems.map((item, index) =>
-          (!item.authRequired || user) && (
-            <ListItem
-              key={index}
-              button
-              onClick={() => handleNavigation(item.path)}
-              sx={{
-                '&:hover': { bgcolor: 'action.hover' },
-                borderRadius: 1,
-                mb: 1,
-              }}
-            >
-              <ListItemText primary={item.label} />
-            </ListItem>
-          )
-        )}
-
-        {/* Admin Menu Items (Only if User is Admin) */}
-        {user?.isAdmin && (
-          <>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-              ניהול
-            </Typography>
-            {adminItems.map((item, index) => (
-              <ListItem
-                key={index}
-                button
-                onClick={() => handleNavigation(item.path)}
-                sx={{
-                  '&:hover': { bgcolor: 'action.hover' },
-                  borderRadius: 1,
-                  mb: 1,
-                }}
-              >
-                <ListItemText primary={item.label} />
-              </ListItem>
-            ))}
-          </>
-        )}
+      <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <IconButton onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
+      <List>
+        {menuItems.map((item, index) => (
+          <ListItem button key={index} onClick={() => handleNavigation(item.path)}>
+            <ListItemText primary={item.label} />
+          </ListItem>
+        ))}
       </List>
-
-      {/* Post Job Button */}
-      {user?.isEmployer && (
-        <Button
-          variant="contained"
-          color="primary"
-          fullWidth
-          onClick={() => handleNavigation('/post-job')}
-          sx={{ mt: 2, borderRadius: '20px' }}
-        >
-          פרסם עבודה
-        </Button>
+      {user?.isAdmin && (
+        <>
+          <ListItem button onClick={() => handleNavigation('/admin')}>
+            <ListItemText primary="ניהול" />
+          </ListItem>
+        </>
       )}
-    </Box>
+    </Drawer>
   );
 }

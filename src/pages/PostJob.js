@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
-  Container, Typography, TextField, Button, Grid, MenuItem, Snackbar, Paper, IconButton, InputAdornment,
-  Box, CircularProgress
+  Container, Typography, TextField, Button, Grid, MenuItem, Snackbar, Paper,
+  Switch, FormControlLabel, IconButton, Box, CircularProgress
 } from '@mui/material';
+import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import { getAuth } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom'; 
-
 
 const jobTypes = [
   'משרה מלאה',
@@ -20,8 +18,8 @@ const jobTypes = [
 ];
 
 export default function PostJob() {
-  const [authLoading, setAuthLoading] = useState(true);
-
+  const [loading, setLoading] = useState(true);
+  const [businessName, setBusinessName] = useState('');
   const [jobData, setJobData] = useState({
     title: '',
     location: '',
@@ -29,61 +27,58 @@ export default function PostJob() {
     salary: '',
     description: '',
     fullDescription: '',
+    workersNeeded: 1,
+    requiresCar: false,
+    isFlexibleTime: false,
     startTime: '',
     endTime: '',
+    isFlexibleDates: false,
     workDates: [''],
-    workersNeeded: 1, 
-    requiresCar: false, 
   });
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: ''
-  });
-  const [businessName, setBusinessName] = useState('');  
-  const [businessLoading, setBusinessLoading] = useState(true);
-  const [isFlexibleTime, setIsFlexibleTime] = useState(false);
-  const [isFlexibleDates, setIsFlexibleDates] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '' });
+  const navigate = useNavigate();
+  const formRef = useRef(null);
 
-  const navigate = useNavigate(); 
-  
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        fetchBusinessName();
+        fetchBusinessName(user.uid);
       }
-      setAuthLoading(false); // Auth check complete
+      setLoading(false);
     });
-  
-    return () => unsubscribe(); // Cleanup listener on unmount
-  }, []);
-  
 
-  const fetchBusinessName = async () => {
+    return () => unsubscribe();
+  }, []);
+
+  const fetchBusinessName = async (userId) => {
     try {
-      const user = auth.currentUser;
-      if (user) {
-        const employerDoc = await getDoc(doc(db, 'employers', user.uid));
-        if (employerDoc.exists()) {
-          const companyName = employerDoc.data().companyName;
-          setBusinessName(companyName);
-          setJobData(prevData => ({
-            ...prevData,
-            companyName: companyName
-          }));
-        }
+      const employerDoc = await getDoc(doc(db, 'employers', userId));
+      if (employerDoc.exists()) {
+        const companyName = employerDoc.data().companyName;
+        setBusinessName(companyName);
+        setJobData(prevData => ({
+          ...prevData,
+          companyName: companyName
+        }));
       }
     } catch (error) {
       console.error("Error fetching business name:", error);
-    } finally {
-      setBusinessLoading(false); // Ensure loading is set to false
+      setSnackbar({ open: true, message: 'שגיאה בטעינת שם העסק' });
     }
   };
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setJobData(prevData => ({
       ...prevData,
       [name]: name === 'workersNeeded' ? Math.min(Math.max(1, parseInt(value) || 1), 10) : value
+    }));
+  };
+
+  const handleSwitchChange = (name) => (event) => {
+    setJobData(prevData => ({
+      ...prevData,
+      [name]: event.target.checked
     }));
   };
 
@@ -113,29 +108,20 @@ export default function PostJob() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Attempting to submit job:", jobData);
-  
-    // if (!jobData.title || !jobData.location || !jobData.type || !jobData.salary || !jobData.description || !jobData.startTime || !jobData.endTime || jobData.workDates.some(date => !date)) {
-    //   setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
-    //   return;
-    // } 
-
     if (
       !jobData.title || 
       !jobData.location || 
       !jobData.type || 
       !jobData.salary || 
       !jobData.description ||
-      (!isFlexibleTime && (!jobData.startTime || !jobData.endTime)) ||
-      (!isFlexibleDates && jobData.workDates.some(date => !date))
+      (!jobData.isFlexibleTime && (!jobData.startTime || !jobData.endTime)) ||
+      (!jobData.isFlexibleDates && jobData.workDates.some(date => !date))
     ) {
       setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
       return;
     }
-    
-  
+
     try {
-      const currentUser = getAuth().currentUser;
       const user = auth.currentUser;
       if (!user) {
         setSnackbar({ open: true, message: 'יש להתחבר כדי לפרסם משרה' });
@@ -146,59 +132,72 @@ export default function PostJob() {
         ...jobData,
         employerId: user.uid,
         companyName: businessName,
-        isFlexibleTime,
-        isFlexibleDates,
-        workDates: isFlexibleDates ? [] : jobData.workDates.filter(date => date),
+        workDates: jobData.isFlexibleDates ? [] : jobData.workDates.filter(date => date),
+        createdAt: new Date(),
       };
 
-      console.log("Job to submit:", jobToSubmit);
-
-      const docRef = await addDoc(collection(db, 'jobs'), {
-        ...jobToSubmit,
-        postedBy: currentUser.uid
-      });
+      const docRef = await addDoc(collection(db, 'jobs'), jobToSubmit);
       console.log("Document written with ID: ", docRef.id);
       setSnackbar({ open: true, message: 'המשרה פורסמה בהצלחה!' });
+      
+      // Reset form after successful submission
       setJobData({
         title: '',
         location: '',
         type: '',
         salary: '',
         description: '',
+        fullDescription: '',
+        workersNeeded: 1,
+        requiresCar: false,
+        isFlexibleTime: false,
         startTime: '',
         endTime: '',
+        isFlexibleDates: false,
         workDates: [''],
-        workersNeeded: 1,
       });
-      navigate('/my-published-jobs'); 
+
+      // Navigate to the published jobs page
+      navigate('/my-published-jobs');
     } catch (error) {
       console.error("Error adding document: ", error);
       setSnackbar({ open: true, message: `אירעה שגיאה בפרסום המשרה: ${error.message}` });
     }
   };
-  
+
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  if (businessLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }  
-  if (authLoading || businessLoading) {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        const form = formRef.current;
+        if (form) {
+          const inputs = Array.from(form.querySelectorAll('input, select, textarea'));
+          const index = inputs.indexOf(e.target);
+          if (index > -1 && index < inputs.length - 1) {
+            inputs[index + 1].focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />
       </Box>
     );
   }
-  
 
   return (
-    <Container dir="rtl" maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h4" gutterBottom align="center">
           פרסום משרה חדשה
@@ -206,7 +205,7 @@ export default function PostJob() {
         <Typography variant="h6" gutterBottom align="center">
           {businessName ? `מפרסם: ${businessName}` : 'לא נמצא שם חברה'}
         </Typography>
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <TextField
@@ -265,184 +264,111 @@ export default function PostJob() {
                 type="number"
                 value={jobData.workersNeeded}
                 onChange={handleChange}
-                InputProps={{
-                  inputProps: { min: 1, max: 10 },
-                  endAdornment: <InputAdornment position="end">מקסימום 10</InputAdornment>,
-                }}
+                inputProps={{ min: 1, max: 10 }}
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                select
-                label="האם דרוש רכב?"
-                name="requiresCar"
-                value={jobData.requiresCar}
-                onChange={(e) => handleChange({ target: { name: 'requiresCar', value: e.target.value === 'true' } })}
-                fullWidth
-              >
-                <MenuItem value="false">לא</MenuItem>
-                <MenuItem value="true">כן</MenuItem>
-              </TextField>
-            </Grid>
-            {/* <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="שעת התחלה"
-                name="startTime"
-                type="time"
-                value={jobData.startTime}
-                onChange={handleChange}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                inputProps={{
-                  step: 300, // 5 min
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="שעת סיום"
-                name="endTime"
-                type="time"
-                value={jobData.endTime}
-                onChange={handleChange}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                inputProps={{
-                  step: 300, // 5 min
-                }}
-              />
-            </Grid> */}
-            <Grid item xs={12}>
-              <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 2, mb: 1 }}
-                >
-                ניתן לבחור  <strong>שעות / זמנים גמישים</strong> לפי הצורך.
-              </Typography>
-
-              <Typography variant="h6">שעות עבודה</Typography>
-              <Button
-                variant={isFlexibleTime ? 'contained' : 'outlined'}
-                onClick={() => setIsFlexibleTime(!isFlexibleTime)}
-                sx={{ mt: 1, mb: 2 }}
-              >
-                {isFlexibleTime ? 'שעות גמישות' : 'בחר שעות ספציפיות'}
-              </Button>
-
-              {!isFlexibleTime && (
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <TextField
-                      required
-                      fullWidth
-                      label="שעת התחלה"
-                      name="startTime"
-                      type="time"
-                      value={jobData.startTime}
-                      onChange={handleChange}
-                      InputLabelProps={{ shrink: true }}
-                      inputProps={{ step: 300 }}
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      required
-                      fullWidth
-                      label="שעת סיום"
-                      name="endTime"
-                      type="time"
-                      value={jobData.endTime}
-                      onChange={handleChange}
-                      InputLabelProps={{ shrink: true }}
-                      inputProps={{ step: 300 }}
-                    />
-                  </Grid>
-                </Grid>
-              )}
-            </Grid>
-
-            {/* <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                תאריכי עבודה
-              </Typography>
-              {jobData.workDates.map((date, index) => (
-                <Grid container spacing={2} key={index} alignItems="center">
-                  <Grid item xs>
-                    <TextField
-                      fullWidth
-                      label={`תאריך עבודה ${index + 1}`}
-                      type="date"
-                      value={date}
-                      onChange={(e) => handleDateChange(e.target.value, index)}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                      margin="normal"
-                    />
-                  </Grid>
-                  <Grid item>
-                    <IconButton onClick={() => removeWorkDate(index)} disabled={jobData.workDates.length === 1}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Grid>
-                </Grid>
-              ))}
-              <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
-                הוסף תאריך עבודה
-              </Button>
-            </Grid> */}
-              <Grid item xs={12}>
-                <Typography variant="h6">תאריכי עבודה</Typography>
-                <Button
-                  variant={isFlexibleDates ? 'contained' : 'outlined'}
-                  onClick={() => setIsFlexibleDates(!isFlexibleDates)}
-                  sx={{ mt: 1, mb: 2 }}
-                >
-                  {isFlexibleDates ? 'תאריכים גמישים' : 'בחר תאריכים ספציפיים'}
-                </Button>
-                  
-                {!isFlexibleDates &&
-                  jobData.workDates.map((date, index) => (
-                    <Grid container spacing={2} key={index} alignItems="center">
-                      <Grid item xs>
-                        <TextField
-                          fullWidth
-                          label={`תאריך עבודה ${index + 1}`}
-                          type="date"
-                          value={date}
-                          onChange={(e) => handleDateChange(e.target.value, index)}
-                          InputLabelProps={{ shrink: true }}
-                          margin="normal"
-                        />
-                      </Grid>
-                      <Grid item>
-                        <IconButton
-                          onClick={() => removeWorkDate(index)}
-                          disabled={jobData.workDates.length === 1}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Grid>
-                      <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
-                        הוסף תאריך עבודה
-                      </Button>    
-                    </Grid>
-                  ))
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={jobData.requiresCar}
+                    onChange={handleSwitchChange('requiresCar')}
+                    name="requiresCar"
+                    color="primary"
+                  />
                 }
+                label="האם דרוש רכב?"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={jobData.isFlexibleTime}
+                    onChange={handleSwitchChange('isFlexibleTime')}
+                    name="isFlexibleTime"
+                    color="primary"
+                  />
+                }
+                label="שעות גמישות?"
+              />
+            </Grid>
+            {!jobData.isFlexibleTime && (
+              <>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="שעת התחלה"
+                    name="startTime"
+                    type="time"
+                    value={jobData.startTime}
+                    onChange={handleChange}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="שעת סיום"
+                    name="endTime"
+                    type="time"
+                    value={jobData.endTime}
+                    onChange={handleChange}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+              </>
+            )}
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={jobData.isFlexibleDates}
+                    onChange={handleSwitchChange('isFlexibleDates')}
+                    name="isFlexibleDates"
+                    color="primary"
+                  />
+                }
+                label="תאריכים גמישים?"
+              />
+            </Grid>
+            {!jobData.isFlexibleDates && (
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  תאריכי עבודה
+                </Typography>
+                {jobData.workDates.map((date, index) => (
+                  <Grid container spacing={2} key={index} alignItems="center">
+                    <Grid item xs>
+                      <TextField
+                        fullWidth
+                        label={`תאריך עבודה ${index + 1}`}
+                        type="date"
+                        value={date}
+                        onChange={(e) => handleDateChange(e.target.value, index)}
+                        InputLabelProps={{ shrink: true }}
+                        margin="normal"
+                      />
+                    </Grid>
+                    <Grid item>
+                      <IconButton onClick={() => removeWorkDate(index)} disabled={jobData.workDates.length === 1}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </Grid>
+                  </Grid>
+                ))}
+                <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
+                  הוסף תאריך עבודה
+                </Button>
               </Grid>
-
+            )}
             <Grid item xs={12}>
               <TextField
                 required
                 fullWidth
                 multiline
                 rows={2}
-                label="תיאור המשרה בקצרה "
+                label="תיאור המשרה בקצרה"
                 name="description"
                 value={jobData.description}
                 onChange={handleChange}
@@ -453,7 +379,7 @@ export default function PostJob() {
                 fullWidth
                 multiline
                 rows={4}
-                label="תיאור מפורט "
+                label="תיאור מפורט"
                 name="fullDescription"
                 value={jobData.fullDescription}
                 onChange={handleChange}

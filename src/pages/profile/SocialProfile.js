@@ -176,14 +176,23 @@ function EmployerProfile({ profileData, reviews }) {
           <InfoItem icon={<Phone />} text={`טלפון: ${profileData.phone}`} />
         )}
 
-        {profileData.contactMethods.length > 0 && 
+        {/* {profileData.contactMethods.length > 0 && 
           <>
             <Typography variant="h6" sx={{ mt: 3 }}>
               דרכי יצירת קשר
             </Typography>
             <ContactIconsDisplay contactMethods={profileData.contactMethods || []} />
           </>
-        }
+        } */}
+
+        {Array.isArray(profileData.contactMethods) && profileData.contactMethods.length > 0 && (
+          <>
+            <Typography variant="h6" sx={{ mt: 3 }}>
+              דרכי יצירת קשר
+            </Typography>
+            <ContactIconsDisplay contactMethods={profileData.contactMethods} />
+          </>
+        )}
         
         {profileData.description && (
           <>
@@ -263,14 +272,14 @@ function EmployeeProfile({ profileData, reviews }) {
           </Paper>
         )}
 
-        {profileData.contactMethods.length > 0 && 
+`       {Array.isArray(profileData.contactMethods) && profileData.contactMethods.length > 0 && (
           <>
             <Typography variant="h6" sx={{ mt: 3 }}>
               דרכי יצירת קשר
             </Typography>
-            <ContactIconsDisplay contactMethods={profileData.contactMethods || []} />
+            <ContactIconsDisplay contactMethods={profileData.contactMethods} />
           </>
-        }
+        )}
         
         {profileData.bio && (
           <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>

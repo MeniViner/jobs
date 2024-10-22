@@ -1,23 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  getFirestore, collection, query, where, doc, deleteDoc, onSnapshot, updateDoc, writeBatch, getDoc,
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  doc,
+  deleteDoc,
+  onSnapshot,
+  updateDoc,
+  writeBatch,
+  getDoc,
 } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Container, Typography, Box, Snackbar, Alert, CircularProgress, Paper, ListItem,
-  ListItemText, Button, IconButton, Grid, 
+import {
+  Container,
+  Typography,
+  Box,
+  Snackbar,
+  Alert,
+  CircularProgress,
+  Paper,
+  ListItem,
+  ListItemText,
+  Button,
+  IconButton,
+  Grid,
+  Avatar,
+  Tooltip,
 } from '@mui/material';
-import { 
-  Delete as DeleteIcon, History as HistoryIcon, Archive as ArchiveIcon,
-  Campaign as BroadcastIcon, Notifications as SystemIcon,
+import {
+  Delete as DeleteIcon,
+  History as HistoryIcon,
+  Archive as ArchiveIcon,
+  Campaign as BroadcastIcon,
+  Notifications as SystemIcon,
+  Info as InfoIcon,
+  SwipeLeft as SwipeLeftIcon,
+  SwipeRight as SwipeRightIcon,
 } from '@mui/icons-material';
 import { SwipeableList, SwipeableListItem } from '@sandstreamdev/react-swipeable-list';
 import '@sandstreamdev/react-swipeable-list/dist/styles.css';
 import NoNotificationsImage from '../images/completed.svg';
 
-
-const NotificationsPage = () => {
+export default function NotificationsPage() {
   const db = getFirestore();
   const [notifications, setNotifications] = useState([]);
   const [historyNotifications, setHistoryNotifications] = useState([]);
@@ -25,126 +51,78 @@ const NotificationsPage = () => {
   const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [showHistory, setShowHistory] = useState(false);
-  const { user, loading: authLoading } = useAuth(); 
-  const navigate = useNavigate()
-
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (authLoading) return; // Wait for auth to complete
-  
+    if (authLoading) return;
+
     if (!user) {
       setLoading(false);
-      navigate('/login')
+      navigate('/login');
       return;
     }
-  
+
     const fetchNotifications = async () => {
       try {
-        // Query all notifications for the user, regardless of type
         const allNotificationsQuery = query(
           collection(db, 'notifications'),
           where('userId', '==', user.uid)
         );
-  
+
         const unsubscribeAll = onSnapshot(allNotificationsQuery, async (snapshot) => {
           const notificationsList = await Promise.all(
             snapshot.docs.map(async (docSnapshot) => {
               const notification = { id: docSnapshot.id, ...docSnapshot.data() };
-  
+
               if (notification.broadcastId) {
                 const broadcastRef = doc(db, 'broadcasts', notification.broadcastId);
                 const broadcastDoc = await getDoc(broadcastRef);
-  
+
                 if (broadcastDoc.exists()) {
                   notification.content = broadcastDoc.data().content;
                 } else {
-                  notification.content = 'Broadcast message not found.';
+                  notification.content = 'הודעת ברודקאסט לא נמצאה.';
                 }
               } else if (notification.type === 'application_submitted' || notification.message) {
-                // Handle system notifications
-                notification.content = notification.message || 'System notification';
-              } else {
-                console.log('Unknown notification type:', notification); // Debug log
+                notification.content = notification.message || 'התראת מערכת';
               }
-  
+
               return notification;
             })
           );
-          // console.log('All fetched notifications:', notificationsList); // Debug log
-  
-          // Sort notifications
+
           notificationsList.sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds);
-  
-          // Separate active and history notifications
-          const activeNotifications = notificationsList.filter(n => !n.isHistory);
-          const historyNotifications = notificationsList.filter(n => n.isHistory);
-    
+
+          const activeNotifications = notificationsList.filter((n) => !n.isHistory);
+          const historyNotifications = notificationsList.filter((n) => n.isHistory);
+
           setNotifications(activeNotifications);
           setHistoryNotifications(historyNotifications);
         });
-  
+
         setLoading(false);
-  
+
         return () => unsubscribeAll();
       } catch (error) {
         console.error('Error fetching notifications:', error);
-        setError('Error loading notifications.');
+        setError('שגיאה בטעינת ההתראות.');
         setLoading(false);
       }
     };
-  
+
     fetchNotifications();
-  }, [db, user, authLoading]);  
-  
+  }, [db, user, authLoading, navigate]);
+
   const handleMoveToHistory = async (notificationId) => {
     try {
       const notificationRef = doc(db, 'notifications', notificationId);
-      const notificationSnapshot = await getDoc(notificationRef);
-  
-      if (notificationSnapshot.exists()) {
-        const notificationData = notificationSnapshot.data();
-        
-        // Update the notification in Firestore to mark it as history
-        await updateDoc(notificationRef, { isHistory: true });
-  
-        let historyNotification = {
-          id: notificationId,
-          ...notificationData,
-          isHistory: true
-        };
-  
-        // If it's a broadcast notification, include the content
-        if (notificationData.broadcastId) {
-          const broadcastRef = doc(db, 'broadcasts', notificationData.broadcastId);
-          const broadcastDoc = await getDoc(broadcastRef);
-          
-          if (broadcastDoc.exists()) {
-            historyNotification.content = broadcastDoc.data().content;
-          } else {
-            historyNotification.content = 'Broadcast message not found.';
-          }
-        }
-  
-        // Update local state
-        setNotifications((prev) =>
-          prev.filter((notification) => notification.id !== notificationId)
-        );
-        setHistoryNotifications((prev) => {
-          // Check if the notification is already in history
-          const exists = prev.some(notification => notification.id === notificationId);
-          if (exists) {
-            return prev; // Don't add if it already exists
-          }
-          return [...prev, historyNotification];
-        });
-  
-        setSnackbar({ open: true, message: 'ההודעה הועברה להיסטוריה', severity: 'success' });
-      } else {
-        throw new Error('Notification not found');
-      }
+      await updateDoc(notificationRef, { isHistory: true });
+      setNotifications((prev) => prev.filter((notification) => notification.id !== notificationId));
+      setSnackbar({ open: true, message: 'ההתראה הועברה לארכיון', severity: 'success' });
     } catch (error) {
       console.error('Error moving to history:', error);
-      setSnackbar({ open: true, message: 'שגיאה בהעברת ההתראה להיסטוריה', severity: 'error' });
+      setSnackbar({ open: true, message: 'שגיאה בהעברת ההתראה לארכיון', severity: 'error' });
     }
   };
 
@@ -152,8 +130,14 @@ const NotificationsPage = () => {
     try {
       const notificationRef = doc(db, 'notifications', notificationId);
       await deleteDoc(notificationRef);
+      if (showHistory) {
+        setHistoryNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      } else {
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      }
       setSnackbar({ open: true, message: 'ההתראה נמחקה', severity: 'success' });
     } catch (error) {
+      console.error('Error deleting notification:', error);
       setSnackbar({ open: true, message: 'שגיאה במחיקת ההתראה', severity: 'error' });
     }
   };
@@ -165,18 +149,17 @@ const NotificationsPage = () => {
         const notificationRef = doc(db, 'notifications', notification.id);
         batch.update(notificationRef, { isHistory: true });
       });
-  
+
       await batch.commit();
-  
-      // Clear the active notifications from the state
+
       setNotifications([]);
-      setSnackbar({ open: true, message: 'All notifications moved to history', severity: 'success' });
+      setSnackbar({ open: true, message: 'כל ההתראות הועברו לארכיון', severity: 'success' });
     } catch (error) {
-      setSnackbar({ open: true, message: 'Error clearing notifications', severity: 'error' });
+      setSnackbar({ open: true, message: 'שגיאה בהעברת ההתראות לארכיון', severity: 'error' });
       console.log('Error clearing notifications', error);
     }
   };
-  
+
   const handleDeleteAllHistory = async () => {
     try {
       const batch = writeBatch(db);
@@ -185,59 +168,74 @@ const NotificationsPage = () => {
         batch.delete(notificationRef);
       });
       await batch.commit();
-      setSnackbar({ open: true, message: 'All history deleted', severity: 'success' });
+      setHistoryNotifications([]);
+      setSnackbar({ open: true, message: 'כל ההיסטוריה נמחקה', severity: 'success' });
     } catch (error) {
-      setSnackbar({ open: true, message: 'Error deleting history', severity: 'error' });
-      console.log('Error deleting history\n', error)
+      setSnackbar({ open: true, message: 'שגיאה במחיקת ההיסטוריה', severity: 'error' });
+      console.log('Error deleting history\n', error);
     }
   };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  }; 
 
   const renderNotificationList = (notificationList, isHistory = false) => {
     const formatDate = (timestamp) => {
       const date = new Date(timestamp.seconds * 1000);
-      return date.toLocaleDateString('en-GB', {
+      return date.toLocaleDateString('he-IL', {
         weekday: 'long',
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
       });
     };
-  
-    let lastDate = ''; // Track the last rendered date
-  
+
+    let lastDate = '';
+
     return (
-      <SwipeableList threshold={0.9} fullSwipe>
+      <SwipeableList threshold={0.5}>
         {notificationList.map((notification) => {
           const notificationDate = formatDate(notification.timestamp);
-  
-          // Check if we need to show a new date divider
           const showDateDivider = notificationDate !== lastDate;
-          lastDate = notificationDate; // Update last rendered date
-  
+          lastDate = notificationDate;
+
           return (
             <React.Fragment key={notification.id}>
               {showDateDivider && (
                 <Typography
-                  variant="caption"
+                  variant="subtitle2"
                   sx={{
                     display: 'block',
                     textAlign: 'center',
                     color: 'gray',
                     fontWeight: 'bold',
-                    marginBottom: 1,
-                    marginTop: 2,
+                    marginBottom: 2,
+                    marginTop: 4,
                   }}
                 >
                   {notificationDate}
                 </Typography>
               )}
-  
+
               <SwipeableListItem
-                swipeLeft={
+                swipeLeft={{
+                  content: (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-start',
+                        alignItems: 'center',
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        height: '100%',
+                        width: '100%',
+                        pl: 2,
+                      }}
+                    >
+                      <DeleteIcon sx={{ mr: 1 }} />
+                      מחיקה
+                    </Box>
+                  ),
+                  action: () => handleDeleteNotification(notification.id),
+                }}
+                swipeRight={
                   isHistory
                     ? null
                     : {
@@ -245,123 +243,68 @@ const NotificationsPage = () => {
                           <Box
                             sx={{
                               display: 'flex',
-                              justifyContent: 'flex-start',
+                              justifyContent: 'flex-end',
                               alignItems: 'center',
                               bgcolor: 'primary.main',
                               color: 'white',
                               height: '100%',
                               width: '100%',
-                              pl: 2,
+                              pr: 2,
                             }}
                           >
-                            <ArchiveIcon sx={{ mr: 1 }} />
                             העבר לארכיון
+                            <ArchiveIcon sx={{ ml: 1 }} />
                           </Box>
                         ),
                         action: () => handleMoveToHistory(notification.id),
                       }
                 }
-                swipeRight={{
-                  content: (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        alignItems: 'center',
-                        bgcolor: 'error.main',
-                        color: 'white',
-                        height: '100%',
-                        width: '100%',
-                        pr: 2,
-                      }}
-                    >
-                      מחיקה
-                      <DeleteIcon sx={{ ml: 1 }} />
-                    </Box>
-                  ),
-                  action: () => handleDeleteNotification(notification.id),
-                }}
               >
                 <ListItem
                   component={Paper}
                   sx={{
                     mb: 2,
                     borderRadius: 2,
-                    display: 'flex',
-                    justifyContent: 'space-between', // Align content horizontally
-                    alignItems: 'center', // Ensure vertical alignment
                     p: 2,
-                    pb: 0,
-                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
                   }}
                 >
-                    {/* Left Section: Type Header with Icon */}
-                  <Box
+                  <Avatar
                     sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      position: 'absolute',
-                      top: 8,
-                      left: 16,
-                      fontSize: '0.75rem',
-                      color: 'gray',
+                      bgcolor: notification.broadcastId ? 'primary.main' : 'secondary.main',
+                      mr: 2,
                     }}
                   >
                     {notification.broadcastId ? (
-                      <>
-                        <BroadcastIcon   
-                          sx={{ 
-                            fontSize: 16, 
-                            mr: 0.5, 
-                            transform: 'rotateY(180deg)', // Flip horizontally tor rtl
-                            display: 'inline-block', // Ensure proper rendering
-                          }}  
-                        />
-                        <Typography variant="caption">ברודקאסט</Typography>
-                      </>
+                      <BroadcastIcon sx={{ transform: 'rotateY(180deg)' }} />
                     ) : (
-                      <>
-                        <SystemIcon sx={{ fontSize: 16, mr: 0.5 }} />
-                        <Typography variant="caption">התראת מערכת</Typography>
-                      </>
+                      <InfoIcon />
                     )}
-                  </Box>
-
-                  {/* Notification Content */}
+                  </Avatar>
                   <ListItemText
-                    primary={notification.content || notification.message || 'No Content Available'}
+                    primary={
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                        {notification.content || notification.message || 'אין תוכן זמין'}
+                      </Typography>
+                    }
                     secondary={
                       notification.timestamp
-                      ? new Date(notification.timestamp.seconds * 1000).toLocaleTimeString('en-GB', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                        : 'Invalid Date'
+                        ? new Date(notification.timestamp.seconds * 1000).toLocaleTimeString('he-IL', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : 'תאריך לא זמין'
                     }
-                    // sx={{ mt: 2 }}
-                    sx={{ flexGrow: 1, marginRight: 1, marginTop: 2 }} // Make the text take available space
                   />
-  
-                  {/* Archive/Delete Button Section */}
-                  <Box sx={{ display: 'flex', gap: 1 }}> {/* Align buttons horizontally */}
-                  {!isHistory ? (
-                    <IconButton
-                      edge="end"
-                      aria-label="archive"
-                      onClick={() => handleMoveToHistory(notification.id)}
-                    >
+                  {!isHistory && (
+                    <IconButton onClick={() => handleMoveToHistory(notification.id)}>
                       <ArchiveIcon />
                     </IconButton>
-                  ) : (
-                    <IconButton
-                      edge="end"
-                      aria-label="delete"
-                      onClick={() => handleDeleteNotification(notification.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
                   )}
-                  </Box>
+                  <IconButton onClick={() => handleDeleteNotification(notification.id)}>
+                    <DeleteIcon />
+                  </IconButton>
                 </ListItem>
               </SwipeableListItem>
             </React.Fragment>
@@ -370,10 +313,10 @@ const NotificationsPage = () => {
       </SwipeableList>
     );
   };
-  
+
   if (authLoading || loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
         <CircularProgress />
       </Box>
     );
@@ -382,95 +325,148 @@ const NotificationsPage = () => {
   if (error) {
     return (
       <Container>
-        <Typography color="error" align="center">{error}</Typography>
+        <Typography color="error" align="center">
+          {error}
+        </Typography>
       </Container>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={3}>
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            onClick={() => setShowHistory(!showHistory)}
-            startIcon={<HistoryIcon />}
-          >
-            {showHistory ? 'הסתר היסטוריה' : 'הצג היסטוריה'}
-          </Button>
-          {showHistory && (
-            <Box mt={2}>
-              <Typography variant="h6" gutterBottom>
-              היסטוריית ההתראות
-              </Typography>
-              {historyNotifications.length === 0 ? (
-                <Typography variant="body2">אין היסטוריה זמינה.</Typography>
-              ) : (
-                <>
-                  {renderNotificationList(historyNotifications, true)}
-                  <Button 
-                    variant="contained" 
-                    color="error" 
-                    fullWidth 
-                    onClick={handleDeleteAllHistory}
-                    sx={{ mt: 2 }}
-                  >
-                    מחיקת כל ההתראות 
-                  </Button>
-                </>
-              )}
+    <Container maxWidth="md" sx={{ mt: 4 }}>
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Paper elevation={3} sx={{ borderRadius: 4, overflow: 'hidden' }}>
+            <Box display="flex" justifyContent="stretch" alignItems="stretch" height={60}>
+              <Button
+                variant={!showHistory ? "contained" : "text"}
+                onClick={() => setShowHistory(false)}
+                sx={{
+                  flex: 1,
+                  height: '100%',
+                  borderRadius: 0,
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.3s',
+                  '&:hover': {
+                    backgroundColor: !showHistory ? 'primary.dark' : 'rgba(0, 0, 0, 0.04)',
+                  },
+                }}
+                startIcon={<SystemIcon />}
+              >
+                התראות
+              </Button>
+              <Button
+                variant={showHistory ? "contained" : "text"}
+                onClick={() => setShowHistory(true)}
+                sx={{
+                  flex: 1,
+                  height: '100%',
+                  borderRadius: 0,
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.3s',
+                  '&:hover': {
+                    backgroundColor: showHistory ? 'primary.dark' : 'rgba(0, 0, 0, 0.04)',
+                  },
+                }}
+                startIcon={<HistoryIcon />}
+              >
+                היסטוריה
+              </Button>
             </Box>
-          )}
+          </Paper>
         </Grid>
-        <Grid item xs={12} md={9}>
-          <Typography variant="h5" align="center" gutterBottom>
-            התראות
-          </Typography>
-          {notifications.length === 0 ? (
-            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" minHeight="50vh">
-              <img src={NoNotificationsImage} alt="No notifications" style={{ width: 200, height: 200 }} />
-              <Typography variant="h6" align="center" mt={2}>
-              אין התראות חדשות
-              </Typography>
-              <Typography variant="body1" align="center" mt={1}>
-              כל ההתראות שלך טופלו בהצלחה. נעדכן אותך כשיגיעו עדכונים חדשים.
-              </Typography>
-            </Box>
+        <Grid item xs={12}>
+          {!showHistory ? (
+            notifications.length === 0 ? (
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                minHeight="50vh"
+              >
+                <img
+                  src={NoNotificationsImage}
+                  alt="No notifications"
+                  style={{ width: '60%', maxWidth: 300, marginBottom: 20 }}
+                />
+                <Typography variant="h6" align="center" gutterBottom>
+                  אין התראות חדשות
+                </Typography>
+                <Typography variant="body1" align="center">
+                  כל ההתראות שלך טופלו בהצלחה. נעדכן אותך כשיגיעו עדכונים חדשים.
+                </Typography>
+              </Box>
+            ) : (
+              <>
+                <Paper elevation={2} sx={{ p: 2, mb: 2, borderRadius: 2, backgroundColor: 'info.light' }}>
+                  <Box display="flex" alignItems="center" justifyContent="center">
+                    <SwipeLeftIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                    <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
+                      החלק שמאלה למחיקה
+                    </Typography>
+                    <SwipeRightIcon sx={{ mx: 1, fontSize: '1rem' }} />
+                    <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
+                      החלק ימינה לארכיון
+                    </Typography>
+                  </Box>
+                </Paper>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Tooltip title="העבר את כל ההתראות לארכיון">
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={handleClearAllNotifications}
+                      startIcon={<ArchiveIcon />}
+                      sx={{ borderRadius: 20, px: 3 }}
+                    >
+                      העבר הכל לארכיון
+                    </Button>
+                  </Tooltip>
+                </Box>
+                {renderNotificationList(notifications)}
+              </>
+            )
+          ) : historyNotifications.length === 0 ? (
+            <Typography variant="body2" align="center">אין היסטוריה זמינה.</Typography>
           ) : (
             <>
-              <Typography variant="body2">החלק שמאלה על הודעה להעברה לארכיון וימינה למחיקה </Typography>
-              {renderNotificationList(notifications)}
-              <Button 
-                variant="contained" 
-                color="primary" 
-                fullWidth 
-                onClick={handleClearAllNotifications}
-                sx={{ mt: 2 }}
-              >
-                Move All to History
-              </Button>
+              <Paper elevation={2} sx={{ p: 2, mb: 2, borderRadius: 2, backgroundColor: 'info.light' }}>
+                <Box display="flex" alignItems="center" justifyContent="center">
+                  <SwipeLeftIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
+                    החלק שמאלה למחיקה
+                  </Typography>
+                </Box>
+              </Paper>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Tooltip title="מחק את כל ההיסטוריה">
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleDeleteAllHistory}
+                    startIcon={<DeleteIcon />}
+                    sx={{ borderRadius: 20, px: 3 }}
+                  >
+                    מחק את כל ההיסטוריה
+                  </Button>
+                </Tooltip>
+              </Box>
+              {renderNotificationList(historyNotifications, true)}
             </>
           )}
         </Grid>
       </Grid>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={handleCloseSnackbar}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
     </Container>
   );
-};
-
-export default NotificationsPage;
-
-
+}
 
 export const useNotificationCount = () => {
   const [notificationCount, setNotificationCount] = useState(0);

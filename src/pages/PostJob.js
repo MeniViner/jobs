@@ -32,7 +32,7 @@ export default function PostJob() {
     startTime: '',
     endTime: '',
     workDates: [''],
-    workersNeeded: 0, 
+    workersNeeded: 1, 
     requiresCar: false, 
   });
   const [snackbar, setSnackbar] = useState({
@@ -81,9 +81,11 @@ export default function PostJob() {
   
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setJobData(prevData => ({
+    setJobData((prevData) => ({
       ...prevData,
-      [name]: name === 'workersNeeded' ? Math.min(Math.max(1, parseInt(value) || 1), 10) : value
+      [name]: name === 'workersNeeded' 
+        ? Math.max(1, parseInt(value) || 1) // Keep only the minimum constraint of 1
+        : value
     }));
   };
 
@@ -259,10 +261,9 @@ export default function PostJob() {
                 type="number"
                 value={jobData.workersNeeded}
                 onChange={handleChange}
-                // InputProps={{
-                //   inputProps: { min: 1, max: 10 },
-                //   endAdornment: <InputAdornment position="end">מקסימום 10</InputAdornment>,
-                // }}
+                InputProps={{
+                  inputProps: { min: 1 },
+                }}
               />
             </Grid>
             <Grid item xs={12} sx={{ textAlign: 'left' }}>
@@ -368,7 +369,7 @@ export default function PostJob() {
                       </IconButton>
                     </Grid>
                     <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
-                      הוסף יום
+                    הוסף יום
                     </Button>    
                   </Grid>
                 ))

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   Box, List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, TextField, IconButton, AppBar,
   Toolbar, Divider, Badge, CircularProgress, Button, Dialog, DialogActions, DialogContent,
-  DialogContentText, DialogTitle, Menu, MenuItem, useTheme 
+  DialogContentText, DialogTitle, Menu, MenuItem, useTheme, Snackbar, Alert
 } from '@mui/material';
 import { 
   Send as SendIcon, ArrowBack as ArrowBackIcon,MoreVert as MoreVertIcon,
@@ -32,6 +32,11 @@ export default function JobChat() {
   const [chatToDelete, setChatToDelete] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const { jobId } = useParams();
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info',
+  });
   const navigate = useNavigate();
   const theme = useTheme();
 
@@ -641,6 +646,21 @@ export default function JobChat() {
           </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
     </Box>
   );
 }

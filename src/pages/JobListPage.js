@@ -15,8 +15,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Box, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { debounce } from 'lodash';
 
-// Import SearchFilters
+// pages Import 
 import SearchFilters from './SearchFilters';
+
 
 export default function JobListPage() {
   const { user, loading: authLoading } = useAuth();

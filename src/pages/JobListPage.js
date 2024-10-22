@@ -39,42 +39,83 @@ export default function JobListPage() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const navigate = useNavigate()
 
+  // useEffect(() => {
+  //   if (authLoading) return;
+
+  //   if (!user) {
+  //     setLoading(false);
+  //     navigate('/login')
+  //     return;
+  //   }
+
+  //   fetchAllData();
+  // }, [authLoading, user]);
+
+  // const fetchAllData = async () => {
+  //   setLoading(true);
+
+  //   try {
+  //     const userRef = doc(db, 'users', user.uid);
+  //     const [jobsSnapshot, savedJobsSnapshot, applicationsSnapshot, acceptedJobsSnapshot] = await Promise.all([
+  //       getDocs(collection(db, 'jobs')),
+  //       getDoc(userRef),
+  //       getDocs(collection(userRef, 'applications')),
+  //       getDocs(collection(userRef, 'acceptedJobs')),
+  //     ]);
+
+  //     const jobList = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  //     const filteredJobList = jobList.filter((job) => !job.isCompleted && !job.isFullyStaffed);
+  //     setJobs(filteredJobList);
+
+  //     const savedJobsData = savedJobsSnapshot.exists() ? savedJobsSnapshot.data().savedJobs || [] : [];
+  //     setSavedJobs(savedJobsData);
+
+  //     const appliedJobsList = applicationsSnapshot.docs.map((doc) => doc.id);
+  //     setAppliedJobs(appliedJobsList);
+
+  //     const acceptedJobsList = acceptedJobsSnapshot.docs.map((doc) => doc.id);
+  //     setAcceptedJobs(acceptedJobsList);
+  //   } catch (error) {
+  //     console.error('Error fetching data:', error);
+  //     setError('Failed to load data.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   useEffect(() => {
-    if (authLoading) return;
-
-    if (!user) {
-      setLoading(false);
-      navigate('/login')
-      return;
-    }
-
-    fetchAllData();
-  }, [authLoading, user]);
-
+    if (authLoading) return; // Wait until authentication loading is complete.
+  
+    fetchAllData(); // Fetch jobs data for all users (signed in or not).
+  }, [authLoading]);
+  
   const fetchAllData = async () => {
     setLoading(true);
-
+  
     try {
-      const userRef = doc(db, 'users', user.uid);
-      const [jobsSnapshot, savedJobsSnapshot, applicationsSnapshot, acceptedJobsSnapshot] = await Promise.all([
-        getDocs(collection(db, 'jobs')),
-        getDoc(userRef),
-        getDocs(collection(userRef, 'applications')),
-        getDocs(collection(userRef, 'acceptedJobs')),
-      ]);
-
+      const jobsSnapshot = await getDocs(collection(db, 'jobs'));
       const jobList = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       const filteredJobList = jobList.filter((job) => !job.isCompleted && !job.isFullyStaffed);
       setJobs(filteredJobList);
-
-      const savedJobsData = savedJobsSnapshot.exists() ? savedJobsSnapshot.data().savedJobs || [] : [];
-      setSavedJobs(savedJobsData);
-
-      const appliedJobsList = applicationsSnapshot.docs.map((doc) => doc.id);
-      setAppliedJobs(appliedJobsList);
-
-      const acceptedJobsList = acceptedJobsSnapshot.docs.map((doc) => doc.id);
-      setAcceptedJobs(acceptedJobsList);
+  
+      if (user) {
+        const userRef = doc(db, 'users', user.uid);
+        const [savedJobsSnapshot, applicationsSnapshot, acceptedJobsSnapshot] = await Promise.all([
+          getDoc(userRef),
+          getDocs(collection(userRef, 'applications')),
+          getDocs(collection(userRef, 'acceptedJobs')),
+        ]);
+  
+        const savedJobsData = savedJobsSnapshot.exists() ? savedJobsSnapshot.data().savedJobs || [] : [];
+        setSavedJobs(savedJobsData);
+  
+        const appliedJobsList = applicationsSnapshot.docs.map((doc) => doc.id);
+        setAppliedJobs(appliedJobsList);
+  
+        const acceptedJobsList = acceptedJobsSnapshot.docs.map((doc) => doc.id);
+        setAcceptedJobs(acceptedJobsList);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load data.');
@@ -83,12 +124,17 @@ export default function JobListPage() {
     }
   };
 
+  
   const handleSaveJob = async (jobId) => {
     const auth = getAuth();
     const currentUser = auth.currentUser;
 
     if (!currentUser) {
-      alert('עליך להתחבר כדי לשמור עבודות');
+      setSnackbar({
+        open: true,
+        message: 'עליך להתחבר כדי לשמור עבודות',
+        severity: 'warning',
+      });
       return;
     }
 
@@ -119,7 +165,11 @@ export default function JobListPage() {
     const currentUser = auth.currentUser;
 
     if (!currentUser) {
-      alert('עליך להתחבר כדי להגיש מועמדות');
+      setSnackbar({
+        open: true,
+        message: 'עליך להתחבר כדי לשמור עבודות',
+        severity: 'warning',
+      });
       return;
     }
 

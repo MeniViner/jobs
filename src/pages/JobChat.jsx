@@ -317,7 +317,12 @@ export default function JobChat() {
       setOpenDeleteDialog(false);
     } catch (error) {
       console.error("Error deleting chat:", error);
-      alert('אירעה שגיאה במחיקת השיחה');
+      setSnackbar({
+        open: true,
+        message: 'אירעה שגיאה במחיקת השיחה',
+        severity: 'warning',
+      });
+
     }
   };
 
@@ -344,7 +349,12 @@ export default function JobChat() {
       setAnchorEl(null);
     } catch (error) {
       console.error("Error deleting job chat:", error);
-      alert('אירעה שגיאה במחיקת השיחות של העבודה');
+      setSnackbar({
+        open: true,
+        message: 'אירעה שגיאה במחיקת שיחות העבודה',
+        severity: 'warning',
+      });
+
     }
   };
 

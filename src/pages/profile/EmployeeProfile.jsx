@@ -15,7 +15,6 @@ import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { RatingDisplay } from '../rating/RatingSystem';
 
-
 export default function EmployeeProfile({
   profileData,
   onUpdateProfile,
@@ -23,7 +22,6 @@ export default function EmployeeProfile({
   snackbar,
   setSnackbar,
   onDeleteAccountRequest,
-  // onSwitchToggle,
 }) {
   const navigate = useNavigate();
   const [editingPersonalInfo, setEditingPersonalInfo] = useState(false);
@@ -35,11 +33,12 @@ export default function EmployeeProfile({
   const [showRating, setShowRating] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [employerRequestStatus, setEmployerRequestStatus] = useState(null);
+  const [shouldScrollTop, setShouldScrollTop] = useState(false); // Update 1
   const auth = getAuth();
   const db = getFirestore();
   const userId = auth.currentUser ? auth.currentUser.uid : null;
 
-  // פונקציית CloudinaryUpload להעלאת תמונות
   const CloudinaryUpload = async (file, callback) => {
     const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
@@ -80,6 +79,13 @@ export default function EmployeeProfile({
   }, [profileData]);
 
   useEffect(() => {
+    if (shouldScrollTop) {
+      window.scrollTo(0, 0);
+      setShouldScrollTop(false);
+    }
+  }, [shouldScrollTop]); // Update 2
+
+  useEffect(() => {
     const fetchUserData = async () => {
       const user = auth.currentUser;
       if (user) {
@@ -88,8 +94,6 @@ export default function EmployeeProfile({
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
           setNewProfilePicture(userData.profileURL);
-  
-          // Check for employer request status or similar fields
           setEmployerRequestStatus(userData.employerRequestStatus || null);
         }
       }
@@ -169,7 +173,6 @@ export default function EmployeeProfile({
     }
   };
 
-  // פונקציה למחיקת תמונת הפרופיל
   const handleDeleteProfilePicture = async () => {
     setLoading(true);
     try {
@@ -198,19 +201,21 @@ export default function EmployeeProfile({
     }
   };
 
-  // פונקציות לתפריט
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
+
   const handleCloseMenu = () => {
     setAnchorEl(null);
   };
 
-  // סטייט למעקב אחר סטטוס בקשת המעסיק
-  const [employerRequestStatus, setEmployerRequestStatus] = useState(null);
-
   const handleEmployerRequest = async () => {
     navigate('/employer-registration');
+  };
+
+  const handleEditPersonalInfo = () => { // Update 3
+    setEditingPersonalInfo(true);
+    setShouldScrollTop(true);
   };
 
   const renderEditDialog = () => {
@@ -326,32 +331,21 @@ export default function EmployeeProfile({
           'bio',
           'hasCar',
         ].map((field) => (
-          // <ListItem key={field} divider>
-          //   <ListItemText
-          //     primary={getFieldLabel(field)}
-          //     secondary={editedData[field] || 'לא סופק'}
-          //   />
-          //   <ListItemIcon>
-          //     <IconButton edge="end" onClick={() => handleEdit(field)}>
-          //       {editedData[field] ? <EditIcon /> : <AddIcon />}
-          //     </IconButton>
-          //   </ListItemIcon>
-          // </ListItem>
           <ListItem key={field} divider>
-          <ListItemText
-            primary={getFieldLabel(field)}
-            secondary={
-              field === 'hasCar'
-                ? editedData[field] ? 'כן' : 'לא'
-                : editedData[field] || 'לא סופק'
-            }
-          />
-          <ListItemIcon>
-            <IconButton edge="end" onClick={() => handleEdit(field)}>
-              {editedData[field] !== undefined ? <EditIcon /> : <AddIcon />}
-            </IconButton>
-          </ListItemIcon>
-        </ListItem>
+            <ListItemText
+              primary={getFieldLabel(field)}
+              secondary={
+                field === 'hasCar'
+                  ? editedData[field] ? 'כן' : 'לא'
+                  : editedData[field] || 'לא סופק'
+              }
+            />
+            <ListItemIcon>
+              <IconButton edge="end" onClick={() => handleEdit(field)}>
+                {editedData[field] !== undefined ? <EditIcon /> : <AddIcon />}
+              </IconButton>
+            </ListItemIcon>
+          </ListItem>
         ))}
       </List>
     </Box>
@@ -392,7 +386,6 @@ export default function EmployeeProfile({
               }}
             />
           )}
-          {/* תפריט עם אפשרויות "החלף תמונה" ו"מחק תמונה" */}
           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleCloseMenu}>
             <MenuItem
               onClick={() => {
@@ -499,7 +492,7 @@ export default function EmployeeProfile({
       </Typography>
 
       <List>
-        <ListItem button onClick={() => setEditingPersonalInfo(true)}>
+        <ListItem button onClick={handleEditPersonalInfo}> {/* Update 4 */}
           <ListItemIcon>
             <PersonIcon />
           </ListItemIcon>
@@ -588,7 +581,6 @@ export default function EmployeeProfile({
 
   return (
     <Box sx={{ bgcolor: 'background.paper', minHeight: '100vh' }}>
-
       {editingPersonalInfo ? renderPersonalInfo() : renderMainContent()}
 
       {renderEditDialog()}

@@ -42,12 +42,12 @@ export default function EmployerProfile({
   const [showRating, setShowRating] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [shouldScrollTop, setShouldScrollTop] = useState(false);
   const auth = getAuth();
   const db = getFirestore();
   const userId = auth.currentUser ? auth.currentUser.uid : null;
   const [contactMethods, setContactMethods] = useState(profileData.contactMethods || []);
 
-  // פונקציית CloudinaryUpload להעלאת תמונות
   const CloudinaryUpload = async (file, callback) => {
     const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
@@ -122,6 +122,13 @@ export default function EmployerProfile({
 
     fetchUserData();
   }, [auth.currentUser, db]);
+
+  useEffect(() => {
+    if (shouldScrollTop) {
+      window.scrollTo(0, 0);
+      setShouldScrollTop(false);
+    }
+  }, [shouldScrollTop]);
 
   const calculateCompletionPercentage = (data) => {
     const fields = [
@@ -211,7 +218,6 @@ export default function EmployerProfile({
     }
   };
 
-  // פונקציה למחיקת תמונת הפרופיל
   const handleDeleteProfilePicture = async () => {
     setLoading(true);
     try {
@@ -240,7 +246,6 @@ export default function EmployerProfile({
     }
   };
 
-  // פונקציות לתפריט
   const handleOpenMenu = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -316,91 +321,105 @@ export default function EmployerProfile({
     }
   };
 
-  const renderPersonalInfo = () => (
-    <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mb: 2,
-        }}
-      >
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          פרטים אישיים
-        </Typography>
-        <IconButton onClick={() => setEditingPersonalInfo(false)}>
-          <ArrowBackIcon />
-        </IconButton>
-      </Box>
-      <List>
-        {['name', 'phone', 'email', 'location'].map((field) => (
-          <ListItem key={field} divider>
-            <ListItemText
-              primary={getFieldLabel(field)}
-              secondary={editedData[field] || 'לא סופק'}
-            />
-            <ListItemIcon>
-              <IconButton edge="end" onClick={() => handleEdit(field)}>
-                {editedData[field] ? <EditIcon /> : <AddIcon />}
-              </IconButton>
-            </ListItemIcon>
-          </ListItem>
-        ))}
-      </List>
+  const handleEditPersonalInfo = () => {
+    setEditingPersonalInfo(true);
+    setShouldScrollTop(true);
+  };
+
+  const handleEditBusinessInfo = () => {
+    setEditingBusinessInfo(true);
+    setShouldScrollTop(true);
+  };
+
+  const renderPersonalInfo = () => {
+    return (
+      <Box>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mb: 2,
+          }}
+        >
+          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            פרטים אישיים
+          </Typography>
+          <IconButton onClick={() => setEditingPersonalInfo(false)}>
+            <ArrowBackIcon />
+          </IconButton>
+        </Box>
+        <List>
+          {['name', 'phone', 'email', 'location'].map((field) => (
+            <ListItem key={field} divider>
+              <ListItemText
+                primary={getFieldLabel(field)}
+                secondary={editedData[field] || 'לא סופק'}
+              />
+              <ListItemIcon>
+                <IconButton edge="end" onClick={() => handleEdit(field)}>
+                  {editedData[field] ? <EditIcon /> : <AddIcon />}
+                </IconButton>
+              </ListItemIcon>
+            </ListItem>
+          ))}
+        </List>
       <ContactMethodsManager
         contactMethods={contactMethods}
         setContactMethods={setContactMethods}
       />
-    </Box>
-  );
-
-  const renderBusinessInfo = () => (
-    <Box>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mb: 2,
-        }}
-      >
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          פרטי העסק
-        </Typography>
-        <IconButton onClick={() => setEditingBusinessInfo(false)}>
-          <ArrowBackIcon />
-        </IconButton>
       </Box>
-      <List>
-        {[
-          'companyName',
-          'businessType',
-          'description',
-          'email',
-          'phone',
-          'businessAddress',
-          'businessPhone',
-          'businessEmail',
-          'website',
-          'foundedYear',
-          'numberOfEmployees',
-        ].map((field) => (
-          <ListItem key={field} divider>
-            <ListItemText
-              primary={getFieldLabel(field)}
-              secondary={editedData[field] || 'לא סופק'}
-            />
-            <ListItemIcon>
-              <IconButton edge="end" onClick={() => handleEdit(field)}>
-                {editedData[field] ? <EditIcon /> : <AddIcon />}
-              </IconButton>
-            </ListItemIcon>
-          </ListItem>
-        ))}
-      </List>
-    </Box>
-  );
+    );
+  };
+
+  const renderBusinessInfo = () => {
+    return (
+      <Box>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mb: 2,
+          }}
+        >
+          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            פרטי העסק
+          </Typography>
+          <IconButton onClick={() => setEditingBusinessInfo(false)}>
+            <ArrowBackIcon />
+          </IconButton>
+        </Box>
+        <List>
+          {[
+            'companyName',
+            'businessType',
+            'description',
+            'email',
+            'phone',
+            'businessAddress',
+            'businessPhone',
+            'businessEmail',
+            'website',
+            'foundedYear',
+            'numberOfEmployees',
+          ].map((field) => (
+            <ListItem key={field} divider>
+              <ListItemText
+                primary={getFieldLabel(field)}
+                secondary={editedData[field] || 'לא סופק'}
+              />
+              <ListItemIcon>
+                <IconButton edge="end" onClick={() => handleEdit(field)}>
+                  {editedData[field] ? <EditIcon /> : <AddIcon />}
+                </IconButton>
+              </ListItemIcon>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    );
+  };
 
   const renderMainContent = () => (
     <>
@@ -426,6 +445,7 @@ export default function EmployerProfile({
             }}
             onClick={handleOpenMenu}
           >
+            
             <PhotoCameraIcon fontSize="small" />
           </IconButton>
           {loading && (
@@ -438,7 +458,6 @@ export default function EmployerProfile({
               }}
             />
           )}
-          {/* תפריט עם אפשרויות "החלף תמונה" ו"מחק תמונה" */}
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
@@ -450,7 +469,7 @@ export default function EmployerProfile({
                 handleCloseMenu();
               }}
             >
-              החלף תמונה
+              החלף  תמונה
             </MenuItem>
             {newProfilePicture && (
               <MenuItem onClick={handleDeleteProfilePicture}>מחק תמונה</MenuItem>
@@ -513,7 +532,7 @@ export default function EmployerProfile({
               bgcolor: 'action.hover',
             },
           }}
-          onClick={() => setEditingBusinessInfo(true)}
+          onClick={handleEditBusinessInfo}
         >
           <Box
             sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
@@ -551,7 +570,7 @@ export default function EmployerProfile({
       </Typography>
 
       <List>
-        <ListItem button onClick={() => setEditingPersonalInfo(true)}>
+        <ListItem button onClick={handleEditPersonalInfo}>
           <ListItemIcon>
             <PersonIcon />
           </ListItemIcon>

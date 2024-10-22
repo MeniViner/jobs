@@ -372,7 +372,7 @@ export default function NotificationsPage() {
                 }}
                 startIcon={<HistoryIcon />}
               >
-                היסטוריה
+                אריכיון
               </Button>
             </Box>
           </Paper>

@@ -1,5 +1,6 @@
 // FeedbackManager.js
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Box, TextField, Typography, Paper, Stack, Avatar, CircularProgress, Button 
 } from '@mui/material';
@@ -62,12 +63,24 @@ export const SendFeedback = () => {
   );
 };
 
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat('he-IL', {
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,  // 24-hour format
+  }).format(date);
+};
+
 // Component to Manage Feedbacks in Admin Panel
 export const FeedbackAdmin = () => {
   const [feedbacks, setFeedbacks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const db = getFirestore();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
@@ -79,9 +92,16 @@ export const FeedbackAdmin = () => {
           feedbackSnapshot.docs.map(async (doc) => {
             const feedbackData = doc.data();
             const userData = await fetchUserData(feedbackData.userId);
+
+            // Convert Firestore Timestamp to JS Date
+            const timestamp = feedbackData.timestamp?.toDate
+            ? feedbackData.timestamp.toDate()
+            : new Date(feedbackData.timestamp);
+
             return {
               id: doc.id,
               ...feedbackData,
+              timestamp,  // Store the converted timestamp
               user: userData,
             };
           })
@@ -108,7 +128,7 @@ export const FeedbackAdmin = () => {
           const userData = userDocSnap.data();
           return {
             name: userData.name || 'משתמש ללא שם',
-            profileURL: userData.pictureURL || userData.profileURL,
+            profileURL: userData.profileURL || userData.photoURL ,
           };
         }
       } catch (error) {
@@ -154,16 +174,27 @@ export const FeedbackAdmin = () => {
         {filteredFeedbacks.map((feedback) => (
           <Paper key={feedback.id} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar
-              src={feedback.user.pictureURL || feedback.user.profileURL}
+              src={feedback.user.profileURL  || feedback.user.photoURL }
               alt={feedback.user.name}
               sx={{ width: 50, height: 50 }}
             />
             <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                {feedback.user.name}
+              <Typography variant="h6">{feedback.user.name}</Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                onClick={() => {
+                  navigate(`/user/${feedback.userId}`);
+                }}
+                sx={{ cursor: 'pointer' }}
+              >
+                הצג פרופיל
               </Typography>
+            </Box>
+
+            <Box>
               <Typography variant="body2" color="text.secondary">
-                {new Date(feedback.timestamp).toLocaleString()}
+                {feedback.timestamp ? formatDate(feedback.timestamp) : 'תאריך לא זמין'}
               </Typography>
               <Typography variant="body1" sx={{ mt: 1 }}>
                 {feedback.message}

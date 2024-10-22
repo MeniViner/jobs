@@ -199,7 +199,13 @@ const AccountPage = () => {
     );
   }
   
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
   if (!user) return null;
 
   return (

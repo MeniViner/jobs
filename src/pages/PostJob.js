@@ -51,10 +51,10 @@ export default function PostJob() {
       if (user) {
         fetchBusinessName();
       }
-      setAuthLoading(false); // Auth check complete
+      setAuthLoading(false);
     });
   
-    return () => unsubscribe(); // Cleanup listener on unmount
+    return () => unsubscribe();
   }, []);
   
 
@@ -114,12 +114,6 @@ export default function PostJob() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Attempting to submit job:", jobData);
-  
-    // if (!jobData.title || !jobData.location || !jobData.type || !jobData.salary || !jobData.description || !jobData.startTime || !jobData.endTime || jobData.workDates.some(date => !date)) {
-    //   setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
-    //   return;
-    // } 
-
     if (
       !jobData.title || 
       !jobData.location || 
@@ -284,38 +278,6 @@ export default function PostJob() {
                 <MenuItem value="true">כן</MenuItem>
               </TextField>
             </Grid>
-            {/* <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="שעת התחלה"
-                name="startTime"
-                type="time"
-                value={jobData.startTime}
-                onChange={handleChange}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                inputProps={{
-                  step: 300, // 5 min
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="שעת סיום"
-                name="endTime"
-                type="time"
-                value={jobData.endTime}
-                onChange={handleChange}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                inputProps={{
-                  step: 300, // 5 min
-                }}
-              />
-            </Grid> */}
             <Grid item xs={12}>
               <Typography
                   variant="body2"
@@ -365,37 +327,6 @@ export default function PostJob() {
                 </Grid>
               )}
             </Grid>
-
-            {/* <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                תאריכי עבודה
-              </Typography>
-              {jobData.workDates.map((date, index) => (
-                <Grid container spacing={2} key={index} alignItems="center">
-                  <Grid item xs>
-                    <TextField
-                      fullWidth
-                      label={`תאריך עבודה ${index + 1}`}
-                      type="date"
-                      value={date}
-                      onChange={(e) => handleDateChange(e.target.value, index)}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
-                      margin="normal"
-                    />
-                  </Grid>
-                  <Grid item>
-                    <IconButton onClick={() => removeWorkDate(index)} disabled={jobData.workDates.length === 1}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Grid>
-                </Grid>
-              ))}
-              <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
-                הוסף תאריך עבודה
-              </Button>
-            </Grid> */}
               <Grid item xs={12}>
                 <Typography variant="h6">תאריכי עבודה</Typography>
                 <Button
@@ -435,7 +366,6 @@ export default function PostJob() {
                   ))
                 }
               </Grid>
-
             <Grid item xs={12}>
               <TextField
                 required

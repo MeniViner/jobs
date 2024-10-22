@@ -134,7 +134,7 @@ export default function JobListPage() {
     if (!currentUser) {
       setSnackbar({
         open: true,
-        message: 'עליך להתחבר כדי לשמור עבודות',
+        message: 'בכדי להגיש מועמדות, עליך להתחבר.',
         severity: 'warning',
       });
       return;
@@ -169,7 +169,7 @@ export default function JobListPage() {
     if (!currentUser) {
       setSnackbar({
         open: true,
-        message: 'עליך להתחבר כדי לשמור עבודות',
+        message: '',
         severity: 'warning',
       });
       return;

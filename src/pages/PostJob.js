@@ -32,7 +32,7 @@ export default function PostJob() {
     startTime: '',
     endTime: '',
     workDates: [''],
-    workersNeeded: 1, 
+    workersNeeded: 0, 
     requiresCar: false, 
   });
   const [snackbar, setSnackbar] = useState({

@@ -98,7 +98,7 @@ export default function JobListPage() {
     try {
       const jobsSnapshot = await getDocs(collection(db, 'jobs'));
       const jobList = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      const filteredJobList = jobList.filter((job) => !job.isCompleted && !job.isFullyStaffed);
+      const filteredJobList = jobList.filter((job) => !job.isCompleted && !job.isFullyStaffed );
       setJobs(filteredJobList);
   
       if (user) {

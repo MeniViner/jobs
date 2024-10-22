@@ -30,7 +30,6 @@ export default function UserProfilePage() {
           const userData = userDocSnap.data();
           setIsEmployer(userData.isEmployer || false);
           setProfileData(userData);
-          console.log('userData:' ,userData);
 
           // Fetch reviews
           const reviewsQuery = query(collection(db, 'ratings'), where('ratedUser', '==', userId));
@@ -177,13 +176,15 @@ function EmployerProfile({ profileData, reviews }) {
           <InfoItem icon={<Phone />} text={`טלפון: ${profileData.phone}`} />
         )}
 
-        <Typography variant="h6" sx={{ mt: 3 }}>
-          דרכי יצירת קשר
-        </Typography>
-        <ContactIconsDisplay contactMethods={profileData.contactMethods || []} />
-
-        <Divider sx={{ my: 3 }} />
-
+        {profileData.contactMethods.length > 0 && 
+          <>
+            <Typography variant="h6" sx={{ mt: 3 }}>
+              דרכי יצירת קשר
+            </Typography>
+            <ContactIconsDisplay contactMethods={profileData.contactMethods || []} />
+          </>
+        }
+        
         {profileData.description && (
           <>
             <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 3 }}>
@@ -262,13 +263,14 @@ function EmployeeProfile({ profileData, reviews }) {
           </Paper>
         )}
 
-        {/* הצגת אייקונים של דרכי יצירת קשר */}
-        <Typography variant="h6" sx={{ mt: 3 }}>
-          דרכי יצירת קשר
-        </Typography>
-        <ContactIconsDisplay contactMethods={profileData.contactMethods || []} />
-
-        <Divider sx={{ my: 3 }} />
+        {profileData.contactMethods.length > 0 && 
+          <>
+            <Typography variant="h6" sx={{ mt: 3 }}>
+              דרכי יצירת קשר
+            </Typography>
+            <ContactIconsDisplay contactMethods={profileData.contactMethods || []} />
+          </>
+        }
         
         {profileData.bio && (
           <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>

@@ -119,6 +119,7 @@ export default function EmployeeProfile({
       'education',
       'experience',
       'languages',
+      'profession',
       'bio',
     ];
     const completedFields = fields.filter(
@@ -253,7 +254,7 @@ export default function EmployeeProfile({
               autoFocus
               margin="dense"
               fullWidth
-              multiline={['bio', 'skills', 'languages'].includes(editingField)}
+              multiline={['bio', 'skills', 'languages', 'profession'].includes(editingField)}
               rows={['bio'].includes(editingField) ? 4 : 1}
               value={editedData[editingField] || ''}
               onChange={(e) =>
@@ -296,6 +297,8 @@ export default function EmployeeProfile({
         return 'ניסיון';
       case 'languages':
         return 'שפות';
+      case 'profession':
+        return 'מקצוע';
       case 'bio':
         return 'אודות';
       case 'hasCar':
@@ -335,6 +338,7 @@ export default function EmployeeProfile({
           'education',
           'experience',
           'languages',
+          'profession',
           'bio',
           'hasCar',
         ].map((field) => (

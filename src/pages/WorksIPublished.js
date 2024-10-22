@@ -272,11 +272,8 @@ export default function MyWorksPage() {
 
     const applicant = applicants.find(app => app.applicantId === applicantId);
     if (!applicant) {
-      console.error('Applicant not found');
       return;
-    } else {
-      console.log('ou ok founded', applicant);
-    }
+    } 
     const applicantName = applicant.userData?.name || 'שם לא זמין';
     console.log('applicantName:', applicantName);
     

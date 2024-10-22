@@ -140,6 +140,7 @@ export default function PostJob() {
 
       const jobToSubmit = {
         ...jobData,
+        requiresCar: jobData.requiresCar || false, 
         employerId: user.uid,
         companyName: businessName,
         isFlexibleTime,
@@ -165,8 +166,9 @@ export default function PostJob() {
         endTime: '',
         workDates: [''],
         workersNeeded: 1,
+        requiresCar: false, 
       });
-      navigate('/my-published-jobs'); 
+      // navigate('/my-published-jobs'); 
     } catch (error) {
       console.error("Error adding document: ", error);
       setSnackbar({ open: true, message: `אירעה שגיאה בפרסום המשרה: ${error.message}` });

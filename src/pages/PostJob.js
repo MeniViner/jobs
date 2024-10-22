@@ -81,14 +81,13 @@ export default function PostJob() {
   
   const handleChange = (e) => {
     const { name, value } = e.target;
+  
     setJobData((prevData) => ({
       ...prevData,
-      [name]: name === 'workersNeeded' 
-        ? Math.max(1, parseInt(value) || 1) // Keep only the minimum constraint of 1
-        : value
+      [name]: name === 'workersNeeded' ? value : value,
     }));
   };
-
+  
   const handleDateChange = (value, index) => {
     const newWorkDates = [...jobData.workDates];
     newWorkDates[index] = value;
@@ -129,6 +128,10 @@ export default function PostJob() {
       return;
     }
     
+    if (parseInt(jobData.workersNeeded) < 1) {
+      setSnackbar({ open: true, message: 'נא להזין לפחות עובד אחד.' });
+      return;
+    }
   
     try {
       const currentUser = getAuth().currentUser;

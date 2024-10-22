@@ -6,12 +6,17 @@ import { getAuth, signOut } from 'firebase/auth'
 import {
   AppBar, Toolbar, IconButton, Typography, Button, Avatar, Menu, MenuItem, ListItemIcon, ListItemText,
   Badge, Tooltip, useMediaQuery, useTheme, Box, Paper, BottomNavigation, BottomNavigationAction,
+  Drawer, List, ListItem, ListItemButton, ListItemIcon as MuiListItemIcon, ListItemText as MuiListItemText,
+  Divider, Fade
 } from '@mui/material'
 import {
   Search as SearchIcon, Favorite as FavoriteIcon, ChatBubbleOutline as ChatIcon,
   PersonOutline as PersonIcon, Add as AddIcon, Business as BusinessIcon,
   AssignmentOutlined as AssignmentIcon, NotificationsNone as NotificationsIcon,
-  AccountCircle as AccountCircleIcon, ExitToApp as LogoutIcon
+  AccountCircle as AccountCircleIcon, ExitToApp as LogoutIcon,
+  MoreVert as MoreVertIcon,
+  Home as HomeIcon,
+  AdminPanelSettings as AdminIcon
 } from '@mui/icons-material'
 import { useNotificationCount } from '../pages/NotificationsPage'
 import MenuIcon from '@mui/icons-material/Menu'; 
@@ -26,6 +31,7 @@ export default function Header() {
   const auth = getAuth()
   const notificationCount = useNotificationCount();
   const [scrolled, setScrolled] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -72,12 +78,13 @@ export default function Header() {
   const renderMenu = (
     <Menu
       anchorEl={anchorEl}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'right' : 'left' }}
       id={menuId}
       keepMounted
-      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      transformOrigin={{ vertical: 'top', horizontal: isMobile ? 'right' : 'left' }}
       open={Boolean(anchorEl)}
       onClose={handleMenuClose}
+      TransitionComponent={Fade}
     >
       <MenuItem onClick={() => { handleMenuClose(); navigate('/account') }}>
         <ListItemIcon>
@@ -127,48 +134,64 @@ export default function Header() {
     { text: 'ניהול', link: '/admin', authRequired: true, adminRequired: true },
   ];
 
+  // רשימת דפים לדוגמה
+  const examplePages = [
+    { text: 'דף דוגמה 1 (דוגמה)', link: '/example1' },
+    { text: 'דף דוגמה 2 (דוגמה)', link: '/example2' },
+    { text: 'דף דוגמה 3 (דוגמה)', link: '/example3' },
+  ];
+
+  const toggleDrawer = (open) => (event) => {
+    if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
+      return;
+    }
+    setDrawerOpen(open);
+  };
+
+  const list = () => (
+    <Box
+      sx={{ width: 230 }}
+      role="presentation"
+      onClick={toggleDrawer(false)}
+      onKeyDown={toggleDrawer(false)}
+    >
+      <List disablePadding sx={{ marginTop :2 }}> {/* הסרת הרווחים הפנימיים */}
+        {desktopNavItems.map((item, index) => (
+          (!item.authRequired || (item.authRequired && user)) &&
+          (!item.adminRequired || (item.adminRequired && user?.isAdmin)) && (
+            <ListItem key={item.text} disablePadding >
+              <ListItemButton 
+                component={Link} 
+                to={item.link}
+                sx={{ pl:3, pr: 1 }} // התאמת הרווחים הצדדיים
+              >
+                <MuiListItemText primary={item.text} />
+              </ListItemButton>
+            </ListItem>
+          )
+        ))}
+      </List>
+      <Divider />
+      {/* הוספת דפים לדוגמה מתחת ל-Divider */}
+      <List disablePadding>
+        {examplePages.map((item, index) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton 
+              component={Link} 
+              to={item.link}
+              sx={{ pl: 3, pr: 1 }} // התאמת הרווחים הצדדיים
+            >
+              <MuiListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
+
   if (isMobile) {
     return (
       <>
-        {/* <AppBar 
-          position="fixed" 
-          color="default" 
-          elevation={0} 
-          sx={{ 
-            top: 0, 
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)', 
-            zIndex: theme.zIndex.drawer + 2,
-            backgroundColor: 'background.paper',
-          }}
-        >
-          <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
-            <Typography
-              variant="h6"
-              noWrap
-              component={Link}
-              to="/"
-              sx={{
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 700,
-                color: 'primary.main',
-                textDecoration: 'none',
-              }}
-            >
-              WorkMatch
-            </Typography>
-            <IconButton
-              onClick={() => navigate('/notifications')}
-              sx={{ p: '10px' }}
-              aria-label="notifications"
-            >
-              <Badge badgeContent={notificationCount} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Toolbar>
-        </AppBar> */}
-
-
         <AppBar 
           position="fixed" 
           color="default" 
@@ -181,14 +204,16 @@ export default function Header() {
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
+            {/* אייקון תפריט לפתיחת Drawer */}
             <IconButton
-              onClick={() => navigate('/mobile-menu')}
+              onClick={toggleDrawer(true)}
               sx={{ p: '10px' }}
               aria-label="open menu"
             >
-              <MenuIcon />
+              <MoreVertIcon />
             </IconButton>
             
+            {/* שם החברה במרכז */}
             <Typography
               variant="h6"
               noWrap
@@ -204,6 +229,7 @@ export default function Header() {
               WorkMatch
             </Typography>
 
+            {/* אייקון התראות */}
             <IconButton
               onClick={() => navigate('/notifications')}
               sx={{ p: '10px' }}
@@ -216,9 +242,19 @@ export default function Header() {
           </Toolbar>
         </AppBar>
 
+        {/* Drawer */}
+        <Drawer
+          anchor="left"
+          open={drawerOpen}
+          onClose={toggleDrawer(false)}
+          transitionDuration={300}
+        >
+          {list()}
+        </Drawer>
 
         <Box sx={{ pb: 7 }} /> {/* Spacer for content */}
 
+        {/* Bottom Navigation */}
         <Paper 
           sx={{ 
             position: 'fixed', 
@@ -272,6 +308,7 @@ export default function Header() {
     )
   }
 
+  // גרסת הדסקטופ - כפי שסיפקת בקוד שלך
   return (
     <AppBar 
       position="fixed" 

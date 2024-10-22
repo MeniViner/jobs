@@ -7,6 +7,7 @@ import ApprovalRequests from './ApprovalRequests';
 import AdminStatisticsPage from './AdminStatisticsPage';
 import TopUsersPage from './TopUsersPage';
 import NotificationsPanel from './BroadcastPanel';
+import { FeedbackAdmin } from '../../components/code parts/FeedbackManager';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
@@ -41,6 +42,7 @@ const tabComponents = [
   { label: "ניהול משרות", component: AdminJobsDashboard },
   { label: "סטטיסטיקות", component: AdminStatisticsPage },
   { label: "משתמשים מובילים", component: TopUsersPage },
+  { label: "משוב משתמשים", component: FeedbackAdmin },
   { label: "פאנל התראות", component: NotificationsPanel },
 ];
 
@@ -91,7 +93,16 @@ export default function AdminPage() {
           value={value}
           onChange={handleChange}
           aria-label="admin tabs"
-          sx={{ '& .MuiTabs-flexContainer': { flexDirection: 'row-reverse' } }}
+          variant="scrollable" // Enables horizontal scrolling
+          scrollButtons="auto" // Automatically shows scroll buttons if needed
+          allowScrollButtonsMobile // Ensures scroll buttons are available on mobile
+          sx={{
+            '& .MuiTabs-flexContainer': {
+              flexDirection: 'row-reverse',
+              overflowX: { xs: 'auto', md: 'visible' }, // Scroll on mobile, normal on desktop
+              whiteSpace: 'nowrap', // Prevent tabs from wrapping
+            },
+          }}
         >
           {tabComponents.map((tab, index) => (
             <Tab

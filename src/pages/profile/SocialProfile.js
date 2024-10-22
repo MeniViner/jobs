@@ -9,6 +9,8 @@ import {
 import { 
   getFirestore, doc, getDoc, collection, query, where, getDocs 
 } from 'firebase/firestore';
+import { ContactIconsDisplay } from '../../components/code parts/ContactMethodsManager';
+
 
 export default function UserProfilePage() {
   const { userId } = useParams();
@@ -175,6 +177,13 @@ function EmployerProfile({ profileData, reviews }) {
           <InfoItem icon={<Phone />} text={`טלפון: ${profileData.phone}`} />
         )}
 
+        <Typography variant="h6" sx={{ mt: 3 }}>
+          דרכי יצירת קשר
+        </Typography>
+        <ContactIconsDisplay contactMethods={profileData.contactMethods || []} />
+
+        <Divider sx={{ my: 3 }} />
+
         {profileData.description && (
           <>
             <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 3 }}>
@@ -252,6 +261,14 @@ function EmployeeProfile({ profileData, reviews }) {
             </Typography>
           </Paper>
         )}
+
+        {/* הצגת אייקונים של דרכי יצירת קשר */}
+        <Typography variant="h6" sx={{ mt: 3 }}>
+          דרכי יצירת קשר
+        </Typography>
+        <ContactIconsDisplay contactMethods={profileData.contactMethods || []} />
+
+        <Divider sx={{ my: 3 }} />
         
         {profileData.bio && (
           <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>

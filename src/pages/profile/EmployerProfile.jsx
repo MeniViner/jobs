@@ -7,13 +7,17 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon, Notifications as NotificationsIcon, ChevronRight as ChevronRightIcon,
+  ChevronLeft as ChevronLeftIcon,
   Edit as EditIcon, Star as StarIcon, Add as AddIcon, Delete as DeleteIcon, Security as SecurityIcon,
   Payment as PaymentIcon, Notifications as NotificationsSettingsIcon, Lock as PrivacyIcon,
   Settings as PreferencesIcon, Person as PersonIcon, PhotoCamera as PhotoCameraIcon, Business as BusinessIcon,
+  RateReview as RateReviewIcon,
 } from '@mui/icons-material';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { RatingDisplay } from '../rating/RatingSystem';
+import { ContactMethodsManager } from '../../components/code parts/ContactMethodsManager';
+import { SendFeedback } from '../../components/code parts/FeedbackManager';
 
 
 export default function EmployerProfile({
@@ -34,12 +38,14 @@ export default function EmployerProfile({
   const [newBannerImage, setNewBannerImage] = useState(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [showSecurity, setShowSecurity] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
   const auth = getAuth();
   const db = getFirestore();
   const userId = auth.currentUser ? auth.currentUser.uid : null;
+  const [contactMethods, setContactMethods] = useState(profileData.contactMethods || []);
 
   // פונקציית CloudinaryUpload להעלאת תמונות
   const CloudinaryUpload = async (file, callback) => {
@@ -342,6 +348,10 @@ export default function EmployerProfile({
           </ListItem>
         ))}
       </List>
+      <ContactMethodsManager
+        contactMethods={contactMethods}
+        setContactMethods={setContactMethods}
+      />
     </Box>
   );
 
@@ -514,7 +524,7 @@ export default function EmployerProfile({
                 {editedData.companyName || 'הוסף שם חברה'}
               </Typography>
             </Box>
-            <ChevronRightIcon />
+            <ChevronLeftIcon />
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             {editedData.businessType || 'הוסף סוג עסק'}
@@ -546,15 +556,15 @@ export default function EmployerProfile({
             <PersonIcon />
           </ListItemIcon>
           <ListItemText primary="מידע אישי" secondary={profileData.name} />
-          <ChevronRightIcon />
+          <ChevronLeftIcon />
         </ListItem>
         <Divider />
         <ListItem button onClick={() => setShowRating(!showRating)}>
           <ListItemIcon>
             <StarIcon />
           </ListItemIcon>
-          <ListItemText primary="דירוג" />
-          <ChevronRightIcon />
+          <ListItemText primary="דירוגים" />
+          <ChevronLeftIcon />
         </ListItem>
         {showRating && (
           <Box sx={{ pl: 4, pr: 2, py: 2 }}>
@@ -567,8 +577,9 @@ export default function EmployerProfile({
             <SecurityIcon />
           </ListItemIcon>
           <ListItemText primary="התחברות ואבטחה" />
-          <ChevronRightIcon />
+          <ChevronLeftIcon />
         </ListItem>
+        <Divider />
         {showSecurity && (
           <Box sx={{ pl: 4, pr: 2, py: 2 }}>
             {profileData.pendingDeletion ? (
@@ -596,10 +607,21 @@ export default function EmployerProfile({
             )}
           </Box>
         )}
+        <ListItem button onClick={() => setShowFeedback(!showFeedback)}>
+          <ListItemIcon><RateReviewIcon /></ListItemIcon>
+          <ListItemText primary="משוב למפתחי האתר" />
+          <ChevronLeftIcon />
+        </ListItem>
+        {showFeedback && (
+          <Box sx={{ pl: 4, pr: 2, py: 2 }}>
+            <SendFeedback />
+          </Box>
+        )}
+
+
         <Divider />
         {[
           { key: 'payments', icon: <PaymentIcon />, label: 'תשלומים ותשלומים למארחים' },
-          { key: 'notifications', icon: <NotificationsSettingsIcon />, label: 'התראות' },
           { key: 'privacy', icon: <PrivacyIcon />, label: 'פרטיות ושיתוף' },
           { key: 'preferences', icon: <PreferencesIcon />, label: 'העדפות' },
         ].map((item) => (
@@ -607,7 +629,7 @@ export default function EmployerProfile({
             <ListItem button onClick={() => alert('באמצע פיתוח')}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />
-              <ChevronRightIcon />
+              <ChevronLeftIcon />
             </ListItem>
             <Divider />
           </React.Fragment>

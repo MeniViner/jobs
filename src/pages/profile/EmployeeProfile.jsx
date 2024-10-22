@@ -366,8 +366,7 @@ export default function EmployeeProfile({
             src={
               newProfilePicture ||
               profileData.profileURL ||
-              auth.currentUser?.photoURL ||
-              '/placeholder.svg'
+              auth.currentUser?.photoURL
             }
             sx={{ width: 64, height: 64, mr: 2 }}
           />

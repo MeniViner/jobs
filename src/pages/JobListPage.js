@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, Bookmark, Users, Clock, Briefcase, X, ChevronDown, ChevronUp, CheckCircle, Calendar, Car
 } from 'lucide-react';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import {
   collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, serverTimestamp,
   arrayUnion, arrayRemove
@@ -583,7 +584,7 @@ export default function JobListPage() {
                       )}
                       {job.requiresCar && (
                         <span style={{ ...styles.tag, background: '#FFEDCC', color: '#D2691E' }}>
-                          <Car size={14} style={{ marginLeft: '4px' }} />
+                          <DirectionsCarIcon style={{ fontSize: '18px', marginLeft: '4px' }}/>
                           דרוש רכב
                         </span>
                       )}

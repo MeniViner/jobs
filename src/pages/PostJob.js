@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Container, Typography, TextField, Button, Grid, MenuItem, Snackbar, Paper, IconButton, InputAdornment,
-  Box, CircularProgress
+  Box, CircularProgress, Switch, FormControlLabel 
 } from '@mui/material';
 import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
@@ -265,18 +265,26 @@ export default function PostJob() {
                 }}
               />
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                select
+            <Grid item xs={12} sx={{ textAlign: 'left' }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={jobData.requiresCar}
+                    onChange={(e) => setJobData({ ...jobData, requiresCar: e.target.checked })}
+                    color="primary"
+                  />
+                }
                 label="האם דרוש רכב?"
-                name="requiresCar"
-                value={jobData.requiresCar}
-                onChange={(e) => handleChange({ target: { name: 'requiresCar', value: e.target.value === 'true' } })}
-                fullWidth
-              >
-                <MenuItem value="false">לא</MenuItem>
-                <MenuItem value="true">כן</MenuItem>
-              </TextField>
+                labelPlacement="start" // Ensures the label is to the left (RTL layout)
+                sx={{
+                  margin: 0,
+                  '.MuiFormControlLabel-label': {
+                    fontSize: '1rem',
+                    fontWeight: 500,
+                    marginLeft: '8px', // Add small space between switch and label
+                  },
+                }}
+              />
             </Grid>
             <Grid item xs={12}>
               <Typography
@@ -327,45 +335,140 @@ export default function PostJob() {
                 </Grid>
               )}
             </Grid>
-              <Grid item xs={12}>
-                <Typography variant="h6">תאריכי עבודה</Typography>
-                <Button
-                  variant={isFlexibleDates ? 'contained' : 'outlined'}
-                  onClick={() => setIsFlexibleDates(!isFlexibleDates)}
-                  sx={{ mt: 1, mb: 2 }}
-                >
-                  {isFlexibleDates ? 'תאריכים גמישים' : 'בחר תאריכים ספציפיים'}
-                </Button>
-                  
-                {!isFlexibleDates &&
-                  jobData.workDates.map((date, index) => (
-                    <Grid container spacing={2} key={index} alignItems="center">
-                      <Grid item xs>
-                        <TextField
-                          fullWidth
-                          label={`תאריך עבודה ${index + 1}`}
-                          type="date"
-                          value={date}
-                          onChange={(e) => handleDateChange(e.target.value, index)}
-                          InputLabelProps={{ shrink: true }}
-                          margin="normal"
-                        />
-                      </Grid>
-                      <Grid item>
-                        <IconButton
-                          onClick={() => removeWorkDate(index)}
-                          disabled={jobData.workDates.length === 1}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Grid>
-                      <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
-                        הוסף תאריך עבודה
-                      </Button>    
+            <Grid item xs={12}>
+              <Typography variant="h6">תאריכי עבודה</Typography>
+              <Button
+                variant={isFlexibleDates ? 'contained' : 'outlined'}
+                onClick={() => setIsFlexibleDates(!isFlexibleDates)}
+                sx={{ mt: 1, mb: 2 }}
+              >
+                {isFlexibleDates ? 'תאריכים גמישים' : 'בחר תאריכים ספציפיים'}
+              </Button>
+                
+              {!isFlexibleDates &&
+                jobData.workDates.map((date, index) => (
+                  <Grid container spacing={2} key={index} alignItems="center">
+                    <Grid item xs>
+                      <TextField
+                        fullWidth
+                        label={`תאריך עבודה ${index + 1}`}
+                        type="date"
+                        value={date}
+                        onChange={(e) => handleDateChange(e.target.value, index)}
+                        InputLabelProps={{ shrink: true }}
+                        margin="normal"
+                      />
                     </Grid>
-                  ))
+                    <Grid item>
+                      <IconButton
+                        onClick={() => removeWorkDate(index)}
+                        disabled={jobData.workDates.length === 1}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Grid>
+                    <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
+                      הוסף תאריך עבודה
+                    </Button>    
+                  </Grid>
+                ))
+              }
+            </Grid>
+            {/* <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isFlexibleTime}
+                    onChange={() => setIsFlexibleTime(!isFlexibleTime)}
+                    color="primary"
+                  />
                 }
-              </Grid>
+                label="שעות גמישות?"
+                labelPlacement="end"
+                sx={{
+                  width: '100%',
+                  marginBottom: '16px',
+                }}
+              />
+
+              {!isFlexibleTime && (
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="שעת התחלה"
+                      name="startTime"
+                      type="time"
+                      value={jobData.startTime}
+                      onChange={handleChange}
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{ step: 300 }} // 5-minute steps
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      required
+                      fullWidth
+                      label="שעת סיום"
+                      name="endTime"
+                      type="time"
+                      value={jobData.endTime}
+                      onChange={handleChange}
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{ step: 300 }}
+                    />
+                  </Grid>
+                </Grid>
+              )}
+            </Grid>
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isFlexibleDates}
+                    onChange={() => setIsFlexibleDates(!isFlexibleDates)}
+                    color="primary"
+                  />
+                }
+                label="תאריכים גמישים?"
+                labelPlacement="end"
+                sx={{
+                  width: '100%',
+                  marginBottom: '16px',
+                }}
+              />
+
+              {!isFlexibleDates &&
+                jobData.workDates.map((date, index) => (
+                  <Grid container spacing={2} key={index} alignItems="center">
+                    <Grid item xs>
+                      <TextField
+                        fullWidth
+                        label={`תאריך עבודה ${index + 1}`}
+                        type="date"
+                        value={date}
+                        onChange={(e) => handleDateChange(e.target.value, index)}
+                        InputLabelProps={{ shrink: true }}
+                        margin="normal"
+                      />
+                    </Grid>
+                    <Grid item>
+                      <IconButton
+                        onClick={() => removeWorkDate(index)}
+                        disabled={jobData.workDates.length === 1}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Grid>
+                  </Grid>
+                ))
+              }
+              <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
+                הוסף תאריך עבודה
+              </Button>
+            </Grid> */}
+
             <Grid item xs={12}>
               <TextField
                 required

@@ -11,7 +11,7 @@ import {
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Box, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { debounce } from 'lodash';
 
@@ -37,13 +37,14 @@ export default function JobListPage() {
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [acceptedJobs, setAcceptedJobs] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (authLoading) return;
 
     if (!user) {
-      setError('No user is logged in.');
       setLoading(false);
+      navigate('/login')
       return;
     }
 

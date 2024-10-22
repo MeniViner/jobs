@@ -208,8 +208,8 @@ export default function MyWorksPage() {
     if (authLoading) return; // Wait for auth to complete
 
     if (!user) {
-      setError('No user is logged in.');
       setLoading(false);
+      navigate('/login')
       return;
     }
 

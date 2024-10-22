@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   getFirestore, collection, query, where, doc, deleteDoc, onSnapshot, updateDoc, writeBatch, getDoc,
 } from 'firebase/firestore';
@@ -25,14 +26,15 @@ const NotificationsPage = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [showHistory, setShowHistory] = useState(false);
   const { user, loading: authLoading } = useAuth(); 
+  const navigate = useNavigate()
 
 
   useEffect(() => {
     if (authLoading) return; // Wait for auth to complete
   
     if (!user) {
-      setError('No user is logged in.');
       setLoading(false);
+      navigate('/login')
       return;
     }
   

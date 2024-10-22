@@ -28,6 +28,7 @@ import {
   Grid,
   Avatar,
   Tooltip,
+  Link,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -38,6 +39,8 @@ import {
   Info as InfoIcon,
   SwipeLeft as SwipeLeftIcon,
   SwipeRight as SwipeRightIcon,
+  Settings as SettingsIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { SwipeableList, SwipeableListItem } from '@sandstreamdev/react-swipeable-list';
 import '@sandstreamdev/react-swipeable-list/dist/styles.css';
@@ -314,6 +317,7 @@ export default function NotificationsPage() {
     );
   };
 
+
   if (authLoading || loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
@@ -336,84 +340,75 @@ export default function NotificationsPage() {
     <Container maxWidth="md" sx={{ mt: 4 }}>
       <Grid container spacing={2}>
         <Grid item xs={12}>
-          <Paper elevation={3} sx={{ borderRadius: 4, overflow: 'hidden' }}>
-            <Box display="flex" justifyContent="stretch" alignItems="stretch" height={60}>
-              <Button
-                variant={!showHistory ? "contained" : "text"}
-                onClick={() => setShowHistory(false)}
-                sx={{
-                  flex: 1,
-                  height: '100%',
-                  borderRadius: 0,
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    backgroundColor: !showHistory ? 'primary.dark' : 'rgba(0, 0, 0, 0.04)',
-                  },
-                }}
-                startIcon={<SystemIcon />}
-              >
-                התראות
-              </Button>
-              <Button
-                variant={showHistory ? "contained" : "text"}
-                onClick={() => setShowHistory(true)}
-                sx={{
-                  flex: 1,
-                  height: '100%',
-                  borderRadius: 0,
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  transition: 'all 0.3s',
-                  '&:hover': {
-                    backgroundColor: showHistory ? 'primary.dark' : 'rgba(0, 0, 0, 0.04)',
-                  },
-                }}
-                startIcon={<HistoryIcon />}
-              >
-                אריכיון
-              </Button>
-            </Box>
-          </Paper>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <IconButton>
+              <SettingsIcon />
+            </IconButton>
+            <Button
+              variant="text"
+              onClick={() => setShowHistory(!showHistory)}
+              sx={{ color: 'primary.main', textTransform: 'none', fontWeight: 'bold' }}
+              startIcon={showHistory ? <ArrowBackIcon /> : <HistoryIcon />}
+            >
+              {showHistory ? 'חזרה להתראות' : 'ראה היסטוריה'}
+            </Button>
+          </Box>
         </Grid>
         <Grid item xs={12}>
-          {!showHistory ? (
-            notifications.length === 0 ? (
-              <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                minHeight="50vh"
-              >
-                <img
-                  src={NoNotificationsImage}
-                  alt="No notifications"
-                  style={{ width: '60%', maxWidth: 300, marginBottom: 20 }}
-                />
-                <Typography variant="h6" align="center" gutterBottom>
-                  אין התראות חדשות
-                </Typography>
-                <Typography variant="body1" align="center">
-                  כל ההתראות שלך טופלו בהצלחה. נעדכן אותך כשיגיעו עדכונים חדשים.
-                </Typography>
-              </Box>
-            ) : (
-              <>
-                <Paper elevation={2} sx={{ p: 2, mb: 2, borderRadius: 2, backgroundColor: 'info.light' }}>
-                  <Box display="flex" alignItems="center" justifyContent="center">
-                    <SwipeLeftIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                    <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
-                      החלק שמאלה למחיקה
-                    </Typography>
-                    <SwipeRightIcon sx={{ mx: 1, fontSize: '1rem' }} />
-                    <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
-                      החלק ימינה לארכיון
-                    </Typography>
-                  </Box>
-                </Paper>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+          {notifications.length === 0 && !showHistory ? (
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              minHeight="50vh"
+            >
+              <img
+                src={NoNotificationsImage}
+                alt="No notifications"
+                style={{ width: '60%', maxWidth: 300, marginBottom: 20 }}
+              />
+              <Typography variant="h6" align="center" gutterBottom>
+                {showHistory ? 'אין היסטוריה זמינה' : 'אין התראות חדשות'}
+              </Typography>
+              <Typography variant="body1" align="center">
+                {showHistory
+                  ? 'לא נמצאו התראות בהיסטוריה.'
+                  : 'כל ההתראות שלך טופלו בהצלחה. נעדכן אותך כשיגיעו עדכונים חדשים.'}
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <Paper elevation={2} sx={{ p: 2, mb: 2, borderRadius: 2, backgroundColor: 'info.light' }}>
+                <Box display="flex" alignItems="center" justifyContent="center">
+                  <SwipeLeftIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
+                    החלק שמאלה למחיקה
+                  </Typography>
+                  {!showHistory && (
+                    <>
+                      <SwipeRightIcon sx={{ mx: 1, fontSize: '1rem' }} />
+                      <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
+                        החלק ימינה לארכיון
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+              </Paper>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                {showHistory ? (
+                  <Tooltip title="מחק את כל ההיסטוריה">
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={handleDeleteAllHistory}
+                      startIcon={<DeleteIcon />}
+                      sx={{ borderRadius: 20, px: 3 }}
+                    >
+                      מחק את כל ההיסטוריה
+                    </Button>
+                  </Tooltip>
+                ) : (
                   <Tooltip title="העבר את כל ההתראות לארכיון">
                     <Button
                       variant="outlined"
@@ -425,36 +420,9 @@ export default function NotificationsPage() {
                       העבר הכל לארכיון
                     </Button>
                   </Tooltip>
-                </Box>
-                {renderNotificationList(notifications)}
-              </>
-            )
-          ) : historyNotifications.length === 0 ? (
-            <Typography variant="body2" align="center">אין היסטוריה זמינה.</Typography>
-          ) : (
-            <>
-              <Paper elevation={2} sx={{ p: 2, mb: 2, borderRadius: 2, backgroundColor: 'info.light' }}>
-                <Box display="flex" alignItems="center" justifyContent="center">
-                  <SwipeLeftIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
-                    החלק שמאלה למחיקה
-                  </Typography>
-                </Box>
-              </Paper>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Tooltip title="מחק את כל ההיסטוריה">
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={handleDeleteAllHistory}
-                    startIcon={<DeleteIcon />}
-                    sx={{ borderRadius: 20, px: 3 }}
-                  >
-                    מחק את כל ההיסטוריה
-                  </Button>
-                </Tooltip>
+                )}
               </Box>
-              {renderNotificationList(historyNotifications, true)}
+              {renderNotificationList(showHistory ? historyNotifications : notifications, showHistory)}
             </>
           )}
         </Grid>

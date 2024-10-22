@@ -6,14 +6,18 @@ import {
   Menu, MenuItem, CircularProgress,
 } from '@mui/material';
 import {
-  ArrowBack as ArrowBackIcon, Notifications as NotificationsIcon, ChevronRight as ChevronRightIcon,
+  ArrowBack as ArrowBackIcon, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon,
   Edit as EditIcon, Star as StarIcon, Add as AddIcon, Delete as DeleteIcon, Security as SecurityIcon,
   Payment as PaymentIcon, Notifications as NotificationsSettingsIcon, Lock as PrivacyIcon,
-  Settings as PreferencesIcon, Person as PersonIcon, Home as HomeIcon, PhotoCamera as PhotoCameraIcon,
+  Settings as PreferencesIcon, Person as PersonIcon, PhotoCamera as PhotoCameraIcon, Home as HomeIcon,
+  RateReview as RateReviewIcon,
 } from '@mui/icons-material';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { RatingDisplay } from '../rating/RatingSystem';
+import { ContactMethodsManager } from '../../components/code parts/ContactMethodsManager';
+import { SendFeedback } from '../../components/code parts/FeedbackManager';
+
 
 export default function EmployeeProfile({
   profileData,
@@ -30,14 +34,17 @@ export default function EmployeeProfile({
   const [newProfilePicture, setNewProfilePicture] = useState(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [showSecurity, setShowSecurity] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [employerRequestStatus, setEmployerRequestStatus] = useState(null);
-  const [shouldScrollTop, setShouldScrollTop] = useState(false); // Update 1
+  const [shouldScrollTop, setShouldScrollTop] = useState(false);
   const auth = getAuth();
   const db = getFirestore();
   const userId = auth.currentUser ? auth.currentUser.uid : null;
+  const [contactMethods, setContactMethods] = useState(profileData.contactMethods || []);
+
 
   const CloudinaryUpload = async (file, callback) => {
     const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
@@ -348,6 +355,10 @@ export default function EmployeeProfile({
           </ListItem>
         ))}
       </List>
+      <ContactMethodsManager
+        contactMethods={contactMethods}
+        setContactMethods={setContactMethods}
+      />
     </Box>
   );
 
@@ -469,7 +480,7 @@ export default function EmployeeProfile({
               <Typography>הפוך למעסיק ופתח הזדמנויות חדשות!</Typography>
             )}
           </Box>
-          {employerRequestStatus !== 'pending' && <ChevronRightIcon />}
+          {employerRequestStatus !== 'pending' && <ChevronLeftIcon />}
         </Box>
       </Box>
 
@@ -497,7 +508,7 @@ export default function EmployeeProfile({
             <PersonIcon />
           </ListItemIcon>
           <ListItemText primary="מידע אישי" secondary={profileData.name} />
-          <ChevronRightIcon />
+          <ChevronLeftIcon />
         </ListItem>
         <Divider />
         <ListItem button onClick={() => setShowRating(!showRating)}>
@@ -505,7 +516,7 @@ export default function EmployeeProfile({
             <StarIcon />
           </ListItemIcon>
           <ListItemText primary="דירוגים" />
-          <ChevronRightIcon />
+          <ChevronLeftIcon />
         </ListItem>
         {showRating && (
           <Box sx={{ pl: 4, pr: 2, py: 2 }}>
@@ -518,7 +529,7 @@ export default function EmployeeProfile({
             <SecurityIcon />
           </ListItemIcon>
           <ListItemText primary="התחברות ואבטחה" />
-          <ChevronRightIcon />
+          <ChevronLeftIcon />
         </ListItem>
         {showSecurity && (
           <Box sx={{ pl: 4, pr: 2, py: 2 }}>
@@ -547,6 +558,16 @@ export default function EmployeeProfile({
             )}
           </Box>
         )}
+                <ListItem button onClick={() => setShowFeedback(!showFeedback)}>
+          <ListItemIcon><RateReviewIcon /></ListItemIcon>
+          <ListItemText primary="משוב למפתחי האתר" />
+          <ChevronLeftIcon />
+        </ListItem>
+        {showFeedback && (
+          <Box sx={{ pl: 4, pr: 2, py: 2 }}>
+            <SendFeedback />
+          </Box>
+        )}
         <Divider />
         {[
           { key: 'payments', icon: <PaymentIcon />, label: 'תשלומים ותשלומים למארחים' },
@@ -555,10 +576,10 @@ export default function EmployeeProfile({
           { key: 'preferences', icon: <PreferencesIcon />, label: 'העדפות' },
         ].map((item) => (
           <React.Fragment key={item.key}>
-            <ListItem button onClick={() => alert('באמצע פיתוח')}>
+            <ListItem button onClick={() => alert('כרגע בפיתוח')}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />
-              <ChevronRightIcon />
+              <ChevronLeftIcon />
             </ListItem>
             <Divider />
           </React.Fragment>

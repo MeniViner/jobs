@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Avatar, IconButton, List, ListItem, ListItemText, ListItemIcon, Button, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, Divider, LinearProgress,
-  Menu, MenuItem, CircularProgress
+  Menu, MenuItem, CircularProgress,
 } from '@mui/material';
 import {
-  ArrowBack as ArrowBackIcon, Notifications as NotificationsIcon, ChevronRight as ChevronRightIcon,
-  ChevronLeft as ChevronLeftIcon,
+  ArrowBack as ArrowBackIcon, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon,
   Edit as EditIcon, Star as StarIcon, Add as AddIcon, Delete as DeleteIcon, Security as SecurityIcon,
   Payment as PaymentIcon, Notifications as NotificationsSettingsIcon, Lock as PrivacyIcon,
   Settings as PreferencesIcon, Person as PersonIcon, PhotoCamera as PhotoCameraIcon, Business as BusinessIcon,
@@ -27,7 +26,6 @@ export default function EmployerProfile({
   snackbar,
   setSnackbar,
   onDeleteAccountRequest,
-  onSwitchToggle,
 }) {
   const navigate = useNavigate();
   const [editingPersonalInfo, setEditingPersonalInfo] = useState(false);
@@ -47,6 +45,7 @@ export default function EmployerProfile({
   const db = getFirestore();
   const userId = auth.currentUser ? auth.currentUser.uid : null;
   const [contactMethods, setContactMethods] = useState(profileData.contactMethods || []);
+
 
   const CloudinaryUpload = async (file, callback) => {
     const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
@@ -636,8 +635,6 @@ export default function EmployerProfile({
             <SendFeedback />
           </Box>
         )}
-
-
         <Divider />
         {[
           { key: 'payments', icon: <PaymentIcon />, label: 'תשלומים ותשלומים למארחים' },
@@ -645,7 +642,7 @@ export default function EmployerProfile({
           { key: 'preferences', icon: <PreferencesIcon />, label: 'העדפות' },
         ].map((item) => (
           <React.Fragment key={item.key}>
-            <ListItem button onClick={() => alert('באמצע פיתוח')}>
+            <ListItem button onClick={() => alert('כרגע בפיתוח')}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />
               <ChevronLeftIcon />

@@ -259,10 +259,10 @@ export default function PostJob() {
                 type="number"
                 value={jobData.workersNeeded}
                 onChange={handleChange}
-                InputProps={{
-                  inputProps: { min: 1, max: 10 },
-                  endAdornment: <InputAdornment position="end">מקסימום 10</InputAdornment>,
-                }}
+                // InputProps={{
+                //   inputProps: { min: 1, max: 10 },
+                //   endAdornment: <InputAdornment position="end">מקסימום 10</InputAdornment>,
+                // }}
               />
             </Grid>
             <Grid item xs={12} sx={{ textAlign: 'left' }}>

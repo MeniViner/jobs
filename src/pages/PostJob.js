@@ -368,7 +368,7 @@ export default function PostJob() {
                       </IconButton>
                     </Grid>
                     <Button startIcon={<AddIcon />} onClick={addWorkDate} sx={{ mt: 2 }}>
-                      הוסף תאריך עבודה
+                      הוסף יום
                     </Button>    
                   </Grid>
                 ))

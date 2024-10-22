@@ -162,6 +162,7 @@ export default function PostJob() {
         type: '',
         salary: '',
         description: '',
+        fullDescription: '',
         startTime: '',
         endTime: '',
         workDates: [''],

@@ -8,6 +8,7 @@ import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import rtlPlugin from 'stylis-plugin-rtl';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
+import CompanyInfoPage from 'pages/CompanyInfoPage';
 
 // ייבוא כל הרכיבים שלך
 import PostJob from './pages/PostJob';
@@ -91,6 +92,7 @@ function App() {
                     </ProtectedAdminRoute>
                   }
                 />
+                <Route path="/company-info" element={<CompanyInfoPage />} />
                 <Route path="/jobs" element={<JobListPage />} />
                 <Route path="/saved-jobs" element={<SavedJobsPage />} />
                 <Route path="/post-job" element={<PostJob />} />

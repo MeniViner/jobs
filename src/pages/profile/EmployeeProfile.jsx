@@ -5,6 +5,8 @@ import {
   DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, Divider, LinearProgress,
   Menu, MenuItem, CircularProgress,
 } from '@mui/material';
+import { Business as BusinessIcon } from '@mui/icons-material';
+
 import {
   ArrowBack as ArrowBackIcon, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon,
   Edit as EditIcon, Star as StarIcon, Add as AddIcon, Delete as DeleteIcon, Security as SecurityIcon,
@@ -528,6 +530,14 @@ export default function EmployeeProfile({
           </Box>
         )}
         <Divider />
+        <ListItem button onClick={() => navigate('/company-info')}>
+          <ListItemIcon>
+            <BusinessIcon />
+          </ListItemIcon>
+          <ListItemText primary="מידע ושיתוף" />
+        <ChevronLeftIcon />
+        </ListItem>
+        <Divider />
         <ListItem button onClick={() => setShowSecurity(!showSecurity)}>
           <ListItemIcon>
             <SecurityIcon />
@@ -576,7 +586,7 @@ export default function EmployeeProfile({
         {[
           { key: 'payments', icon: <PaymentIcon />, label: 'תשלומים ותשלומים למארחים' },
           { key: 'notifications', icon: <NotificationsSettingsIcon />, label: 'התראות' },
-          { key: 'privacy', icon: <PrivacyIcon />, label: 'פרטיות ושיתוף' },
+          // { key: 'privacy', icon: <PrivacyIcon />, label: 'פרטיות ושיתוף' },
           { key: 'preferences', icon: <PreferencesIcon />, label: 'העדפות' },
         ].map((item) => (
           <React.Fragment key={item.key}>

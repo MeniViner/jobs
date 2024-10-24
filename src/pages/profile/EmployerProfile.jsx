@@ -590,6 +590,15 @@ export default function EmployerProfile({
           </Box>
         )}
         <Divider />
+        <ListItem button onClick={() => navigate('/company-info')}>
+          <ListItemIcon>
+            <BusinessIcon />
+          </ListItemIcon>
+          <ListItemText primary="מידע ושיתוף" />
+        <ChevronLeftIcon />
+        </ListItem>
+        <Divider />
+
         <ListItem button onClick={() => setShowSecurity(!showSecurity)}>
           <ListItemIcon>
             <SecurityIcon />
@@ -638,7 +647,7 @@ export default function EmployerProfile({
         <Divider />
         {[
           { key: 'payments', icon: <PaymentIcon />, label: 'תשלומים ותשלומים למארחים' },
-          { key: 'privacy', icon: <PrivacyIcon />, label: 'פרטיות ושיתוף' },
+          // { key: 'privacy', icon: <PrivacyIcon />, label: 'פרטיות ושיתוף' },
           { key: 'preferences', icon: <PreferencesIcon />, label: 'העדפות' },
         ].map((item) => (
           <React.Fragment key={item.key}>

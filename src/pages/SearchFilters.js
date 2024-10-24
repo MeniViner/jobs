@@ -104,7 +104,7 @@ export default function SearchFilters({
           }}
           onClick={() => setShowFilters(true)}
         >
-          <SlidersHorizontal size="large"/>
+          <SlidersHorizontal/>
         </Box>
       </Box>
 

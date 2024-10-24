@@ -350,7 +350,7 @@ export default function NotificationsPage() {
               sx={{ color: 'primary.main', textTransform: 'none', fontWeight: 'bold' }}
               startIcon={showHistory ? <ArrowBackIcon /> : <HistoryIcon />}
             >
-              {showHistory ? 'חזרה להתראות' : 'ראה היסטוריה'}
+              {showHistory ? 'חזרה להתראות' : 'ארכיון ההודעות'}
             </Button>
           </Box>
         </Grid>
@@ -389,7 +389,7 @@ export default function NotificationsPage() {
                     <>
                       <SwipeRightIcon sx={{ mx: 1, fontSize: '1rem' }} />
                       <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
-                        החלק ימינה לארכיון
+                        וימינה לשמירה בארכיון
                       </Typography>
                     </>
                   )}

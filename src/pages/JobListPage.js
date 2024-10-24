@@ -272,7 +272,7 @@ export default function JobListPage() {
   //   }, []);
 
 
-  // ניסיון  מוצלח לאיחוד בינהם
+  // עובד סופי אבל בלי סינון שכר משכורות
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
       const jobTitle = job.title?.toLowerCase() || '';

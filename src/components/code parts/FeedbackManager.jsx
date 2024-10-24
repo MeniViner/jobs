@@ -5,7 +5,7 @@ import {
   Box, TextField, Typography, Paper, Stack, Avatar, CircularProgress, Button 
 } from '@mui/material';
 import { 
-  getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc 
+  getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc, updateDoc, deleteDoc,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
@@ -24,6 +24,7 @@ export const SendFeedback = () => {
         message,
         userId: user?.uid || 'אנונימי',
         timestamp: serverTimestamp(),
+        isArchived: false,
       });
       setMessage('');
       setFeedbackSent(true);
@@ -155,6 +156,56 @@ export const FeedbackAdmin = () => {
     );
   }
 
+  const moveToArchive = async (id) => {
+    try {
+      const feedbackRef = doc(db, 'feedback', id);
+      await updateDoc(feedbackRef, { isArchived: true });
+      setFeedbacks(feedbacks.map((fb) => fb.id === id ? { ...fb, isArchived: true } : fb));
+    } catch (error) {
+      console.error('Error moving to archive:', error);
+    }
+  };
+  
+  const deleteFeedback = async (id) => {
+    try {
+      await deleteDoc(doc(db, 'feedback', id));
+      setFeedbacks(feedbacks.filter((fb) => fb.id !== id));
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+    }
+  };  
+
+  const FeedbackItem = ({ feedback, onArchive, onDelete }) => (
+    <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Avatar src={feedback.user.profileURL} alt={feedback.user.name} sx={{ width: 50, height: 50 }} />
+      <Box>
+        <Typography variant="h6">{feedback.user.name}</Typography>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          onClick={() => navigate(`/user/${feedback.userId}`)}
+          sx={{ cursor: 'pointer' }}
+        >
+          הצג פרופיל
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {formatDate(feedback.timestamp)}
+        </Typography>
+        <Typography variant="body1" sx={{ mt: 1 }}>
+          {feedback.message}
+        </Typography>
+      </Box>
+      {!feedback.isArchived && (
+        <Button variant="outlined" color="primary" onClick={onArchive}>
+          העבר לארכיון
+        </Button>
+      )}
+      <Button variant="outlined" color="error" onClick={onDelete}>
+        מחק
+      </Button>
+    </Paper>
+  );
+  
   return (
     <Box sx={{ p: 2, maxWidth: 800, margin: 'auto' }}>
       <Typography variant="h5" sx={{ mb: 2 }}>
@@ -171,38 +222,31 @@ export const FeedbackAdmin = () => {
       />
 
       <Stack spacing={2}>
-        {filteredFeedbacks.map((feedback) => (
-          <Paper key={feedback.id} sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar
-              src={feedback.user.profileURL  || feedback.user.photoURL }
-              alt={feedback.user.name}
-              sx={{ width: 50, height: 50 }}
+        {filteredFeedbacks
+          .filter((feedback) => !feedback.isArchived)
+          .map((feedback) => (
+            <FeedbackItem
+              key={feedback.id}
+              feedback={feedback}
+              onArchive={() => moveToArchive(feedback.id)}
+              onDelete={() => deleteFeedback(feedback.id)}
             />
-            <Box>
-              <Typography variant="h6">{feedback.user.name}</Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                onClick={() => {
-                  navigate(`/user/${feedback.userId}`);
-                }}
-                sx={{ cursor: 'pointer' }}
-              >
-                הצג פרופיל
-              </Typography>
-            </Box>
+          ))}
 
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                {feedback.timestamp ? formatDate(feedback.timestamp) : 'תאריך לא זמין'}
-              </Typography>
-              <Typography variant="body1" sx={{ mt: 1 }}>
-                {feedback.message}
-              </Typography>
-            </Box>
-          </Paper>
-        ))}
+        <Typography variant="h6" sx={{ mt: 4 }}>
+          הודעות בארכיון
+        </Typography>
+        {filteredFeedbacks
+          .filter((feedback) => feedback.isArchived)
+          .map((feedback) => (
+            <FeedbackItem
+              key={feedback.id}
+              feedback={feedback}
+              onDelete={() => deleteFeedback(feedback.id)}
+            />
+          ))}
       </Stack>
+
     </Box>
   );
 };

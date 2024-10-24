@@ -427,7 +427,8 @@ export default function JobListPage() {
     applyButton: {
       color: '#FFFFFF',
       fontWeight: '600',
-      padding: '12px 24px',
+      fontSize:'15px' ,
+      padding: '1px 14px',
       borderRadius: '12px',
       border: 'none',
       cursor: 'pointer',

@@ -69,8 +69,8 @@ export default function SearchFilters({
             bgcolor: 'background.paper',
             display: 'flex',
             alignItems: 'center',
-            p: 2,
-            width: '80%',
+            p: 1,
+            width: '85%',
             borderRadius: '100px',
             border: '1px solid #e0e0e0',
             boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
@@ -82,7 +82,7 @@ export default function SearchFilters({
             placeholder="חפש משרות"
             value={filter}
             onChange={(e) => handleFilterChange('title', e.target.value)}
-            InputProps={{
+            InputProps={  {
               disableUnderline: true,
               startAdornment: <Search color="#829AB1" />,
             }}
@@ -95,7 +95,7 @@ export default function SearchFilters({
             display: 'flex',
             alignItems: 'center',
             p: 2,
-            width: '15%',
+            width: '13%',
             borderRadius: '100px',
             border: '1px solid #e0e0e0',
             boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
@@ -104,7 +104,7 @@ export default function SearchFilters({
           }}
           onClick={() => setShowFilters(true)}
         >
-          <SlidersHorizontal />
+          <SlidersHorizontal size="large"/>
         </Box>
       </Box>
 

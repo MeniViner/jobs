@@ -755,7 +755,7 @@ export default function MyWorksPage() {
                     </Box>
                   )}
                   <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-                    תקשורת עם מועמדים
+                    רשימת המועמדים לעבודה
                   </Typography>
                   {applicants.filter((applicant) =>
                     applicant.appliedJobs.some((appliedJob) => appliedJob.jobId === job.id)

@@ -20,6 +20,68 @@ import { debounce } from 'lodash';
 import SearchFilters from './SearchFilters';
 
 
+const filterJobs = (jobs, filters) => {
+  const {
+    filter = '',
+    locationFilter = '',
+    categoryFilter = '',
+    experienceFilter = '',
+    jobTypeFilter = '',
+    salaryFilter = [0, Infinity],
+    acceptedJobs = []
+  } = filters;
+
+  // Helper function to safely handle text matching
+  const safeMatch = (text, searchTerm) => {
+    if (!text || !searchTerm) return true;
+    
+    // Convert both strings to lowercase for case-insensitive comparison
+    const normalizedText = text.toString().toLowerCase();
+    const normalizedSearch = searchTerm.toLowerCase();
+    
+    try {
+      // First try direct includes for better performance
+      if (normalizedText.includes(normalizedSearch)) return true;
+      
+      // If direct match fails, try with escaped special characters
+      const escapedSearch = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escapedSearch, 'i');
+      return regex.test(text);
+    } catch (e) {
+      // Fallback to simple includes if regex fails
+      return normalizedText.includes(normalizedSearch);
+    }
+  };
+
+  return jobs.filter((job) => {
+    // Check if job is not in accepted jobs
+    if (acceptedJobs.includes(job.id)) return false;
+
+    // Title and description search
+    const titleMatch = safeMatch(job.title, filter);
+    const descriptionMatch = safeMatch(job.description, filter);
+    if (!titleMatch && !descriptionMatch) return false;
+
+    // Location filter
+    if (locationFilter && !safeMatch(job.location, locationFilter)) return false;
+
+    // Category filter
+    if (categoryFilter && job.category !== categoryFilter) return false;
+
+    // Experience filter
+    if (experienceFilter && job.experience !== experienceFilter) return false;
+
+    // Job type filter
+    if (jobTypeFilter && job.jobType !== jobTypeFilter) return false;
+
+    // Salary filter
+    if (job.salary < salaryFilter[0] || job.salary > salaryFilter[1]) return false;
+
+    return true;
+  });
+};
+
+
 export default function JobListPage() {
   const { user, loading: authLoading } = useAuth();
   const [jobs, setJobs] = useState([]);
@@ -293,17 +355,28 @@ export default function JobListPage() {
     }
   };
 
+  // const filteredJobs = jobs.filter((job) => {
+  //   return (
+  //     !acceptedJobs.includes(job.id) &&
+  //     job.title.toLowerCase().includes(filter.toLowerCase()) &&
+  //     (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
+  //     (categoryFilter === '' || job.category === categoryFilter) &&
+  //     (experienceFilter === '' || job.experience === experienceFilter) &&
+  //     (jobTypeFilter === '' || job.jobType === jobTypeFilter) &&
+  //     (job.salary >= debouncedSalaryFilter[0] && job.salary <= debouncedSalaryFilter[1])
+  //   );
+  // });
+
+  const escapeRegExp = (string) => {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape special characters
+  };
+  
   const filteredJobs = jobs.filter((job) => {
-    return (
-      !acceptedJobs.includes(job.id) &&
-      job.title.toLowerCase().includes(filter.toLowerCase()) &&
-      (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
-      (categoryFilter === '' || job.category === categoryFilter) &&
-      (experienceFilter === '' || job.experience === experienceFilter) &&
-      (jobTypeFilter === '' || job.jobType === jobTypeFilter) &&
-      (job.salary >= debouncedSalaryFilter[0] && job.salary <= debouncedSalaryFilter[1])
-    );
+    const sanitizedFilter = escapeRegExp(filter);
+    const regex = new RegExp(sanitizedFilter, 'i'); // Case-insensitive matching
+    return regex.test(job.title) || regex.test(job.description);
   });
+
 
   const styles = {
     container: {

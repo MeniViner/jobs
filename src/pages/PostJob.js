@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Container, Typography, TextField, Button, Grid, MenuItem, Snackbar, Paper, IconButton, InputAdornment,
-  Box, CircularProgress, Switch, FormControlLabel 
+  Box, CircularProgress, Switch, FormControlLabel, Alert
 } from '@mui/material';
 import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
@@ -128,7 +128,6 @@ export default function PostJob() {
       setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים' });
       return;
     }
-    
   
     try {
       const currentUser = getAuth().currentUser;
@@ -176,10 +175,6 @@ export default function PostJob() {
     }
   };
   
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
-
   if (businessLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
@@ -349,7 +344,7 @@ export default function PostJob() {
                 {isFlexibleDates ? 'תאריכים גמישים' : 'בחר תאריכים ספציפיים'}
               </Button>
                 
-              {!isFlexibleDates &&
+              {/* {!isFlexibleDates &&
                 jobData.workDates.map((date, index) => (
                   <Grid container spacing={2} key={index} alignItems="center">
                     <Grid item xs>
@@ -376,7 +371,46 @@ export default function PostJob() {
                     </Button>    
                   </Grid>
                 ))
-              }
+              } */}
+
+
+              <Grid container spacing={2} alignItems="center">
+                {!isFlexibleDates &&
+                  jobData.workDates.map((date, index) => (
+                    <Grid container spacing={2} key={index} alignItems="center">
+                      <Grid item xs>
+                        <TextField
+                          fullWidth
+                          label={`תאריך עבודה ${index + 1}`}
+                          type="date"
+                          value={date}
+                          onChange={(e) => handleDateChange(e.target.value, index)}
+                          InputLabelProps={{ shrink: true }}
+                          margin="normal"
+                        />
+                      </Grid>
+                      <Grid item>
+                        <IconButton
+                          onClick={() => removeWorkDate(index)}
+                          disabled={jobData.workDates.length === 1}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Grid>
+                    </Grid>
+                  ))
+                }
+                {!isFlexibleDates && (
+                  <Grid item xs={12}>
+                    <Button startIcon={<AddIcon />} onClick={addWorkDate} >
+                      הוסף יום
+                    </Button>
+                  </Grid>
+                )}
+              </Grid>
+
+
+
             </Grid>
             {/* <Grid item xs={12}>
               <FormControlLabel
@@ -510,12 +544,22 @@ export default function PostJob() {
           </Grid>
         </form>
       </Paper>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        message={snackbar.message}
-      />
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
     </Container>
   );
 }

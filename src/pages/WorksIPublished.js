@@ -5,20 +5,19 @@ import {
   Divider, Button, TextField, Box, Card, CardContent, Chip, LinearProgress, Dialog, DialogActions,
   DialogContent, DialogContentText, DialogTitle, Collapse, Tab, Tabs, CircularProgress
 } from '@mui/material';
-import { 
-  Work, LocationOn, AttachMoney, AccessTime, DateRange, Person, CheckCircle, Group, DoneAll, 
-  Delete, Undo, Flag, ExpandMore, ExpandLess, Chat, Edit 
+import {
+  Work, LocationOn, AttachMoney, AccessTime, DateRange, Person, CheckCircle, Group, DoneAll,
+  Delete, Undo, Flag, ExpandMore, ExpandLess, Chat, Edit
 } from '@mui/icons-material';
-import { 
-  collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp,arrayUnion,
+import {
+  collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, arrayUnion
 } from 'firebase/firestore';
 import { db } from '../services/firebase.js';
 import { getAuth } from 'firebase/auth';
-import { useAuth } from '../contexts/AuthContext'; // Import AuthContext
-import { Link, useNavigate} from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
 import { RatingInput } from './rating/RatingSystem.jsx';
-import JobCompletionRating from './rating/JobCompletionRating.jsx';
-
+import JobCompletionRating from './rating/JobCompletionRating';
 
 function EditJobDialog({ open, handleClose, job, handleSave }) {
   const [editedJob, setEditedJob] = useState(job || {});
@@ -163,12 +162,11 @@ function EditJobDialog({ open, handleClose, job, handleSave }) {
   );
 }
 
-
 export default function MyWorksPage() {
-  const { user, loading: authLoading } = useAuth(); // Use the context
+  const { user, loading: authLoading } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [expandedJob, setExpandedJob] = useState(null);
-  const [applicants, setApplicants] = useState([]);
+  const [jobApplicants, setJobApplicants] = useState({});
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -187,16 +185,14 @@ export default function MyWorksPage() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // Check if the user has signed in with Google
         const googleUser = user.providerData.find(provider => provider.providerId === 'google.com');
-    
+
         if (googleUser) {
-          // Store user's photoURL and other details in Firestore
           await setDoc(doc(db, 'users', user.uid), {
             displayName: googleUser.displayName,
             email: googleUser.email,
-            photoURL: googleUser.photoURL,  // Store the Google profile picture
-          }, { merge: true });  // Merge so we don't overwrite existing fields
+            photoURL: googleUser.photoURL,
+          }, { merge: true });
         }
       }
     });
@@ -205,11 +201,11 @@ export default function MyWorksPage() {
   }, [auth]);
 
   useEffect(() => {
-    if (authLoading) return; // Wait for auth to complete
+    if (authLoading) return;
 
     if (!user) {
       setLoading(false);
-      navigate('/login')
+      navigate('/login');
       return;
     }
 
@@ -217,66 +213,63 @@ export default function MyWorksPage() {
   }, [authLoading, user]);
 
   const fetchEmployerJobs = async () => {
-    const auth = getAuth();
-  
     if (!auth.currentUser) return;
     setLoading(true);
-  
+
     try {
-      // Query to fetch jobs posted by the current employer
       const jobsQuery = query(
         collection(db, 'jobs'),
         where('employerId', '==', auth.currentUser.uid)
       );
-  
+
       const jobsSnapshot = await getDocs(jobsQuery);
       const jobsList = jobsSnapshot.docs.map((jobDoc) => ({
         id: jobDoc.id,
         ...jobDoc.data(),
       }));
-  
-      const allApplicants = new Map();
-  
-      // Fetch applicants from the 'applicants' subcollection for each job
+
+      const applicantsData = {};
+
       for (const job of jobsList) {
         const applicantsRef = collection(db, 'jobs', job.id, 'applicants');
         const applicantsSnapshot = await getDocs(applicantsRef);
-  
+
+        const jobApplicantsArray = [];
+
         for (const applicantDoc of applicantsSnapshot.docs) {
           const applicantData = applicantDoc.data();
           const userDoc = await getDoc(doc(db, 'users', applicantData.applicantId));
           const userData = userDoc.exists() ? userDoc.data() : {};
-  
-          allApplicants.set(applicantData.applicantId, {
+
+          jobApplicantsArray.push({
+            applicantId: applicantData.applicantId,
             ...applicantData,
             userData,
-            appliedJobs: [{ jobId: job.id, hired: applicantData.hired || false }],
           });
         }
+
+        applicantsData[job.id] = jobApplicantsArray;
       }
-  
+
       setJobs(jobsList);
-      setApplicants(Array.from(allApplicants.values()));
+      setJobApplicants(applicantsData);
     } catch (error) {
       console.error('Error fetching jobs or applicants:', error);
     } finally {
       setLoading(false);
     }
   };
-        
+
   const handleToggleExpand = (jobId) => {
     setExpandedJob(expandedJob === jobId ? null : jobId);
   };
 
   const handleSendMessage = async (applicantId, jobId) => {
-
-    const applicant = applicants.find(app => app.applicantId === applicantId);
+    const applicant = jobApplicants[jobId]?.find(app => app.applicantId === applicantId);
     if (!applicant) {
       return;
-    } 
+    }
     const applicantName = applicant.userData?.name || 'שם לא זמין';
-    console.log('applicantName:', applicantName);
-    
 
     if (!message.trim()) return;
 
@@ -325,13 +318,11 @@ export default function MyWorksPage() {
 
   const handleToggleHired = async (jobId, applicantId, currentHiredStatus) => {
     try {
-
       const applicantRef = doc(db, 'jobs', jobId, 'applicants', applicantId);
       const jobRef = doc(db, 'jobs', jobId);
       const userAcceptedJobsRef = doc(db, 'users', applicantId, 'acceptedJobs', jobId);
       const userApplicationsRef = doc(db, 'users', applicantId, 'applications', jobId);
 
-      // Check if the applicant document exists
       const applicantSnapshot = await getDoc(applicantRef);
       if (!applicantSnapshot.exists()) {
         alert('המסמך לא נמצא, לא ניתן לעדכן סטטוס מועמד.');
@@ -339,31 +330,23 @@ export default function MyWorksPage() {
         return;
       }
 
-      // Fetch the job data
       const jobSnapshot = await getDoc(jobRef);
       const jobData = jobSnapshot.data();
-      console.log('Job Data:', jobData);
 
       if (!currentHiredStatus) {
-        // Mark as hired
         await updateDoc(applicantRef, {
           hired: true,
         });
-        // Add to user's acceptedJobs
         await setDoc(userAcceptedJobsRef, {
           jobId: jobId,
           timestamp: serverTimestamp(),
         });
-        // Remove from user's applications
         await deleteDoc(userApplicationsRef);
       } else {
-        // Unmark as hired
         await updateDoc(applicantRef, {
           hired: false,
         });
-        // Remove from user's acceptedJobs
         await deleteDoc(userAcceptedJobsRef);
-        // Optionally, re-add to applications
         await setDoc(userApplicationsRef, {
           jobId: jobId,
           timestamp: serverTimestamp(),
@@ -371,7 +354,6 @@ export default function MyWorksPage() {
         });
       }
 
-      // Add notification to Firestore
       await addDoc(collection(db, 'notifications'), {
         userId: applicantId,
         jobId: jobId,
@@ -384,10 +366,8 @@ export default function MyWorksPage() {
         isHistory: false,
       });
 
-      // Update local state
       fetchEmployerJobs();
 
-      // Show success message
       alert(
         currentHiredStatus
           ? 'הסטטוס שונה - המועמד כבר לא התקבל למשרה.'
@@ -435,11 +415,10 @@ export default function MyWorksPage() {
       alert('אירעה שגיאה בעת עדכון סטטוס האיוש של העבודה');
     }
   };
-  
+
   const getHiredCount = (jobId) => {
-    return applicants.filter((applicant) =>
-      applicant.appliedJobs.some((job) => job.jobId === jobId && job.hired)
-    ).length;
+    const applicantsForJob = jobApplicants[jobId] || [];
+    return applicantsForJob.filter(applicant => applicant.hired).length;
   };
 
   const handleMarkJobCompleted = (jobId) => {
@@ -453,7 +432,7 @@ export default function MyWorksPage() {
   };
 
   const handleJobCompletionRatingComplete = () => {
-    fetchEmployerJobs(); // Refresh the job list
+    fetchEmployerJobs();
   };
 
   const handleConfirmJobCompletion = async () => {
@@ -467,34 +446,29 @@ export default function MyWorksPage() {
       });
 
       setJobs(
-        jobs.map((job) =>
-          job.id === jobToRate ? { ...job, isCompleted: true, isPublic: false } : job
-        )
+        jobs.map((job) => (job.id === jobToRate ? { ...job, isCompleted: true, isPublic: false } : job))
       );
 
-      // Notify and update hired applicants
       const jobSnapshot = await getDoc(jobRef);
       const jobData = jobSnapshot.data();
 
-      for (const applicant of applicants) {
-        if (applicant.appliedJobs.some((job) => job.jobId === jobToRate && job.hired)) {
-          // Update the worker's profile
-          const workerRef = doc(db, 'users', applicant.applicantId);
-          await updateDoc(workerRef, {
-            workedJobs: arrayUnion(jobToRate),
-          });
+      const hiredApplicants = jobApplicants[jobToRate]?.filter(applicant => applicant.hired) || [];
 
-          // Add notification
-          await addDoc(collection(db, 'notifications'), {
-            userId: applicant.applicantId,
-            jobId: jobToRate,
-            jobTitle: jobData?.title || 'Unknown Job',
-            type: 'job_completed',
-            message: `המשרה: ${jobData?.title} הושלמה.`,
-            timestamp: serverTimestamp(),
-            isHistory: false,
-          });
-        }
+      for (const applicant of hiredApplicants) {
+        const workerRef = doc(db, 'users', applicant.applicantId);
+        await updateDoc(workerRef, {
+          workedJobs: arrayUnion(jobToRate),
+        });
+
+        await addDoc(collection(db, 'notifications'), {
+          userId: applicant.applicantId,
+          jobId: jobToRate,
+          jobTitle: jobData?.title || 'Unknown Job',
+          type: 'job_completed',
+          message: `המשרה: ${jobData?.title} הושלמה.`,
+          timestamp: serverTimestamp(),
+          isHistory: false,
+        });
       }
 
       setOpenRatingDialog(false);
@@ -556,11 +530,14 @@ export default function MyWorksPage() {
         createdAt: serverTimestamp(),
       });
 
-      setApplicants((prevApplicants) =>
-        prevApplicants.map((applicant) =>
+      setJobApplicants((prevJobApplicants) => {
+        const updatedApplicants = { ...prevJobApplicants };
+        const applicantsForJob = updatedApplicants[jobId] || [];
+        updatedApplicants[jobId] = applicantsForJob.map((applicant) =>
           applicant.applicantId === workerId ? { ...applicant, isRated: true } : applicant
-        )
-      );
+        );
+        return updatedApplicants;
+      });
 
       alert('הדירוג נשלח בהצלחה!');
     } catch (error) {
@@ -727,27 +704,22 @@ export default function MyWorksPage() {
                     </Box>
                   )}
                   {!job.isCompleted && (
-                   <Button
-                   variant="contained"
-                   color="success"
-                   startIcon={<Flag />}
-                   onClick={() => handleMarkJobCompleted(job.id)}
-                   fullWidth
-                   sx={{ mt: 2 }}
-                 >
-                   סמן כהושלם (רק לאחר שהעובדים הגיעו)
-                 </Button>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      startIcon={<Flag />}
+                      onClick={() => handleMarkJobCompleted(job.id)}
+                      fullWidth
+                      sx={{ mt: 2 }}
+                    >
+                      סמן כהושלם (רק לאחר שהעובדים הגיעו)
+                    </Button>
                   )}
                   {job.isCompleted && (
                     <Box mt={2}>
                       <Typography variant="h6">דרג את העובדים</Typography>
-                      {applicants
-                        .filter(
-                          (applicant) =>
-                            applicant.appliedJobs.some(
-                              (aj) => aj.jobId === job.id && aj.hired
-                            ) && !applicant.isRated
-                        )
+                      {jobApplicants[job.id]
+                        ?.filter((applicant) => applicant.hired && !applicant.isRated)
                         .map((worker) => (
                           <Box key={worker.applicantId} mb={2}>
                             <Typography>{worker.userData?.name || 'שם לא זמין'}</Typography>
@@ -764,93 +736,84 @@ export default function MyWorksPage() {
                     </Box>
                   )}
                   <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
-                    רשימת המועמדים לעבודה
+                    תקשורת עם מועמדים
                   </Typography>
-                  {applicants.filter((applicant) =>
-                    applicant.appliedJobs.some((appliedJob) => appliedJob.jobId === job.id)
-                  ).length > 0 ? (
+                  {jobApplicants[job.id] && jobApplicants[job.id].length > 0 ? (
                     <List>
-                      {applicants
-                        .filter((applicant) =>
-                          applicant.appliedJobs.some((appliedJob) => appliedJob.jobId === job.id)
-                        )
-                        .map((applicant) => {
-                          const appliedJob = applicant.appliedJobs.find(
-                            (appliedJob) => appliedJob.jobId === job.id
-                          );
-                          return (
-                            <React.Fragment key={applicant.applicantId}>
-                              <ListItem alignItems="flex-start">
-                                <ListItemAvatar>
-                                  <Avatar
-                                    alt={applicant.userData?.name || 'מועמד'}
-                                    src={
-                                      applicant.userData?.profileURL || 
-                                      applicant.userData?.photoURL ||
-                                      applicant.userData?.avatarUrl  
-                                    }
-                                  />
-                                </ListItemAvatar>
-                                <ListItemText
-                                  primary={
-                                    <Link
-                                      to={`/user/${applicant.applicantId}`}
-                                      style={{ textDecoration: 'none', color: 'inherit' }}
-                                    >
-                                      {applicant.userData?.name || 'שם לא זמין'}
-                                    </Link>
-                                  }
-                                  secondary={
-                                    <>
-                                      <Typography
-                                        component="span"
-                                        variant="body2"
-                                        color="text.primary"
-                                      >
-                                        {applicant.userData?.email}
-                                      </Typography>
-                                      {` — ${applicant.message || 'אין הודעה מהמועמד'}`}
-                                    </>
+                      {jobApplicants[job.id].map((applicant) => {
+                        return (
+                          <React.Fragment key={applicant.applicantId}>
+                            <ListItem alignItems="flex-start">
+                              <ListItemAvatar>
+                                <Avatar
+                                  alt={applicant.userData?.name || 'מועמד'}
+                                  src={
+                                    applicant.userData?.profileURL ||
+                                    applicant.userData?.photoURL ||
+                                    applicant.userData?.avatarUrl
                                   }
                                 />
-                                <Box>
-                                  <Button
-                                    component={Link}
+                              </ListItemAvatar>
+                              <ListItemText
+                                primary={
+                                  <Link
                                     to={`/user/${applicant.applicantId}`}
-                                    startIcon={<Person />}
-                                    variant="outlined"
-                                    size="small"
-                                    sx={{ mr: 1 }}
+                                    style={{ textDecoration: 'none', color: 'inherit' }}
                                   >
-                                    צפה בפרופיל
-                                  </Button>
-                                  <Button
-                                    variant={appliedJob.hired ? 'contained' : 'outlined'}
-                                    color={appliedJob.hired ? 'success' : 'primary'}
-                                    size="small"
-                                    onClick={() =>
-                                      handleToggleHired(job.id, applicant.applicantId, appliedJob.hired)
-                                    }
-                                    startIcon={appliedJob.hired ? <CheckCircle /> : null}
-                                  >
-                                    {appliedJob.hired ? 'הועסק' : 'סמן כמועסק'}
-                                  </Button>
-                                  <Button
-                                    variant="contained"
-                                    color="primary"
-                                    size="small"
-                                    startIcon={<Chat />}
-                                    onClick={() => handleOpenChatDialog(applicant, job.id)}
-                                    sx={{ ml: 1 }}
-                                  >
-                                    צ'אט
-                                  </Button>
-                                </Box>
-                              </ListItem>
-                              <Divider variant="inset" component="li" />
-                            </React.Fragment>
-                          );
-                        })}
+                                    {applicant.userData?.name || 'שם לא זמין'}
+                                  </Link>
+                                }
+                                secondary={
+                                  <>
+                                    <Typography
+                                      component="span"
+                                      variant="body2"
+                                      color="text.primary"
+                                    >
+                                      {applicant.userData?.email}
+                                    </Typography>
+                                    {` — ${applicant.message || 'אין הודעה מהמועמד'}`}
+                                  </>
+                                }
+                              />
+                              <Box>
+                                <Button
+                                  component={Link}
+                                  to={`/user/${applicant.applicantId}`}
+                                  startIcon={<Person />}
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{ mr: 1 }}
+                                >
+                                  צפה בפרופיל
+                                </Button>
+                                <Button
+                                  variant={applicant.hired ? 'contained' : 'outlined'}
+                                  color={applicant.hired ? 'success' : 'primary'}
+                                  size="small"
+                                  onClick={() =>
+                                    handleToggleHired(job.id, applicant.applicantId, applicant.hired)
+                                  }
+                                  startIcon={applicant.hired ? <CheckCircle /> : null}
+                                >
+                                  {applicant.hired ? 'הועסק' : 'סמן כמועסק'}
+                                </Button>
+                                <Button
+                                  variant="contained"
+                                  color="primary"
+                                  size="small"
+                                  startIcon={<Chat />}
+                                  onClick={() => handleOpenChatDialog(applicant, job.id)}
+                                  sx={{ ml: 1 }}
+                                >
+                                  צ'אט
+                                </Button>
+                              </Box>
+                            </ListItem>
+                            <Divider variant="inset" component="li" />
+                          </React.Fragment>
+                        );
+                      })}
                     </List>
                   ) : (
                     <Typography>אין מועמדים למשרה זו עדיין</Typography>
@@ -871,12 +834,11 @@ export default function MyWorksPage() {
         <CircularProgress />
       </Box>
     );
-  } 
+  }
 
   if (error) {
     return <div>Error: {error}</div>;
   }
-
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -885,7 +847,7 @@ export default function MyWorksPage() {
       </Typography>
       <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 2 }}>
         <Tab label="עבודות פעילות" />
-        <Tab label="עבודות שהושלמו" />
+        <Tab label="היסטוריית עבודות" />
       </Tabs>
       <Paper elevation={3} sx={{ p: 2 }}>
         {activeTab === 0 ? renderJobList(activeJobs) : renderJobList(completedJobs)}

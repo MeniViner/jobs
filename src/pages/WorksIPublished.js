@@ -10,7 +10,7 @@ import {
   Delete, Undo, Flag, ExpandMore, ExpandLess, Chat, Edit 
 } from '@mui/icons-material';
 import { 
-  collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp
+  collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp,arrayUnion,
 } from 'firebase/firestore';
 import { db } from '../services/firebase.js';
 import { getAuth } from 'firebase/auth';
@@ -458,24 +458,33 @@ export default function MyWorksPage() {
 
   const handleConfirmJobCompletion = async () => {
     if (!jobToRate) return;
-  
+
     try {
       const jobRef = doc(db, 'jobs', jobToRate);
       await updateDoc(jobRef, {
         isCompleted: true,
         isPublic: false,
       });
-  
+
       setJobs(
-        jobs.map((job) => (job.id === jobToRate ? { ...job, isCompleted: true, isPublic: false } : job))
+        jobs.map((job) =>
+          job.id === jobToRate ? { ...job, isCompleted: true, isPublic: false } : job
+        )
       );
 
-      // Optionally, notify applicants about job completion
+      // Notify and update hired applicants
       const jobSnapshot = await getDoc(jobRef);
       const jobData = jobSnapshot.data();
 
       for (const applicant of applicants) {
-        if (applicant.appliedJobs.some(job => job.jobId === jobToRate && job.hired)) {
+        if (applicant.appliedJobs.some((job) => job.jobId === jobToRate && job.hired)) {
+          // Update the worker's profile
+          const workerRef = doc(db, 'users', applicant.applicantId);
+          await updateDoc(workerRef, {
+            workedJobs: arrayUnion(jobToRate),
+          });
+
+          // Add notification
           await addDoc(collection(db, 'notifications'), {
             userId: applicant.applicantId,
             jobId: jobToRate,
@@ -487,7 +496,7 @@ export default function MyWorksPage() {
           });
         }
       }
-  
+
       setOpenRatingDialog(false);
       setJobToRate(null);
       alert('העבודה סומנה כהושלמה והוסרה מרשימת העבודות הפעילות');

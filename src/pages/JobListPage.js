@@ -247,30 +247,25 @@ export default function JobListPage() {
   };
 
 
-  //זה הקוד הרגיל שהיה ובו הסינון עובד אך לא רואים עבודות מסוימות
-  const filteredJobs = jobs.filter((job) => {
-    return (
-      !acceptedJobs.includes(job.id) &&
-      job.title.toLowerCase().includes(filter.toLowerCase()) &&
-      (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
-      (categoryFilter === '' || job.category === categoryFilter) &&
-      (experienceFilter === '' || job.experience === experienceFilter) &&
-      (jobTypeFilter === '' || job.jobType === jobTypeFilter) &&
-      (job.salary >= debouncedSalaryFilter[0] && job.salary <= debouncedSalaryFilter[1])
-    );
-  });
+  // //זה הקוד הרגיל שהיה ובו הסינון עובד אך לא רואים עבודות מסוימות
+  // const filteredJobs = jobs.filter((job) => {
+  //   return (
+  //     !acceptedJobs.includes(job.id) &&
+  //     job.title.toLowerCase().includes(filter.toLowerCase()) &&
+  //     (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
+  //     (categoryFilter === '' || job.category === categoryFilter) &&
+  //     (experienceFilter === '' || job.experience === experienceFilter) &&
+  //     (jobTypeFilter === '' || job.jobType === jobTypeFilter) &&
+  //     (job.salary >= debouncedSalaryFilter[0] && job.salary <= debouncedSalaryFilter[1])
+  //   );
+  // });
 
   
-  // //קוד שכן עובד ובו רואים את כל רשימת העבודות
-  // const escapeRegExp = (string) => {
-  //   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape special characters
-  // };
-  
-  // const filteredJobs = jobs.filter((job) => {
-  //   const sanitizedFilter = escapeRegExp(filter);
-  //   const regex = new RegExp(sanitizedFilter, 'i'); // Case-insensitive matching
-  //   return regex.test(job.title) || regex.test(job.description);
-  // });
+  //קוד שכן עובד ובו רואים את כל רשימת העבודות
+  const filteredJobs = jobs.filter((job) => {
+    const regex = new RegExp(filter, 'i'); // התאמה לא רגישה לרישיות
+    return regex.test(job.title) || regex.test(job.description);
+  });
 
 
   ////  עוד ניסיון לא מוצלח של לשלב בין שני הקודים למעלה אך כאמור הוא לא עובד

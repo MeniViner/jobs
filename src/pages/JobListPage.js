@@ -1,5 +1,5 @@
 // JobListPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, Bookmark, Users, Clock, Briefcase, X, ChevronDown, ChevronUp, CheckCircle, Calendar, Car
@@ -15,6 +15,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { Box, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { debounce } from 'lodash';
+import { useDebounce } from 'use-debounce';
+
 
 // pages Import 
 import SearchFilters from './SearchFilters';
@@ -261,62 +263,54 @@ export default function JobListPage() {
   // });
 
   
-  //קוד שכן עובד ובו רואים את כל רשימת העבודות
-  const filteredJobs = jobs.filter((job) => {
-    const regex = new RegExp(filter, 'i'); // התאמה לא רגישה לרישיות
-    return regex.test(job.title) || regex.test(job.description);
-  });
+  //   // קוד שכן עובד ובו רואים את כל רשימת העבודות
+  //   const filteredJobs = useMemo(()  => {
+  //     return jobs.filter((job) => {
+  //       const regex = new RegExp(filter, 'i'); // התאמה לא רגישה לרישיות
+  //       regex.test(job.title) || regex.test(job.description);
+  //     });
+  //   }, []);
 
 
-  ////  עוד ניסיון לא מוצלח של לשלב בין שני הקודים למעלה אך כאמור הוא לא עובד
-  // const filteredJobs = jobs.filter((job) => {
-  //   const lowerCaseFilter = filter.toLowerCase();
+  // ניסיון  מוצלח לאיחוד בינהם
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((job) => {
+      const jobTitle = job.title?.toLowerCase() || '';
+      const jobDescription = job.description?.toLowerCase() || '';
+      const jobLocation = job.location?.toLowerCase() || '';
+      const jobCategory = job.category || '';
+      const jobExperience = job.experience || '';
+      const jobJobType = job.jobType || '';
+      // const jobSalary = job.salary != null ? job.salary : 0;
   
-  //   // התאמה כללית - מחפשים גם בשם וגם בתיאור וגם במיקום
-  //   const matchesText = 
-  //     job.title.toLowerCase().includes(lowerCaseFilter) ||
-  //     job.description.toLowerCase().includes(lowerCaseFilter) ||
-  //     job.location.toLowerCase().includes(lowerCaseFilter);
+      const filterText = filter.toLowerCase();
+      const locationFilterText = locationFilter.toLowerCase();
   
-  //   // התאמת שאר הפילטרים
-  //   const matchesFilters =
-  //     !acceptedJobs.includes(job.id) &&
-  //     (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
-  //     (categoryFilter === '' || job.category === categoryFilter) &&
-  //     (experienceFilter === '' || job.experience === experienceFilter) &&
-  //     (jobTypeFilter === '' || job.jobType === jobTypeFilter) &&
-  //     job.salary >= debouncedSalaryFilter[0] &&
-  //     job.salary <= debouncedSalaryFilter[1];
+      const matchesTitleOrDescription =
+        jobTitle.includes(filterText) || jobDescription.includes(filterText);
   
-  //   return matchesText && matchesFilters;
-  // });
+      return (
+        !acceptedJobs.includes(job.id) &&
+        matchesTitleOrDescription &&
+        (locationFilter === '' || jobLocation.includes(locationFilterText)) &&
+        (categoryFilter === '' || jobCategory === categoryFilter) &&
+        (experienceFilter === '' || jobExperience === experienceFilter) &&
+        (jobTypeFilter === '' || jobJobType === jobTypeFilter) 
+        // && (jobSalary >= debouncedSalaryFilter[0] && jobSalary <= debouncedSalaryFilter[1])
+      );
+    });
+  }, [
+    jobs,
+    filter,
+    locationFilter,
+    categoryFilter,
+    experienceFilter,
+    jobTypeFilter,
+    debouncedSalaryFilter,
+    acceptedJobs,
+  ]);
+  
 
-  // const filteredJobs = jobs.filter((job) => {
-  //   const lowerCaseFilter = filter.toLowerCase();
-  
-  //   // בדיקה אם שם או תיאור תואמים לחיפוש
-  //   const matchesText = 
-  //     job.title.toLowerCase().includes(lowerCaseFilter) ||
-  //     job.description?.toLowerCase().includes(lowerCaseFilter) || // תיאור יכול להיות ריק
-  //     job.location?.toLowerCase().includes(lowerCaseFilter); // מיקום יכול להיות ריק
-  
-  //   // התאמת שאר הפילטרים עם בדיקה האם השדות קיימים
-  //   const matchesFilters =
-  //     !acceptedJobs.includes(job.id) &&
-  //     (locationFilter === '' || job.location?.toLowerCase().includes(locationFilter.toLowerCase())) &&
-  //     (categoryFilter === '' || job.category === categoryFilter) &&
-  //     (experienceFilter === '' || job.experience === experienceFilter) &&
-  //     (jobTypeFilter === '' || job.jobType === jobTypeFilter) &&
-  //     (job.salary >= debouncedSalaryFilter[0] && job.salary <= debouncedSalaryFilter[1]);
-  
-  //   // התמודדות עם שדות כמו שעות ותאריכים
-  //   const hasValidHours = Array.isArray(job.workHours) || job.startTime || job.endTime;
-  //   const hasValidDates = Array.isArray(job.workDates) || job.isFlexibleDates;
-  
-  //   // הכללת משרות גם ללא שעות או תאריכים
-  //   return matchesText && matchesFilters && (hasValidHours || hasValidDates || true);
-  // });
-  
 
   const styles = {
     container: {

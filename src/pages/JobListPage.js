@@ -7,7 +7,7 @@ import {
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import {
   collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, serverTimestamp,
-  arrayUnion, arrayRemove
+  arrayUnion, arrayRemove, addDoc, query, where,
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { getAuth } from 'firebase/auth';
@@ -117,28 +117,81 @@ export default function JobListPage() {
     }
   };
 
+  // const handleApplyForJob = async (jobId) => {
+  //   const auth = getAuth();
+  //   const currentUser = auth.currentUser;
+
+  //   if (!currentUser) {
+  //     setSnackbar({
+  //       open: true,
+  //       message: '',
+  //       severity: 'warning',
+  //     });
+  //     return;
+  //   }
+
+  //   const applicantRef = doc(db, 'jobs', jobId, 'applicants', currentUser.uid);
+  //   const userApplicationsRef = doc(db, 'users', currentUser.uid, 'applications', jobId);
+
+  //   try {
+  //     if (appliedJobs.includes(jobId)) {
+  //       await deleteDoc(applicantRef);
+  //       await deleteDoc(userApplicationsRef);
+  //       setAppliedJobs(appliedJobs.filter((id) => id !== jobId));
+  //       setSnackbar({ open: true, message: 'המועמדות בוטלה בהצלחה!', severity: 'info' });
+  //     } else {
+  //       await setDoc(applicantRef, {
+  //         applicantId: currentUser.uid,
+  //         timestamp: serverTimestamp(),
+  //       });
+  //       await setDoc(userApplicationsRef, {
+  //         jobId: jobId,
+  //         timestamp: serverTimestamp(),
+  //         status: 'applied',
+  //       });
+  //       setAppliedJobs([...appliedJobs, jobId]);
+  //       setSnackbar({ open: true, message: 'המועמדות הוגשה בהצלחה!', severity: 'success' });
+  //     }
+  //   } catch (error) {
+  //     console.error('Error applying for job: ', error);
+  //     setSnackbar({ open: true, message: 'אירעה שגיאה בהגשת המועמדות.', severity: 'error' });
+  //   }
+  // };
+
   const handleApplyForJob = async (jobId) => {
     const auth = getAuth();
     const currentUser = auth.currentUser;
-
+  
     if (!currentUser) {
       setSnackbar({
         open: true,
-        message: '',
+        message: 'עליך להתחבר כדי להגיש מועמדות.',
         severity: 'warning',
       });
       return;
     }
-
+  
     const applicantRef = doc(db, 'jobs', jobId, 'applicants', currentUser.uid);
     const userApplicationsRef = doc(db, 'users', currentUser.uid, 'applications', jobId);
-
+    const notificationRef = collection(db, 'notifications'); // הפניה לקולקשן של ההתראות
+  
     try {
       if (appliedJobs.includes(jobId)) {
+        // מחיקת המועמדות וההתראה הקשורה
         await deleteDoc(applicantRef);
         await deleteDoc(userApplicationsRef);
+  
+        const notificationsSnapshot = await getDocs(
+          query(notificationRef, where('jobId', '==', jobId), where('applicantId', '==', currentUser.uid))
+        );
+  
+        notificationsSnapshot.forEach(async (doc) => {
+          await deleteDoc(doc.ref);
+        });
+  
         setAppliedJobs(appliedJobs.filter((id) => id !== jobId));
         setSnackbar({ open: true, message: 'המועמדות בוטלה בהצלחה!', severity: 'info' });
+  
       } else {
         await setDoc(applicantRef, {
           applicantId: currentUser.uid,
@@ -149,6 +202,30 @@ export default function JobListPage() {
           timestamp: serverTimestamp(),
           status: 'applied',
         });
+  
+        const jobDoc = await getDoc(doc(db, 'jobs', jobId));
+        const jobData = jobDoc.exists() ? jobDoc.data() : null;
+  
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const userData = userDoc.exists() ? userDoc.data() : null;
+  
+        if (jobData && userData) {
+          const applicantName = userData.name || 'מועמד לא מזוהה';
+  
+          await addDoc(notificationRef, {
+            userId: jobData.employerId,
+            jobId: jobId,
+            applicantId: currentUser.uid,
+            jobTitle: jobData.title || 'Unknown Job',
+            type: 'new_application',
+            message: `המשתמש ${applicantName} הגיש מועמדות למשרה: ${jobData.title}`,
+            timestamp: serverTimestamp(),
+            isHistory: false,
+          });
+  
+          console.log('התראה נשלחה בהצלחה למעסיק.');
+        }
+  
         setAppliedJobs([...appliedJobs, jobId]);
         setSnackbar({ open: true, message: 'המועמדות הוגשה בהצלחה!', severity: 'success' });
       }
@@ -157,6 +234,7 @@ export default function JobListPage() {
       setSnackbar({ open: true, message: 'אירעה שגיאה בהגשת המועמדות.', severity: 'error' });
     }
   };
+      
 
   // Debounce salary filter
   useEffect(() => {

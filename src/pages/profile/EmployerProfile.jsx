@@ -646,7 +646,7 @@ export default function EmployerProfile({
         )}
         <Divider />
         {[
-          { key: 'payments', icon: <PaymentIcon />, label: 'תשלומים ותשלומים למארחים' },
+          { key: 'payments', icon: <PaymentIcon />, label: 'תשלומים (יגיע בקרוב)' },
           // { key: 'privacy', icon: <PrivacyIcon />, label: 'פרטיות ושיתוף' },
           { key: 'preferences', icon: <PreferencesIcon />, label: 'העדפות' },
         ].map((item) => (

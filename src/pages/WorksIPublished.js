@@ -876,7 +876,7 @@ export default function MyWorksPage() {
       </Typography>
       <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 2 }}>
         <Tab label="עבודות פעילות" />
-        <Tab label="היסטוריית עבודות" />
+        <Tab label="עבודות שהושלמו" />
       </Tabs>
       <Paper elevation={3} sx={{ p: 2 }}>
         {activeTab === 0 ? renderJobList(activeJobs) : renderJobList(completedJobs)}

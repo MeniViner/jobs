@@ -222,9 +222,7 @@ export default function JobListPage() {
             timestamp: serverTimestamp(),
             isHistory: false,
           });
-  
-          console.log('התראה נשלחה בהצלחה למעסיק.');
-        }
+          }
   
         setAppliedJobs([...appliedJobs, jobId]);
         setSnackbar({ open: true, message: 'המועמדות הוגשה בהצלחה!', severity: 'success' });

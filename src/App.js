@@ -27,7 +27,7 @@ import MyWorksPage from './pages/WorksIPublished.js';
 import MyApplications from './pages/NominatedWorks.js';
 import UserProfilePage from './pages/profile/SocialProfile.js';
 import TopUsersPage from './pages/Management/TopUsersPage.js';
-import JobCompletionRating from './pages/rating/JobCompletionRating.tsx';
+import JobCompletionRating from './pages/rating/JobCompletionRating';
 import EmployerRegistrationForm from './pages/profile/EmployerRegistrationForm.jsx';
 import NotificationsPage from './pages/NotificationsPage.js';
 import MobileMenuPage from './pages/MobileMenuPage';

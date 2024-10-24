@@ -17,7 +17,7 @@ import { getAuth } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext'; // Import AuthContext
 import { Link, useNavigate} from 'react-router-dom';
 import { RatingInput } from './rating/RatingSystem.jsx';
-import JobCompletionRating from './rating/JobCompletionRating.tsx';
+import JobCompletionRating from './rating/JobCompletionRating.jsx';
 
 
 function EditJobDialog({ open, handleClose, job, handleSave }) {

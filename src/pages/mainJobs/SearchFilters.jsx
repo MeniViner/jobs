@@ -1,4 +1,3 @@
-// SearchFilters.js
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, SlidersHorizontal } from 'lucide-react';
@@ -6,6 +5,9 @@ import {
   Box, Typography, IconButton, Button, Slider, ToggleButton, ToggleButtonGroup, 
   TextField, Select, MenuItem, InputLabel, FormControl, DialogActions
 } from '@mui/material';
+import { debounce } from 'lodash';
+import { useCallback } from 'react';
+
 
 export default function SearchFilters({
   filter, setFilter, locationFilter, setLocationFilter, categoryFilter, setCategoryFilter, 
@@ -36,6 +38,11 @@ export default function SearchFilters({
     e.stopPropagation();
   };
 
+  const debouncedSetFilter = useCallback(
+    debounce((value) => setFilter(value), 300),
+    []
+  );
+
   return (
     <>
       <Box sx={{ width: '100%', mb: 2, display: 'flex', gap: '2%' }}>
@@ -56,7 +63,7 @@ export default function SearchFilters({
             variant="standard"
             placeholder="חפש משרות"
             value={filter}
-            onChange={(e) => handleFilterChange('title', e.target.value)}
+            onChange={(e) => debouncedSetFilter(e.target.value)}
             InputProps={  {
               disableUnderline: true,
               startAdornment: <Search color="#829AB1" />,

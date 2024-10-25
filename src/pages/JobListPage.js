@@ -1,8 +1,7 @@
-// JobListPage.js
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MapPin, Bookmark, Users, Clock, Briefcase, X, ChevronDown, ChevronUp, CheckCircle, Calendar, Car
+  MapPin, Bookmark, Users, Clock, Briefcase, X, ChevronDown, ChevronUp, CheckCircle, Calendar,
 } from 'lucide-react';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import {
@@ -15,7 +14,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { Box, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { debounce } from 'lodash';
-import { useDebounce } from 'use-debounce';
 
 
 // pages Import 
@@ -117,47 +115,6 @@ export default function JobListPage() {
     }
   };
 
-  // const handleApplyForJob = async (jobId) => {
-  //   const auth = getAuth();
-  //   const currentUser = auth.currentUser;
-
-  //   if (!currentUser) {
-  //     setSnackbar({
-  //       open: true,
-  //       message: '',
-  //       severity: 'warning',
-  //     });
-  //     return;
-  //   }
-
-  //   const applicantRef = doc(db, 'jobs', jobId, 'applicants', currentUser.uid);
-  //   const userApplicationsRef = doc(db, 'users', currentUser.uid, 'applications', jobId);
-
-  //   try {
-  //     if (appliedJobs.includes(jobId)) {
-  //       await deleteDoc(applicantRef);
-  //       await deleteDoc(userApplicationsRef);
-  //       setAppliedJobs(appliedJobs.filter((id) => id !== jobId));
-  //       setSnackbar({ open: true, message: 'המועמדות בוטלה בהצלחה!', severity: 'info' });
-  //     } else {
-  //       await setDoc(applicantRef, {
-  //         applicantId: currentUser.uid,
-  //         timestamp: serverTimestamp(),
-  //       });
-  //       await setDoc(userApplicationsRef, {
-  //         jobId: jobId,
-  //         timestamp: serverTimestamp(),
-  //         status: 'applied',
-  //       });
-  //       setAppliedJobs([...appliedJobs, jobId]);
-  //       setSnackbar({ open: true, message: 'המועמדות הוגשה בהצלחה!', severity: 'success' });
-  //     }
-  //   } catch (error) {
-  //     console.error('Error applying for job: ', error);
-  //     setSnackbar({ open: true, message: 'אירעה שגיאה בהגשת המועמדות.', severity: 'error' });
-  //   }
-  // };
-
   const handleApplyForJob = async (jobId) => {
     const auth = getAuth();
     const currentUser = auth.currentUser;
@@ -233,7 +190,6 @@ export default function JobListPage() {
     }
   };
       
-
   // Debounce salary filter
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -325,29 +281,6 @@ export default function JobListPage() {
   };
 
 
-  // //זה הקוד הרגיל שהיה ובו הסינון עובד אך לא רואים עבודות מסוימות
-  // const filteredJobs = jobs.filter((job) => {
-  //   return (
-  //     !acceptedJobs.includes(job.id) &&
-  //     job.title.toLowerCase().includes(filter.toLowerCase()) &&
-  //     (locationFilter === '' || job.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
-  //     (categoryFilter === '' || job.category === categoryFilter) &&
-  //     (experienceFilter === '' || job.experience === experienceFilter) &&
-  //     (jobTypeFilter === '' || job.jobType === jobTypeFilter) &&
-  //     (job.salary >= debouncedSalaryFilter[0] && job.salary <= debouncedSalaryFilter[1])
-  //   );
-  // });
-
-  
-  //   // קוד שכן עובד ובו רואים את כל רשימת העבודות
-  //   const filteredJobs = useMemo(()  => {
-  //     return jobs.filter((job) => {
-  //       const regex = new RegExp(filter, 'i'); // התאמה לא רגישה לרישיות
-  //       regex.test(job.title) || regex.test(job.description);
-  //     });
-  //   }, []);
-
-
   // עובד סופי אבל בלי סינון שכר משכורות
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
@@ -386,7 +319,6 @@ export default function JobListPage() {
     acceptedJobs,
   ]);
   
-
 
   const styles = {
     container: {

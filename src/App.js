@@ -16,7 +16,9 @@ import AdminStatisticsPage from './pages/Management/AdminStatisticsPage.js';
 import AdminMessagesDashboard from './pages/Management/AdminMessagesDashboard';
 import Header from './components/Header';
 import HomePage from './pages/HomePage';
-import JobListPage from './pages/JobListPage';
+// import JobListPage from './pages/JobListPage';
+import JobListPage from 'pages/mainJobs/JobListPage';
+
 import SavedJobsPage from './pages/SavedJobsPage';
 import ManageUsers from './pages/Management/ManageUsers';
 import AccountPage from './pages/profile/AccountPage';

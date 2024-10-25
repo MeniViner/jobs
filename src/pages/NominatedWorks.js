@@ -2,12 +2,18 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark, Briefcase, MapPin, Calendar, Clock, CheckCircle, MessageCircle, Trash2, ChevronDown, ChevronUp, Users, DollarSign, Car, User } from 'lucide-react'
-import { collection, doc, getDocs, deleteDoc, getDoc, addDoc, query, where, serverTimestamp } from 'firebase/firestore'
+import { 
+  Briefcase, MapPin, Clock, MessageCircle, Trash2, ChevronDown, ChevronUp, Users, DollarSign, Car, User 
+} from 'lucide-react'
+import { 
+  collection, doc, getDocs, deleteDoc, getDoc, addDoc, query, where, serverTimestamp 
+} from 'firebase/firestore'
 import { db } from '../services/firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
-import { Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button } from '@mui/material'
+import { 
+  Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button 
+} from '@mui/material'
 import 'tailwindcss/tailwind.css'
 import NoNotificationsImage from '../images/completed.svg';
 

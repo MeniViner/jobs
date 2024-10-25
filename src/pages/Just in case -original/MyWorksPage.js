@@ -12,12 +12,12 @@ import {
 import {
   collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, arrayUnion
 } from 'firebase/firestore';
-import { db } from '../services/firebase.js';
+import { db } from '../../services/firebase.js';
 import { getAuth } from 'firebase/auth';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext.js';
 import { Link, useNavigate } from 'react-router-dom';
-import { RatingInput } from './rating/RatingSystem.jsx';
-import JobCompletionRating from './rating/JobCompletionRating';
+import { RatingInput } from '../rating/RatingSystem.jsx';
+import JobCompletionRating from '../rating/JobCompletionRating.jsx';
 
 function EditJobDialog({ open, handleClose, job, handleSave }) {
   const [editedJob, setEditedJob] = useState(job || {});
@@ -946,3 +946,8 @@ export default function MyWorksPage() {
     </Container>
   );
 }
+
+
+
+
+

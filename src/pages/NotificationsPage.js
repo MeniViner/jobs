@@ -1,50 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  doc,
-  deleteDoc,
-  onSnapshot,
-  updateDoc,
-  writeBatch,
-  getDoc,
+  getFirestore, collection, query, where, doc, deleteDoc, onSnapshot, updateDoc, writeBatch, getDoc
 } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  Container,
-  Typography,
-  Box,
-  Snackbar,
-  Alert,
-  CircularProgress,
-  Paper,
-  ListItem,
-  ListItemText,
-  Button,
-  IconButton,
-  Grid,
-  Avatar,
-  Tooltip,
-  Link,
+  Container, Typography, Box, Snackbar, Alert, CircularProgress, Paper,
+  ListItem, ListItemText, Button, IconButton, Grid, Avatar, Tooltip
 } from '@mui/material';
 import {
-  Delete as DeleteIcon,
-  History as HistoryIcon,
-  Archive as ArchiveIcon,
-  Campaign as BroadcastIcon,
-  Notifications as SystemIcon,
-  Info as InfoIcon,
-  SwipeLeft as SwipeLeftIcon,
-  SwipeRight as SwipeRightIcon,
-  Settings as SettingsIcon,
-  ArrowBack as ArrowBackIcon,
+  Delete as DeleteIcon, History as HistoryIcon, Archive as ArchiveIcon, ArrowBack as ArrowBackIcon,
+  Campaign as BroadcastIcon, Notifications as SystemIcon, Info as InfoIcon, Settings as SettingsIcon,
+  SwipeLeft as SwipeLeftIcon, SwipeRight as SwipeRightIcon,  
 } from '@mui/icons-material';
 import { SwipeableList, SwipeableListItem } from '@sandstreamdev/react-swipeable-list';
 import '@sandstreamdev/react-swipeable-list/dist/styles.css';
 import NoNotificationsImage from '../images/completed.svg';
+
 
 export default function NotificationsPage() {
   const db = getFirestore();

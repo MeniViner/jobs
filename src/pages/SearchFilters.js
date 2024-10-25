@@ -3,41 +3,16 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, SlidersHorizontal } from 'lucide-react';
 import {
-  Box,
-  Typography,
-  IconButton,
-  Button,
-  Slider,
-  ToggleButton,
-  ToggleButtonGroup,
-  TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  DialogActions, // ייבוא DialogActions
+  Box, Typography, IconButton, Button, Slider, ToggleButton, ToggleButtonGroup, 
+  TextField, Select, MenuItem, InputLabel, FormControl, DialogActions
 } from '@mui/material';
 
 export default function SearchFilters({
-  filter,
-  setFilter,
-  locationFilter,
-  setLocationFilter,
-  categoryFilter,
-  setCategoryFilter,
+  filter, setFilter, locationFilter, setLocationFilter, categoryFilter, setCategoryFilter, 
   salaryFilter,
   setSalaryFilter, // הוספת setSalaryFilter כפרופ חדש
-  experienceFilter,
-  setExperienceFilter,
-  jobTypeFilter,
-  setJobTypeFilter,
-  showFilters,
-  setShowFilters,
-  handleFilterChange,
-  activeFilters,
-  setActiveFilters,
-  removeFilter,
-  filteredJobsCount,
+  experienceFilter, setExperienceFilter, jobTypeFilter, setJobTypeFilter, showFilters, 
+  setShowFilters, handleFilterChange, setActiveFilters, filteredJobsCount
 }) {
   // הגדרות האנימציה
   const backdropVariants = {

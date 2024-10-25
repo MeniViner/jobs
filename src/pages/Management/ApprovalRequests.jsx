@@ -118,7 +118,7 @@ export default function ApprovalRequests({ onCountUpdate }) {
         timestamp: serverTimestamp(),
       });
 
-      console.log('Notification sent to user:', userId);
+      // console.log('Notification sent to user:', userId);
 
       setSnackbar({
         open: true,

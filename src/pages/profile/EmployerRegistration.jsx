@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, updateDoc } from 'firebase/firestore';
 import { useTranslation } from 'react-i18next';
-import { Container, Typography, Grid, TextField, Button, Card, CardContent, CircularProgress, Box, MenuItem } from '@mui/material';
+import { 
+  Container, Typography, Grid, TextField, Button, Card, CardContent, CircularProgress, Box, MenuItem 
+} from '@mui/material';
 import { Business, Category, Description, Email, Phone } from '@mui/icons-material';
 
 const jobCategories = [

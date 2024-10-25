@@ -184,7 +184,7 @@ export default function PostJob() {
         ...jobToSubmit,
         postedBy: user.uid
       });
-      console.log("Document written with ID: ", docRef.id);
+      // console.log("Document written with ID: ", docRef.id);
       setSnackbar({ open: true, message: 'המשרה פורסמה בהצלחה!', severity: 'success' });
       setJobData({
         title: '',

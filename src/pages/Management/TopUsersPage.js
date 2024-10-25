@@ -1,33 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
-  Typography,
-  Grid,
-  CircularProgress,
-  Card,
-  CardContent,
-  CardHeader,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Container, Typography, Grid, CircularProgress, Card, CardContent, CardHeader, List, ListItem, 
+  ListItemText, ListItemAvatar, Avatar, Button, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import { Work, Person, Visibility } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import {
-  collection,
-  query,
-  where,
-  doc,
-  getDoc,
-  getDocs,
-  collectionGroup,
+  collection, doc, getDoc, getDocs, collectionGroup
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 

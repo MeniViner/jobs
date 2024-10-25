@@ -1,8 +1,12 @@
 // src/components/rating/RatingSystem.js
 
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Rating, TextField, Button, Card, CardContent, Avatar } from '@mui/material';
-import { collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { 
+  Box, Typography, Rating, TextField, Button, Card, CardContent, Avatar 
+} from '@mui/material';
+import { 
+  collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc 
+} from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 

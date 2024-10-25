@@ -3,25 +3,8 @@ import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth } from '../../services/firebase';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
-  Paper, 
-  CircularProgress, 
-  Typography,
-  Button,
-  Box,
-  TextField,
-  InputAdornment,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Snackbar,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Typography, Button,
+  Box, TextField, InputAdornment, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Snackbar
 } from '@mui/material';
 import { Link } from 'react-router-dom';
 import { Person, Search, Delete, Email } from '@mui/icons-material';

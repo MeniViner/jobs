@@ -9,7 +9,7 @@ import rtlPlugin from 'stylis-plugin-rtl';
 import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import CompanyInfoPage from 'pages/CompanyInfoPage';
-
+import JobDetails from 'pages/publishedWorkes/JobDetails';
 // ייבוא כל הרכיבים שלך
 import PostJob from './pages/PostJob';
 import AdminStatisticsPage from './pages/Management/AdminStatisticsPage.js';
@@ -97,6 +97,7 @@ function App() {
 
 
                 <Route path="/company-info" element={<CompanyInfoPage />} />
+                <Route path="/job/:id" element={<JobDetails />} />
                 <Route path="/jobs" element={<JobListPage />} />
                 <Route path="/saved-jobs" element={<SavedJobsPage />} />
                 <Route path="/post-job" element={<PostJob />} />

@@ -291,7 +291,7 @@ export default function MyWorksPage() {
         </Toolbar>
       </AppBar>
 
-      <Paper elevation={3} sx={{ p: 2, mt: 2 }}>
+      <Paper>
         {loading || authLoading ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
             <CircularProgress />

@@ -1,0 +1,16 @@
+// CustomAvatar.jsx
+import React from 'react';
+
+export default function CustomAvatar({ src, fallback }) {
+  return (
+    <div className="w-12 h-12 rounded-full border-2 border-blue-500 overflow-hidden">
+      {src ? (
+        <img src={src} alt="Avatar" className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-gray-300 text-white">
+          {fallback}
+        </div>
+      )}
+    </div>
+  );
+}

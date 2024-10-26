@@ -6,8 +6,8 @@ import {
 import { WhatsApp, Telegram, Share, LinkedIn, Twitter, Work, People, Diversity3, TrendingUp } from '@mui/icons-material';
 import { styled } from '@mui/system';
 import { motion } from 'framer-motion';
-import f1 from '../images/mv.jpg';
-import f2 from '../images/yc.jpg';
+import f1 from '../images/Our pictures/mv.jpg';
+import f2 from '../images/Our pictures/2.jpg';
 const AnimatedBox = motion(Box);
 
 const ContactButton = styled(Button)({

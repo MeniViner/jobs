@@ -1,5 +1,4 @@
-// UserProfilePage.js
-
+// כל התוכן כפי ששלחת, ללא שינויים במבנה המקורי
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -13,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { ContactIconsDisplay } from '../../components/code parts/ContactMethodsManager';
 
+// הרכיב הראשי של דף הפרופיל
 export default function UserProfilePage() {
   const { userId } = useParams();
   const db = getFirestore();
@@ -20,8 +20,9 @@ export default function UserProfilePage() {
   const [isEmployer, setIsEmployer] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState([]);
-  const [jobsWorkedCount, setJobsWorkedCount] = useState(0); // Added state for jobs worked count
+  const [jobsWorkedCount, setJobsWorkedCount] = useState(0);
 
+  // טעינת נתוני משתמש
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -33,21 +34,20 @@ export default function UserProfilePage() {
           setIsEmployer(userData.isEmployer || false);
           setProfileData(userData);
 
-          // Calculate jobs worked count for employees
           if (!userData.isEmployer) {
             const workedJobs = userData.workedJobs || [];
             setJobsWorkedCount(workedJobs.length);
           }
 
-          // Fetch reviews
           const reviewsQuery = query(collection(db, 'ratings'), where('ratedUser', '==', userId));
           const reviewsSnapshot = await getDocs(reviewsQuery);
-          const reviewsData = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const reviewsData = reviewsSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
 
-          // Extract unique rater IDs
-          const raterIds = [...new Set(reviewsData.map(review => review.ratedBy))];
+          const raterIds = [...new Set(reviewsData.map((review) => review.ratedBy))];
 
-          // Fetch rater profiles
           const raterProfilesPromises = raterIds.map(async (raterId) => {
             const raterDocRef = doc(db, 'users', raterId);
             const raterDocSnap = await getDoc(raterDocRef);
@@ -56,13 +56,13 @@ export default function UserProfilePage() {
               return {
                 id: raterId,
                 name: raterData.name || 'שם משתמש',
-                photoURL: raterData.profileURL || raterData.photoURL
+                photoURL: raterData.profileURL || raterData.photoURL,
               };
             } else {
               return {
                 id: raterId,
                 name: 'משתמש אנונימי',
-                photoURL: '/placeholder.svg?height=40&width=40'
+                photoURL: '/placeholder.svg?height=40&width=40',
               };
             }
           });
@@ -73,13 +73,12 @@ export default function UserProfilePage() {
             return acc;
           }, {});
 
-          // Attach rater profiles to reviews
-          const reviewsWithProfiles = reviewsData.map(review => ({
+          const reviewsWithProfiles = reviewsData.map((review) => ({
             ...review,
             raterProfile: raterProfilesMap[review.ratedBy] || {
               name: 'משתמש אנונימי',
-              photoURL: '/placeholder.svg?height=40&width=40'
-            }
+              photoURL: '/placeholder.svg?height=40&width=40',
+            },
           }));
 
           setReviews(reviewsWithProfiles);
@@ -87,7 +86,7 @@ export default function UserProfilePage() {
           console.error('User does not exist');
         }
       } catch (error) {
-        console.error('Error fetching user data: ', error);
+        console.error('Error fetching user data:', error);
       } finally {
         setLoading(false);
       }
@@ -117,15 +116,14 @@ export default function UserProfilePage() {
       {isEmployer ? (
         <EmployerProfile profileData={profileData} reviews={reviews} />
       ) : (
-        <EmployeeProfile
-          profileData={profileData}
-          reviews={reviews}
-          jobsWorkedCount={jobsWorkedCount} // Pass jobsWorkedCount
-        />
+        <EmployeeProfile profileData={profileData} reviews={reviews} jobsWorkedCount={jobsWorkedCount} />
       )}
     </Box>
   );
 }
+
+// המשך הקוד של ProfileHeader, EmployeeProfile, EmployerProfile וכו' כמו בקוד המקורי שלך
+
 
 function ProfileHeader({ profileData, isEmployer, reviews, jobsWorkedCount }) {
   const averageRating = reviews.length > 0

@@ -14,8 +14,8 @@ import CompanyInfoPage from 'pages/CompanyInfoPage';
 import PostJob from './pages/PostJob';
 import AdminStatisticsPage from './pages/Management/AdminStatisticsPage.js';
 import AdminMessagesDashboard from './pages/Management/AdminMessagesDashboard';
-import Header from './components/Header';
-import HomePage from './pages/HomePage';
+import Header from './menu/Header';
+import HomePage from './pages/recycling basket/HomePage';
 // import JobListPage from './pages/JobListPage';
 import JobListPage from 'pages/mainJobs/JobListPage';
 
@@ -33,7 +33,7 @@ import TopUsersPage from './pages/Management/TopUsersPage.js';
 import JobCompletionRating from './pages/rating/JobCompletionRating';
 import EmployerRegistrationForm from './pages/profile/EmployerRegistrationForm.jsx';
 import NotificationsPage from './pages/NotificationsPage.js';
-import MobileMenuPage from './pages/MobileMenuPage';
+import MobileMenuPage from './menu/MobileMenuPage';
 
 
 const ProtectedAdminRoute = ({ children }) => {
@@ -94,6 +94,8 @@ function App() {
                     </ProtectedAdminRoute>
                   }
                 />
+
+
                 <Route path="/company-info" element={<CompanyInfoPage />} />
                 <Route path="/jobs" element={<JobListPage />} />
                 <Route path="/saved-jobs" element={<SavedJobsPage />} />

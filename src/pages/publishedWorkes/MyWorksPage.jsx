@@ -1,10 +1,34 @@
+// MyWorksPage.jsx
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Container, Typography, Paper, Tabs, Tab, Box, CircularProgress, Snackbar,
+import {
+  Container,
+  Typography,
+  Paper,
+  Tabs,
+  Tab,
+  Box,
+  CircularProgress,
+  Snackbar,
+  AppBar,
+  Toolbar,
+  IconButton,
 } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
-import { 
-  collection, query, where, getDocs, doc, getDoc, deleteDoc, updateDoc, addDoc, serverTimestamp, collectionGroup, onSnapshot
+import { Add as AddIcon, History as HistoryIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  doc,
+  getDoc,
+  getDocs,
+  deleteDoc,
+  updateDoc,
+  addDoc,
+  serverTimestamp,
+  collectionGroup,
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { getAuth } from 'firebase/auth';
@@ -15,7 +39,6 @@ import DeleteJobDialog from './DeleteJobDialog.jsx';
 import EditJobDialog from './EditJobDialog';
 import ChatDialog from './ChatDialog.jsx';
 import JobCompletionRating from '../rating/JobCompletionRating';
-
 
 export default function MyWorksPage() {
   const { user, loading: authLoading } = useAuth();
@@ -41,9 +64,9 @@ export default function MyWorksPage() {
 
   useEffect(() => {
     if (authLoading || !user) return;
-  
-    setLoading(true); // Start loading
-  
+
+    setLoading(true); // התחלת טעינה
+
     const unsubscribe = onSnapshot(
       query(collection(db, 'jobs'), where('employerId', '==', auth.currentUser.uid)),
       async (snapshot) => {
@@ -51,45 +74,44 @@ export default function MyWorksPage() {
           id: doc.id,
           ...doc.data(),
         }));
-  
+
         try {
-          // Fetch all applicants for the jobs in parallel
+          // שליפת כל המועמדים לעבודות במקביל
           const applicantsData = await fetchApplicantsForJobs(jobsList);
           setJobs(jobsList);
           setJobApplicants(applicantsData);
         } catch (error) {
           console.error('Error fetching applicants:', error);
-          setError('Failed to fetch applicants. Please try again.');
+          setError('אירעה שגיאה בטעינת הנתונים. אנא נסה שוב.');
         } finally {
-          setLoading(false); // Ensure loading stops
+          setLoading(false); // סיום טעינה
         }
       },
       (error) => {
         console.error('Error fetching jobs:', error);
-        setError('Failed to fetch jobs. Please try again.');
-        setLoading(false); // Ensure loading stops even on error
+        setError('אירעה שגיאה בטעינת הנתונים. אנא נסה שוב.');
+        setLoading(false); // סיום טעינה גם במקרה של שגיאה
       }
     );
-  
-    return () => unsubscribe(); // Clean up listener on unmount
+
+    return () => unsubscribe(); // ניקוי מאזין כאשר הרכיב מתנתק
   }, [authLoading, user]);
-  
-  // Helper function to fetch all applicants for the jobs
+
+  // פונקציה עזר לשליפת כל המועמדים לעבודות
   const fetchApplicantsForJobs = async (jobsList) => {
     const applicantsData = {};
-  
-    // Use Promise.all to fetch applicants in parallel
+
     await Promise.all(
       jobsList.map(async (job) => {
         const applicantsRef = collection(db, 'jobs', job.id, 'applicants');
         const applicantsSnapshot = await getDocs(applicantsRef);
-  
+
         const jobApplicants = await Promise.all(
           applicantsSnapshot.docs.map(async (applicantDoc) => {
             const applicantData = applicantDoc.data();
             const userDoc = await getDoc(doc(db, 'users', applicantData.applicantId));
             const userData = userDoc.exists() ? userDoc.data() : {};
-  
+
             return {
               applicantId: applicantData.applicantId,
               ...applicantData,
@@ -97,77 +119,74 @@ export default function MyWorksPage() {
             };
           })
         );
-  
+
         applicantsData[job.id] = jobApplicants;
       })
     );
-  
+
     return applicantsData;
   };
-  
 
-
-    
   const fetchEmployerJobs = async () => {
     if (!auth.currentUser) return;
-    setLoading(true);  // Start loading
-  
+    setLoading(true); // התחלת טעינה
+
     try {
       const jobsQuery = query(
         collection(db, 'jobs'),
         where('employerId', '==', auth.currentUser.uid)
       );
       const jobsSnapshot = await getDocs(jobsQuery);
-  
+
       const jobsList = jobsSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-  
-      // If no jobs found, stop loading and return early
+
+      // אם לא נמצאו עבודות, עצור את הטעינה והחזר מוקדם
       if (jobsList.length === 0) {
-        setJobs([]); // Set empty jobs to avoid errors
+        setJobs([]); // הגדרת עבודות ריקות כדי למנוע שגיאות
         setLoading(false);
         return;
       }
-  
+
       const jobIds = jobsList.map((job) => job.id);
-  
-      // Fetch applicants in batches for all jobs
+
+      // שליפת המועמדים במנות עבור כל העבודות
       const applicantsQuery = query(
         collectionGroup(db, 'applicants'),
         where('jobId', 'in', jobIds)
       );
       const applicantsSnapshot = await getDocs(applicantsQuery);
-  
+
       const applicantsData = applicantsSnapshot.docs.reduce((acc, doc) => {
         const data = doc.data();
         if (!acc[data.jobId]) acc[data.jobId] = [];
         acc[data.jobId].push(data);
         return acc;
       }, {});
-  
+
       setJobs(jobsList);
       setJobApplicants(applicantsData);
     } catch (error) {
       console.error('Error fetching jobs or applicants:', error);
-      setError('Failed to fetch jobs. Please try again.');
+      setError('אירעה שגיאה בטעינת הנתונים. אנא נסה שוב.');
     } finally {
-      // Stop loading regardless of the outcome
+      // עצירת הטעינה בכל מקרה
       setLoading(false);
     }
   };
-    
+
   const handleDeleteJob = async () => {
     if (!jobToDelete) return;
 
     try {
       await deleteDoc(doc(db, 'jobs', jobToDelete.id));
       
-      // Remove the deleted job from the jobs state
+      // הסרת העבודה שנמחקה ממצב העבודות
       setJobs(jobs.filter(job => job.id !== jobToDelete.id));
       
-      // Remove the job's applicants from the jobApplicants state
+      // הסרת המועמדים של העבודה שנמחקה ממצב המועמדים
       const updatedJobApplicants = { ...jobApplicants };
       delete updatedJobApplicants[jobToDelete.id];
       setJobApplicants(updatedJobApplicants);
@@ -186,7 +205,7 @@ export default function MyWorksPage() {
       const jobRef = doc(db, 'jobs', editedJob.id);
       await updateDoc(jobRef, editedJob);
       
-      // Update the job in the jobs state
+      // עדכון העבודה במצב העבודות
       setJobs(jobs.map(job => job.id === editedJob.id ? { ...job, ...editedJob } : job));
 
       setOpenEditDialog(false);
@@ -235,6 +254,7 @@ export default function MyWorksPage() {
 
       setOpenChatDialog(false);
       showSnackbar('ההודעה נשלחה בהצלחה', 'success');
+      // ניתן לנתב לדף הצ'אט אם נדרש
       // navigate(`/job-chat/${chatId}`, { replace: true });
     } catch (error) {
       console.error('Error sending message:', error);
@@ -247,7 +267,7 @@ export default function MyWorksPage() {
     [jobs]
   );
 
-    const completedJobs = useMemo(
+  const completedJobs = useMemo(
     () => jobs.filter((job) => job.isCompleted),
     [jobs]
   );
@@ -269,15 +289,28 @@ export default function MyWorksPage() {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        עבודות שפרסמתי
-      </Typography>
-      <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 2 }}>
-        <Tab label="עבודות פעילות" />
-        <Tab label="היסטוריית עבודות" />
-      </Tabs>
+      <AppBar position="static" color="transparent" elevation={0}>
+        <Toolbar sx={{ justifyContent: 'space-between' }}>
+          <Typography variant="h6">
+            {activeTab === 0 ? 'עבודות פעילות' : 'היסטוריית עבודות'}
+          </Typography>
+          <Box>
+            <IconButton
+              color="primary"
+              onClick={() => setActiveTab(activeTab === 0 ? 1 : 0)}
+              aria-label="היסטוריה"
+              sx={{ mr: 1 }}
+            >
+              <HistoryIcon />
+            </IconButton>
+            <IconButton color="primary" onClick={() => fetchEmployerJobs()} aria-label="רענן">
+              <RefreshIcon />
+            </IconButton>
+          </Box>
+        </Toolbar>
+      </AppBar>
 
-      <Paper elevation={3} sx={{ p: 2 }}>
+      <Paper elevation={3} sx={{ p: 2, mt: 2 }}>
         {loading || authLoading ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
             <CircularProgress />
@@ -286,6 +319,7 @@ export default function MyWorksPage() {
           <MyJobsList 
             jobs={activeTab === 0 ? activeJobs : completedJobs} 
             jobApplicants={jobApplicants}
+            isHistoryView={activeTab === 1}
             onDeleteJob={(job) => {
               setJobToDelete(job);
               setOpenDeleteDialog(true);
@@ -303,7 +337,7 @@ export default function MyWorksPage() {
               setOpenRatingDialog(true);
             }}
             fetchEmployerJobs={fetchEmployerJobs}
-            setJobs={setJobs} // כאן לוודא שהפונקציה מועברת
+            setJobs={setJobs}
             setJobApplicants={setJobApplicants}
           />
         )}
@@ -359,7 +393,6 @@ export default function MyWorksPage() {
           {snackbarMessage}
         </MuiAlert>
       </Snackbar>
-
     </Container>
   );
 }

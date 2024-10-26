@@ -226,7 +226,7 @@ export default function PostJob() {
           </Typography>
           <form onSubmit={handleSubmit}>
             <Grid container spacing={3}>
-              <Grid item xs={12}>
+              <Grid item xs={6}>
                 <TextField
                   required
                   fullWidth
@@ -237,18 +237,7 @@ export default function PostJob() {
                   variant="outlined"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  required
-                  fullWidth
-                  label="מיקום"
-                  name="location"
-                  value={jobData.location}
-                  onChange={handleChange}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={6} sm={6}>
                 <TextField
                   required
                   fullWidth
@@ -266,7 +255,18 @@ export default function PostJob() {
                   ))}
                 </TextField>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={6} sm={6}>
+                <TextField
+                  required
+                  fullWidth
+                  label="מיקום"
+                  name="location"
+                  value={jobData.location}
+                  onChange={handleChange}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={6} sm={6}>
                 <TextField
                   required
                   fullWidth
@@ -278,7 +278,7 @@ export default function PostJob() {
                   variant="outlined"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={6} sm={6}>
                 <TextField
                   required
                   fullWidth
@@ -293,7 +293,7 @@ export default function PostJob() {
                   }}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={6}>
                 <FormControlLabel
                   control={
                     <Switch

@@ -43,6 +43,12 @@ export const RatingInput = ({ jobId, targetUserId, isEmployerRating, onRatingSub
       return;
     }
 
+    if (!jobId || !targetUserId) {
+      console.error('Missing jobId or targetUserId.');
+      alert('Invalid job or user information. Please try again.');
+      return;
+    }
+
     if (!rating) {
       alert('Please select a rating before submitting.');
       return;
@@ -56,10 +62,13 @@ export const RatingInput = ({ jobId, targetUserId, isEmployerRating, onRatingSub
         rating,
         review,
         isEmployerRating,
-        createdAt: new Date()
+        createdAt: new Date(),
       };
 
+      console.log('Submitting rating:', newRating);
+
       const docRef = await addDoc(collection(db, 'ratings'), newRating);
+      console.log('Rating submitted successfully with ID:', docRef.id);
 
       const userRef = doc(db, 'users', targetUserId);
       const ratingsQuery = query(collection(db, 'ratings'), where('ratedUser', '==', targetUserId));
@@ -69,14 +78,14 @@ export const RatingInput = ({ jobId, targetUserId, isEmployerRating, onRatingSub
       ratingsSnapshot.forEach(doc => {
         totalRating += doc.data().rating;
       });
-      const averageRating = totalRating / ratingsSnapshot.size;
 
+      const averageRating = totalRating / ratingsSnapshot.size;
       await updateDoc(userRef, { averageRating });
 
       alert('Rating submitted successfully!');
       setRating(0);
       setReview('');
-      
+
       if (onRatingSubmitted) {
         onRatingSubmitted({ id: docRef.id, ...newRating });
       }
@@ -84,7 +93,7 @@ export const RatingInput = ({ jobId, targetUserId, isEmployerRating, onRatingSub
       console.error('Error submitting rating:', error);
       alert('Failed to submit rating. Please try again.');
     }
-  };
+  };   
 
   return (
     <Box>
@@ -106,12 +115,18 @@ export const RatingInput = ({ jobId, targetUserId, isEmployerRating, onRatingSub
         onChange={(e) => setReview(e.target.value)}
         margin="normal"
       />
-      <Button variant="contained" color="primary" onClick={handleSubmitRating} disabled={!rating}>
+      <Button 
+        variant="contained" 
+        color="primary" 
+        onClick={handleSubmitRating} 
+        disabled={!rating || !jobId || !targetUserId}
+      >
         Submit Rating
       </Button>
     </Box>
   );
 };
+
 
 export const RatingDisplay = ({ userId, isEmployer, allowRating = true }) => {
   const [ratings, setRatings] = useState([]);

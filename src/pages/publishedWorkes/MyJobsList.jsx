@@ -348,6 +348,7 @@ export default function MyJobsList({
                           <Typography variant="p">{worker.userData?.name || 'שם לא זמין'}</Typography>
                           <RatingInput
                             jobId={job.id}
+                            jobTitle={job.title}
                             targetUserId={worker.applicantId}
                             isEmployerRating={true}
                             onSubmit={(rating, review) =>

@@ -5,7 +5,7 @@ import {
   Box, Typography, Rating, TextField, Button, Card, CardContent, Avatar 
 } from '@mui/material';
 import { 
-  collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc 
+  collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -32,7 +32,7 @@ const ReviewCard = ({ rating }) => (
   </Card>
 );
 
-export const RatingInput = ({ jobId, targetUserId, isEmployerRating, onRatingSubmitted }) => {
+export const RatingInput = ({ jobId, jobTitle, targetUserId, isEmployerRating, onRatingSubmitted }) => {
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
   const { user } = useAuth();
@@ -65,10 +65,7 @@ export const RatingInput = ({ jobId, targetUserId, isEmployerRating, onRatingSub
         createdAt: new Date(),
       };
 
-      console.log('Submitting rating:', newRating);
-
       const docRef = await addDoc(collection(db, 'ratings'), newRating);
-      console.log('Rating submitted successfully with ID:', docRef.id);
 
       const userRef = doc(db, 'users', targetUserId);
       const ratingsQuery = query(collection(db, 'ratings'), where('ratedUser', '==', targetUserId));
@@ -81,6 +78,18 @@ export const RatingInput = ({ jobId, targetUserId, isEmployerRating, onRatingSub
 
       const averageRating = totalRating / ratingsSnapshot.size;
       await updateDoc(userRef, { averageRating });
+
+      // Send a notification to the rated user
+      const notificationMessage = `המעסיק ${user.displayName || 'לא ידוע'} דירג אותך על העבודה ${jobTitle} !`;
+      await addDoc(collection(db, 'notifications'), {
+        userId: targetUserId,
+        message: notificationMessage,
+        status: 'new',
+        isGlobal: false,
+        isHistory: false,
+        type: 'RatingReceived',
+        timestamp: serverTimestamp(),
+      });
 
       alert('Rating submitted successfully!');
       setRating(0);

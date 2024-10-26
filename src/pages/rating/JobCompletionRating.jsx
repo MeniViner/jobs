@@ -9,7 +9,7 @@ import {
 import { db } from '../../services/firebase';
 import { RatingInput } from './RatingSystem';
 
-const JobCompletionRating = ({ open, onClose, jobId, onComplete }) => {
+const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => {
   const [workers, setWorkers] = useState([]);
   const [ratings, setRatings] = useState({});
   const [noShows, setNoShows] = useState([]);
@@ -93,7 +93,37 @@ const JobCompletionRating = ({ open, onClose, jobId, onComplete }) => {
   const updateWorkers = async (transaction) => {
     for (const worker of workers) {
       if (ratings[worker.id]) await saveRating(worker);
-      if (noShows.includes(worker.applicantId)) await incrementNoShowCount(transaction, worker);
+      if (noShows.includes(worker.applicantId)) {
+        await incrementNoShowCount(transaction, worker);
+      } else {
+        await incrementJobCount(transaction, worker); // Track worked jobs
+      }
+    }
+  };
+
+  const incrementJobCount = async (transaction, worker) => {
+    const userRef = doc(db, 'users', worker.applicantId);
+    const userDoc = await transaction.get(userRef);
+  
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      const newJobsWorkedCount = (userData.jobsWorkedCount || 0) + 1;
+      const updatedWorkedJobs = [...(userData.workedJobs || []), jobId];
+  
+      transaction.update(userRef, {
+        jobsWorkedCount: newJobsWorkedCount,
+        workedJobs: updatedWorkedJobs,
+      });
+    }
+  };
+  
+  const incrementNoShowCount = async (transaction, worker) => {
+    const userRef = doc(db, 'users', worker.applicantId);
+    const userDoc = await transaction.get(userRef);
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      const newNoShowCount = (userData.noShows || 0) + 1;
+      transaction.update(userRef, { noShows: newNoShowCount });
     }
   };
 
@@ -105,16 +135,6 @@ const JobCompletionRating = ({ open, onClose, jobId, onComplete }) => {
       review: ratings[worker.id].review,
       timestamp: new Date(),
     });
-  };
-
-  const incrementNoShowCount = async (transaction, worker) => {
-    const userRef = doc(db, 'users', worker.applicantId);
-    const userDoc = await transaction.get(userRef);
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      const newNoShowCount = (userData.noShows || 0) + 1;
-      transaction.update(userRef, { noShows: newNoShowCount });
-    }
   };
 
   const updateJobCompletion = async (transaction) => {
@@ -164,6 +184,7 @@ const JobCompletionRating = ({ open, onClose, jobId, onComplete }) => {
 
                       <RatingInput
                         jobId={jobId}  // Ensure jobId is passed here
+                        jobTitle={jobTitle}
                         targetUserId={worker.applicantId}  // Ensure targetUserId is passed here
                         isEmployerRating={true}
                         onRatingChange={(rating, review) => handleRatingChange(worker.id, rating, review)}

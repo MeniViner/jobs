@@ -346,107 +346,107 @@ export default function JobListPage() {
 
   return (
     <div style={styles.container}>
-        <div style={styles.content}>
-            <SearchFilters
-            filter={filter}
-            setFilter={setFilter}
-            locationFilter={locationFilter}
-            setLocationFilter={setLocationFilter}
-            categoryFilter={categoryFilter}
-            setCategoryFilter={setCategoryFilter}
-            salaryFilter={salaryFilter}
-            setSalaryFilter={setSalaryFilter}
-            experienceFilter={experienceFilter}
-            setExperienceFilter={setExperienceFilter}
-            jobTypeFilter={jobTypeFilter}
-            setJobTypeFilter={setJobTypeFilter}
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-            handleFilterChange={handleFilterChange}
-            activeFilters={activeFilters}
-            setActiveFilters={setActiveFilters}
-            removeFilter={removeFilter}
-            filteredJobsCount={filteredJobs.length}
-            />
+      <div style={styles.content}>
+          <SearchFilters
+          filter={filter}
+          setFilter={setFilter}
+          locationFilter={locationFilter}
+          setLocationFilter={setLocationFilter}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          salaryFilter={salaryFilter}
+          setSalaryFilter={setSalaryFilter}
+          experienceFilter={experienceFilter}
+          setExperienceFilter={setExperienceFilter}
+          jobTypeFilter={jobTypeFilter}
+          setJobTypeFilter={setJobTypeFilter}
+          showFilters={showFilters}
+          setShowFilters={setShowFilters}
+          handleFilterChange={handleFilterChange}
+          activeFilters={activeFilters}
+          setActiveFilters={setActiveFilters}
+          removeFilter={removeFilter}
+          filteredJobsCount={filteredJobs.length}
+          />
 
-            {activeFilters.length > 0 && (
+          {activeFilters.length > 0 && (
             <div style={styles.activeFiltersContainer}>
-                {activeFilters.map((filter, index) => (
+              {activeFilters.map((filter, index) => (
                 <span
-                    key={index}
-                    style={{
-                    ...styles.activeFilter,
-                    marginRight: '0.5rem',
-                    flex: '0 0 auto',
-                    backgroundColor: 'lightblue',
-                    color: 'black',
-                    }}
+                  key={index}
+                  style={{
+                  ...styles.activeFilter,
+                  marginRight: '0.5rem',
+                  flex: '0 0 auto',
+                  backgroundColor: 'lightblue',
+                  color: 'black',
+                  }}
                 >
-                    {filter.type === 'category' && `קטגוריה: ${filter.value}`}
-                    {filter.type === 'salary' && `שכר: ₪${filter.value[0]} - ₪${filter.value[1]}`}
-                    {filter.type === 'location' && `מיקום: ${filter.value}`}
-                    {filter.type === 'experience' && `ניסיון: ${filter.value}`}
-                    {filter.type === 'jobType' && `סוג עבודה: ${filter.value}`}
-                    {filter.type === 'title' && `תפקיד: ${filter.value}`}
-                    <button
-                    onClick={() => removeFilter(filter.type)}
-                    style={styles.removeFilterButton}
-                    aria-label={`הסר סינון ${filter.type}`}
-                    >
-                    <X size={14} />
-                    </button>
+                  {filter.type === 'category' && `קטגוריה: ${filter.value}`}
+                  {filter.type === 'salary' && `שכר: ₪${filter.value[0]} - ₪${filter.value[1]}`}
+                  {filter.type === 'location' && `מיקום: ${filter.value}`}
+                  {filter.type === 'experience' && `ניסיון: ${filter.value}`}
+                  {filter.type === 'jobType' && `סוג עבודה: ${filter.value}`}
+                  {filter.type === 'title' && `תפקיד: ${filter.value}`}
+                  <button
+                  onClick={() => removeFilter(filter.type)}
+                  style={styles.removeFilterButton}
+                  aria-label={`הסר סינון ${filter.type}`}
+                  >
+                  <X size={14} />
+                  </button>
                 </span>
-                ))}
+              ))}
             </div>
-            )}
+          )}
 
-            {filteredJobs.length === 0 ? (
-            <div
-                style={{
-                textAlign: 'center',
-                padding: '2rem',
-                background: '#FFFFFF',
-                borderRadius: '20px',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                }}
-            >
-                <h2 style={{ fontSize: '1.5rem', color: '#102A43', marginBottom: '1rem' }}>לא נמצאו משרות מתאימות</h2>
-                <p style={{ color: '#486581' }}>נסה לשנות את הגדרות החיפוש שלך או לחפש מחדש מאוחר יותר.</p>
-            </div>
-            ) : (
-                <div style={styles.jobGrid}>
-                    {filteredJobs.map((job) => (
-                        <JobCard 
-                        key={job.id} 
-                        job={job} 
-                        expandedJob={expandedJob} 
-                        setExpandedJob={setExpandedJob} 
-                        savedJobs={savedJobs} 
-                        appliedJobs={appliedJobs} 
-                        acceptedJobs={acceptedJobs} 
-                        handleSaveJob={handleSaveJob} 
-                        handleApplyForJob={handleApplyForJob} 
-                        />
-                    ))}
-                </div>
-            )}
-            
-        </div>
+          {filteredJobs.length === 0 ? (
+          <div
+            style={{
+            textAlign: 'center',
+            padding: '2rem',
+            background: '#FFFFFF',
+            borderRadius: '20px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <h2 style={{ fontSize: '1.5rem', color: '#102A43', marginBottom: '1rem' }}>לא נמצאו משרות מתאימות</h2>
+            <p style={{ color: '#486581' }}>נסה לשנות את הגדרות החיפוש שלך או לחפש מחדש מאוחר יותר.</p>
+          </div>
+          ) : (
+              <div style={styles.jobGrid}>
+                  {filteredJobs.map((job) => (
+                      <JobCard 
+                      key={job.id} 
+                      job={job} 
+                      expandedJob={expandedJob} 
+                      setExpandedJob={setExpandedJob} 
+                      savedJobs={savedJobs} 
+                      appliedJobs={appliedJobs} 
+                      acceptedJobs={acceptedJobs} 
+                      handleSaveJob={handleSaveJob} 
+                      handleApplyForJob={handleApplyForJob} 
+                      />
+                  ))}
+              </div>
+          )}
+          
+      </div>
 
-        <Snackbar
-            open={snackbar.open}
-            autoHideDuration={6000}
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        severity={snackbar.severity}
+        sx={{ width: '100%' }}
         >
-            <Alert
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity={snackbar.severity}
-            sx={{ width: '100%' }}
-            >
-            {snackbar.message}
-            </Alert>
-        </Snackbar>
+        {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

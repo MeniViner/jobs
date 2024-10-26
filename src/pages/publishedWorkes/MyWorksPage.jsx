@@ -364,47 +364,33 @@
 //   );
 // }
 
+
+
+
+
 // MyWorksPage.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Container,
-  Typography,
-  Paper,
-  Tabs,
-  Tab,
-  Box,
-  CircularProgress,
-  Snackbar,
-  AppBar,
-  Toolbar,
-  IconButton,
+  Container, Typography, Paper, Box, CircularProgress, Snackbar, AppBar, Toolbar, IconButton
 } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
-import { Add as AddIcon, History as HistoryIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { 
+  History as HistoryIcon, Refresh as RefreshIcon, ArrowBack as ArrowBackIcon
+} from '@mui/icons-material';
 import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  doc,
-  getDoc,
-  getDocs,
-  deleteDoc,
-  updateDoc,
-  addDoc,
-  serverTimestamp,
-  collectionGroup,
+  collection, query, where, onSnapshot, doc, getDoc, getDocs, deleteDoc, updateDoc, addDoc, serverTimestamp, collectionGroup,
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import MyJobsList from './MyJobsList';
-import DeleteJobDialog from './DeleteJobDialog.jsx';
+import DeleteJobDialog from './DeleteJobDialog';
 import EditJobDialog from './EditJobDialog';
-import ChatDialog from './ChatDialog.jsx';
+import ChatDialog from './ChatDialog';
 import JobCompletionRating from '../rating/JobCompletionRating';
+
 
 export default function MyWorksPage() {
   const { user, loading: authLoading } = useAuth();
@@ -667,7 +653,8 @@ export default function MyWorksPage() {
               aria-label="היסטוריה"
               sx={{ mr: 1 }}
             >
-              <HistoryIcon />
+              
+              {activeTab === 0 ? <HistoryIcon /> : <ArrowBackIcon/>}
             </IconButton>
             <IconButton color="primary" onClick={() => fetchEmployerJobs()} aria-label="רענן">
               <RefreshIcon />

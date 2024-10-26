@@ -354,18 +354,69 @@ export default function MyWorksPage() {
         });
       }
 
-      await addDoc(collection(db, 'notifications'), {
-        userId: applicantId,
-        jobId: jobId,
-        jobTitle: jobData?.title || 'Unknown Job',
-        type: currentHiredStatus ? 'hired_status_revoked' : 'hired_status_updated',
-        message: currentHiredStatus
-          ? `הסטטוס שלך למשרה: ${jobData?.title} בוטל.`
-          : `התקבלת למשרה: ${jobData?.title}!`,
-        timestamp: serverTimestamp(),
-        isHistory: false,
-      });
-
+      const handleToggleHired = async (jobId, applicantId, currentHiredStatus) => {
+        try {
+          const applicantRef = doc(db, 'jobs', jobId, 'applicants', applicantId);
+          const jobRef = doc(db, 'jobs', jobId);
+          const userAcceptedJobsRef = doc(db, 'users', applicantId, 'acceptedJobs', jobId);
+          const userApplicationsRef = doc(db, 'users', applicantId, 'applications', jobId);
+    
+          const applicantSnapshot = await getDoc(applicantRef);
+          if (!applicantSnapshot.exists()) {
+            alert('המסמך לא נמצא, לא ניתן לעדכן סטטוס מועמד.');
+            console.error('Applicant document does not exist.');
+            return;
+          }
+    
+          const jobSnapshot = await getDoc(jobRef);
+          const jobData = jobSnapshot.data();
+    
+          if (!currentHiredStatus) {
+            await updateDoc(applicantRef, {
+              hired: true,
+            });
+            await setDoc(userAcceptedJobsRef, {
+              jobId: jobId,
+              timestamp: serverTimestamp(),
+            });
+            await deleteDoc(userApplicationsRef);
+          } else {
+            await updateDoc(applicantRef, {
+              hired: false,
+            });
+            await deleteDoc(userAcceptedJobsRef);
+            await setDoc(userApplicationsRef, {
+              jobId: jobId,
+              timestamp: serverTimestamp(),
+              status: 'applied',
+            });
+          }
+    
+          await addDoc(collection(db, 'notifications'), {
+            userId: applicantId,
+            jobId: jobId,
+            jobTitle: jobData?.title || 'Unknown Job',
+            type: currentHiredStatus ? 'hired_status_revoked' : 'hired_status_updated',
+            message: currentHiredStatus
+              ? `הסטטוס שלך למשרה: ${jobData?.title} בוטל.`
+              : `התקבלת למשרה: ${jobData?.title}!`,
+            timestamp: serverTimestamp(),
+            isHistory: false,
+          });
+    
+          fetchEmployerJobs();
+    
+          alert(
+            currentHiredStatus
+              ? 'הסטטוס שונה - המועמד כבר לא התקבל למשרה.'
+              : 'המועמד התקבל למשרה בהצלחה!'
+          );
+        } catch (error) {
+          console.error('Error updating hired status:', error);
+          alert('אירעה שגיאה בעדכון הסטטוס.');
+        }
+      };
+    
       fetchEmployerJobs();
 
       alert(

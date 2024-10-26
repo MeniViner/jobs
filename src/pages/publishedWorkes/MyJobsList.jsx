@@ -83,8 +83,12 @@ export default function MyJobsList({
   const handleToggleHired = async (jobId, applicantId, currentHiredStatus) => {
     try {
       const applicantRef = doc(db, 'jobs', jobId, 'applicants', applicantId);
+      const jobRef = doc(db, 'jobs', jobId);
       const userAcceptedJobsRef = doc(db, 'users', applicantId, 'acceptedJobs', jobId);
       const userApplicationsRef = doc(db, 'users', applicantId, 'applications', jobId);
+
+      const jobSnapshot = await getDoc(jobRef);
+      const jobData = jobSnapshot.data();
   
       // Update the hired status in Firebase
       if (!currentHiredStatus) {
@@ -113,6 +117,19 @@ export default function MyJobsList({
         );
   
         return updatedApplicants;
+      });
+
+      // Add a notification to Firebase
+      await addDoc(collection(db, 'notifications'), {
+        userId: applicantId,
+        jobId: jobId,
+        jobTitle: jobData?.title || 'Unknown Job',
+        type: currentHiredStatus ? 'hired_status_revoked' : 'hired_status_updated',
+        message: currentHiredStatus
+          ? `הסטטוס שלך למשרה: ${jobData?.title} בוטל.`
+          : `התקבלת למשרה: ${jobData?.title}!`,
+        timestamp: serverTimestamp(),
+        isHistory: false,
       });
   
       showSnackbar(

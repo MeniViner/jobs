@@ -72,22 +72,35 @@ export default function SearchFilters({
           />
         </Box>
         <Box
-          sx={{
-            bgcolor: 'background.paper',
-            display: 'flex',
-            alignItems: 'center',
-            p: 2,
-            width: '13%',
-            borderRadius: '100px',
-            border: '1px solid #e0e0e0',
-            boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-            cursor: 'pointer',
-            justifyContent: 'center',
-          }}
-          onClick={() => setShowFilters(true)}
-        >
-          <SlidersHorizontal/>
-        </Box>
+  sx={{
+    bgcolor: 'background.paper',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    p: 1,
+    width: '60px', // רוחב ה-Box
+    borderRadius: '100px',
+    border: '1px solid #e0e0e0',
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    cursor: 'pointer',
+  }}
+  onClick={() => setShowFilters(true)}
+>
+  <Box 
+    sx={{ 
+      width: '17px',  // גודל האייקון 
+      height: '17px', // גובה האייקון 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center'
+    }}
+  >
+    <SlidersHorizontal 
+      style={{ fontSize: '20px', color: '#000' }} // גודל האייקון 
+    />
+  </Box>
+</Box>
+
       </Box>
 
       <AnimatePresence>

@@ -1,32 +1,57 @@
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { MapPin, Users, Clock, ChevronRight } from 'lucide-react';
 import ProgressBar from './ProgressBar';
+import JobDetails from './JobDetails';
 
-export default function JobList({ jobs = [], jobApplicants = {} }) {
-  const navigate = useNavigate();
 
-  // פונקציה לספירת מספר העובדים שהועסקו
+export default function JobList({
+  jobs = [],
+  jobApplicants = {},
+  onDeleteJob,
+  onEditJob,
+  onOpenChat,
+  onMarkJobCompleted,
+  setJobApplicants,
+  setJobs,
+}) {
+  const [selectedJob, setSelectedJob] = useState(null); // עוקב אחרי העבודה שנבחרה
+
+  if (selectedJob) {
+    return (
+      <JobDetails
+        job={selectedJob}
+        jobs={jobs}
+        setJobs={setJobs}
+        onDeleteJob={onDeleteJob}
+        onEditJob={onEditJob}
+        onOpenChat={onOpenChat}
+        onMarkJobCompleted={onMarkJobCompleted}
+        setJobApplicants={setJobApplicants}
+        goBack={() => setSelectedJob(null)} // חזרה לרשימת העבודות
+      />
+    );
+  }
+
   const getHiredCount = (jobId) => {
     const applicantsForJob = jobApplicants[jobId] || [];
     return applicantsForJob.filter((applicant) => applicant.hired).length;
   };
 
   const calculateProgress = (hired, total) => {
-    if (total === 0) return 0; // מניעת חלוקה באפס
+    if (total === 0) return 0;
     return Math.round((hired / total) * 100);
   };
 
   return (
-    <div className="w-full max-w-md mx-auto  min-h-screen  space-y-4">
+    <div className="w-full max-w-md mx-auto min-h-screen space-y-4">
       {jobs.map((job) => {
-        const hiredCount = getHiredCount(job.id); // מספר עובדים שהועסקו
-        const totalWorkers = job.workersNeeded || 1; // סך העובדים הנדרשים
+        const hiredCount = getHiredCount(job.id);
+        const totalWorkers = job.workersNeeded || 1;
 
         return (
           <div
             key={job.id}
             className="bg-white rounded-xl shadow-md overflow-hidden"
-            onClick={() => navigate(`/job/${job.id}`)}
           >
             <div className="p-4">
               <div className="flex justify-between items-start mb-3">
@@ -68,8 +93,10 @@ export default function JobList({ jobs = [], jobApplicants = {} }) {
                 </div>
               </div>
             </div>
-
-            <div className="bg-gray-50 px-4 py-3 flex justify-between items-center border-t border-gray-200">
+            <div 
+              className="bg-gray-50 px-4 py-3 flex justify-between items-center border-t border-gray-200"
+              onClick={() => setSelectedJob(job)} // בחירת עבודה להצגה בפרטי עבודה
+            >
               <span className="text-sm font-medium text-gray-600">פרטים נוספים</span>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>

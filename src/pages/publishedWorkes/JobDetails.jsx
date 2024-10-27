@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import MySnackbar from 'styles/snackers/MySnackbar';
 import { setSnackbar, showSnackbar } from '../../styles/snackers/SnackbarUtils';
-import { Rating } from '@mui/material'; 
+import { Avatar, Rating } from '@mui/material'; 
 
 // פונקציה לחישוב התקדמות
 const calculateProgress = (hired, total) => {
@@ -38,6 +38,9 @@ export default function JobDetails({
   const [applicants, setApplicants] = useState([]);
   const [expandedWorker, setExpandedWorker] = useState(-1);
   const [currentJob, setCurrentJob] = useState(job);
+  const [sortOrderDate, setSortOrderDate] = useState('asc'); // מצב מיון
+  const [sortOrderRating, setSortOrderRating] = useState('desc'); // מצב מיון
+  const [activeButton, setActiveButton] = useState('rating'); // שמירת כפתור פעיל
 
   const hiredCount = applicants.filter((applicant) => applicant.hired).length;
   const totalWorkers = job.workersNeeded || 1;
@@ -208,6 +211,32 @@ export default function JobDetails({
     }
   };
 
+  const sortByDate = () => {
+    const sortedApplicants = [...applicants].sort((a, b) => {
+      const dateA = a.timestamp?.toDate() || new Date(0);
+      const dateB = b.timestamp?.toDate() || new Date(0);
+  
+      return sortOrderDate === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+  
+    setApplicants(sortedApplicants);
+    setSortOrderDate(sortOrderDate === 'asc' ? 'desc' : 'asc'); // החלפת הסדר
+    setActiveButton('date'); 
+  };
+
+  const sortByRating = () => {
+    const sortedApplicants = [...applicants].sort((a, b) => {
+      const weightA = (a.rating || 0) * 0.8 + (a.userData.jobsWorkedCount || 0) * 0.2;
+      const weightB = (b.rating || 0) * 0.8 + (b.userData.jobsWorkedCount || 0) * 0.2;
+  
+      return sortOrderRating === 'asc' ? weightA - weightB : weightB - weightA;
+    });
+  
+    setApplicants(sortedApplicants);
+    setSortOrderRating(sortOrderRating === 'asc' ? 'desc' : 'asc'); // החלפת הסדר
+    setActiveButton('rating'); 
+  };
+
   return (
     <div className="w-full sm:max-w-md sm:mx-auto bg-white min-h-screen flex flex-col" dir="rtl">
       <header className="px-4 py-3 bg-[#4285f4] text-white flex items-center justify-between">
@@ -279,18 +308,23 @@ export default function JobDetails({
           </button>
         </div>
 
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium">רשימת מועמדים</h3>
-          <div className="flex gap-2">
-            <button className="border border-gray-300 px-3 py-1.5 rounded-lg flex items-center text-sm">
-              <ArrowUpDown className="w-4 h-4 ml-1" />
-              מיין לפי דירוג
-            </button>
-            <button className="border border-gray-300 px-3 py-1.5 rounded-lg flex items-center text-sm">
-              <Calendar className="w-4 h-4 ml-1" />
-              מיין לפי תאריך
-            </button>
-          </div>
+        <div className="flex gap-2 mb-5">
+          <button
+            className={`border px-3 py-1.5 rounded-lg flex items-center text-sm 
+              ${activeButton === 'rating' ? 'border-blue-500' : 'border-gray-300'}`}            
+            onClick={sortByRating}
+          >
+            <ArrowUpDown className="w-4 h-4 ml-1" />
+            מיין לפי דירוג
+          </button>
+          <button
+            className={`border px-3 py-1.5 rounded-lg flex items-center text-sm 
+              ${activeButton === 'date' ? 'border-blue-500' : 'border-gray-300'}`}
+            onClick={sortByDate}
+          >
+            <Calendar className="w-4 h-4 ml-1" />
+            מיין לפי תאריך
+          </button>
         </div>
 
         <div className="space-y-4">
@@ -300,13 +334,11 @@ export default function JobDetails({
                 className="flex items-center p-3 cursor-pointer"
                 onClick={() => setExpandedWorker(expandedWorker === index ? -1 : index)}
               >
-                <div className="w-12 h-12 rounded-full border-2 border-[#4285f4] overflow-hidden">
-                  <img
-                    src={worker.userData?.photoURL || '/api/placeholder/100/100'}
-                    alt={worker.userData?.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <Avatar
+                  src={worker.userData?.profileURL || worker.userData?.photoURL}
+                  alt={worker.userData?.name}
+                  className="w-full h-full object-cover"
+                />
                 <div className="mr-3 flex-grow">
                   <h4 className="font-medium">{worker.userData?.name}</h4>
                   <div className="flex items-center mt-1">

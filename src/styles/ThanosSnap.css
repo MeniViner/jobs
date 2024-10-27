@@ -1,0 +1,48 @@
+/* ThanosSnap.css */
+
+/* Define keyframes to break the message into pieces */
+@keyframes disintegrate {
+  0% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) rotate(0deg);
+    filter: blur(0px);
+  }
+  30% {
+    opacity: 0.8;
+    transform: translateX(-5px) translateY(-10px) rotate(10deg);
+    filter: blur(1px);
+  }
+  60% {
+    opacity: 0.4;
+    transform: translateX(30px) translateY(-20px) rotate(-15deg);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100px) translateY(-50px) rotate(-45deg);
+    filter: blur(8px);
+  }
+}
+
+@keyframes pixelate {
+  0% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  }
+  30% {
+    clip-path: polygon(10% 10%, 90% 0%, 100% 90%, 0% 100%);
+  }
+  60% {
+    clip-path: polygon(30% 30%, 70% 10%, 90% 70%, 10% 90%);
+  }
+  100% {
+    clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%);
+  }
+}
+
+/* Apply animation to the message element */
+.thanos-disappear {
+  animation: disintegrate 1.2s ease-out forwards, pixelate 1.2s ease-out forwards;
+  transform-origin: center;
+  position: relative;
+  overflow: hidden;
+}

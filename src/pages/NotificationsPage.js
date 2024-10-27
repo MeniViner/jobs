@@ -11,7 +11,7 @@ import {
 import {
   Delete as DeleteIcon, History as HistoryIcon, Archive as ArchiveIcon, ArrowBack as ArrowBackIcon,
   Campaign as BroadcastIcon, Notifications as SystemIcon, Info as InfoIcon, Settings as SettingsIcon,
-  SwipeLeft as SwipeLeftIcon, SwipeRight as SwipeRightIcon,  
+  SwipeLeft as SwipeLeftIcon, SwipeRight as SwipeRightIcon, Close as CloseIcon,
 } from '@mui/icons-material';
 import { SwipeableList, SwipeableListItem } from '@sandstreamdev/react-swipeable-list';
 import '@sandstreamdev/react-swipeable-list/dist/styles.css';
@@ -28,6 +28,14 @@ export default function NotificationsPage() {
   const [showHistory, setShowHistory] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [isBannerVisible, setBannerVisible] = useState(true);
+
+  useEffect(() => {
+    const bannerClosed = localStorage.getItem('notificationBannerClosed');
+    if (bannerClosed === 'true') {
+      setBannerVisible(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (authLoading) return;
@@ -150,6 +158,12 @@ export default function NotificationsPage() {
       console.log('Error deleting history\n', error);
     }
   };
+
+  const handleCloseBanner = () => {
+    localStorage.setItem('notificationBannerClosed', 'true');
+    setBannerVisible(false);
+  };
+
 
   const renderNotificationList = (notificationList, isHistory = false) => {
     const formatDate = (timestamp) => {
@@ -351,22 +365,25 @@ export default function NotificationsPage() {
             </Box>
           ) : (
             <>
-              <Paper elevation={2} sx={{ p: 2, mb: 2, borderRadius: 2, backgroundColor: 'info.light' }}>
-                <Box display="flex" alignItems="center" justifyContent="center">
-                  <SwipeLeftIcon sx={{ mr: 1, fontSize: '1rem' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
-                    החלק שמאלה למחיקה
-                  </Typography>
-                  {!showHistory && (
-                    <>
+              {isBannerVisible && (
+                <Paper elevation={2} sx={{ p: 2, mb: 2, borderRadius: 2, backgroundColor: 'info.light' }}>
+                  <Box display="flex" alignItems="center">
+                    <Box display="flex" alignItems="center" flexGrow={1}>
+                      <SwipeLeftIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                      <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
+                        החלק שמאלה למחיקה
+                      </Typography>
                       <SwipeRightIcon sx={{ mx: 1, fontSize: '1rem' }} />
                       <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
                         וימינה לשמירה בארכיון
                       </Typography>
-                    </>
-                  )}
-                </Box>
-              </Paper>
+                    </Box>
+                    <IconButton onClick={handleCloseBanner}>
+                      <CloseIcon />
+                    </IconButton>
+                  </Box>
+                </Paper>
+              )}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 {showHistory ? (
                   <Tooltip title="מחק את כל ההיסטוריה">

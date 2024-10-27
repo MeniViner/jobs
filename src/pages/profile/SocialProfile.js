@@ -8,9 +8,11 @@ import {
   Verified, Language, LocationOn, Work, School, Email, Phone, Business, DirectionsCar, NewReleases, Star
 } from '@mui/icons-material';
 import {
-  getFirestore, doc, getDoc, collection, query, where, getDocs
+  getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs
 } from 'firebase/firestore';
 import { ContactIconsDisplay } from '../../components/code parts/ContactMethodsManager';
+import { db } from '../../services/firebase'
+
 
 // הרכיב הראשי של דף הפרופיל
 export default function UserProfilePage() {
@@ -122,13 +124,29 @@ export default function UserProfilePage() {
   );
 }
 
-// המשך הקוד של ProfileHeader, EmployeeProfile, EmployerProfile וכו' כמו בקוד המקורי שלך
+const updateAverageRating = async (db, userId, averageRating) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      averageRating: averageRating,
+    });
+    console.log('Average rating updated successfully!');
+  } catch (error) {
+    console.error('Error updating average rating:', error);
+  }
+};
 
 
 function ProfileHeader({ profileData, isEmployer, reviews, jobsWorkedCount }) {
   const averageRating = reviews.length > 0
     ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
     : 0;
+    
+  useEffect(() => {
+    if (averageRating !== null) {
+      updateAverageRating(db, profileData.id, averageRating);
+    }
+  }, [averageRating, profileData.id, db]);
 
   let workerStatusIcon;
   if (!isEmployer) {

@@ -42,43 +42,91 @@ export default function MyApplicationsPage() {
     fetchApplications()
   }, [authLoading, user, navigate])
 
-  const fetchApplications = async () => {
-    setLoading(true)
-    try {
-      const jobsCollection = collection(db, 'jobs')
-      const jobsSnapshot = await getDocs(jobsCollection)
-      const jobsData = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  // const fetchApplications = async () => {
+  //   setLoading(true)
+  //   try {
+  //     const jobsCollection = collection(db, 'jobs')
+  //     const jobsSnapshot = await getDocs(jobsCollection)
+  //     const jobsData = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
+  //     const applicationsPromises = jobsData.map(async (job) => {
+  //       const applicantRef = doc(db, 'jobs', job.id, 'applicants', user.uid)
+  //       const applicantSnap = await getDoc(applicantRef)
+  //       if (applicantSnap.exists()) {
+  //         const applicationData = applicantSnap.data()
+  //         const applicantsCollection = collection(db, 'jobs', job.id, 'applicants')
+  //         const applicantsSnapshot = await getDocs(applicantsCollection)
+  //         return {
+  //           jobId: job.id,
+  //           ...job,
+  //           appliedAt: applicationData.timestamp,
+  //           status: applicationData.hired ? 'התקבלת' : 'ממתין',
+  //           applicationCount: applicantsSnapshot.size,
+  //         }
+  //       }
+  //       return null
+  //     })
+
+  //     const applicationsData = await Promise.all(applicationsPromises)
+  //     const filteredApplications = applicationsData.filter((app) => app !== null)
+
+  //     setApplications(filteredApplications.filter((app) => app.status !== 'התקבלת'))
+  //     setAcceptedApplications(filteredApplications.filter((app) => app.status === 'התקבלת'))
+  //   } catch (error) {
+  //     console.error('Error fetching applications:', error)
+  //     setSnackbar({ open: true, message: 'שגיאה בטעינת המועמדויות.', severity: 'error' })
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
+
+  const fetchApplications = async () => {
+    setLoading(true);
+    try {
+      const jobsCollection = collection(db, 'jobs');
+      const jobsSnapshot = await getDocs(jobsCollection);
+      const jobsData = jobsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  
       const applicationsPromises = jobsData.map(async (job) => {
-        const applicantRef = doc(db, 'jobs', job.id, 'applicants', user.uid)
-        const applicantSnap = await getDoc(applicantRef)
+        const applicantRef = doc(db, 'jobs', job.id, 'applicants', user.uid);
+        const applicantSnap = await getDoc(applicantRef);
+  
         if (applicantSnap.exists()) {
-          const applicationData = applicantSnap.data()
-          const applicantsCollection = collection(db, 'jobs', job.id, 'applicants')
-          const applicantsSnapshot = await getDocs(applicantsCollection)
+          const applicationData = applicantSnap.data();
+          const jobCompleted = job.isCompleted; // בדיקת אם העבודה הושלמה
+  
+          const status = jobCompleted
+            ? (applicationData.hired ? 'התקבלת' : 'לא התקבל')
+            : 'ממתין';
+  
+          const applicantsCollection = collection(db, 'jobs', job.id, 'applicants');
+          const applicantsSnapshot = await getDocs(applicantsCollection);
+  
           return {
             jobId: job.id,
             ...job,
             appliedAt: applicationData.timestamp,
-            status: applicationData.hired ? 'התקבלת' : 'ממתין',
+            status,
             applicationCount: applicantsSnapshot.size,
-          }
+          };
         }
-        return null
-      })
-
-      const applicationsData = await Promise.all(applicationsPromises)
-      const filteredApplications = applicationsData.filter((app) => app !== null)
-
-      setApplications(filteredApplications.filter((app) => app.status !== 'התקבלת'))
-      setAcceptedApplications(filteredApplications.filter((app) => app.status === 'התקבלת'))
+        return null;
+      });
+  
+      const applicationsData = await Promise.all(applicationsPromises);
+      const filteredApplications = applicationsData.filter((app) => app !== null);
+  
+      // עדכון הרשימות בהתאם לסטטוס
+      setApplications(filteredApplications.filter((app) => app.status === 'ממתין'));
+      setAcceptedApplications(filteredApplications.filter((app) => app.status === 'התקבלת'));
     } catch (error) {
-      console.error('Error fetching applications:', error)
-      setSnackbar({ open: true, message: 'שגיאה בטעינת המועמדויות.', severity: 'error' })
+      console.error('Error fetching applications:', error);
+      setSnackbar({ open: true, message: 'שגיאה בטעינת המועמדויות.', severity: 'error' });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+  
 
   const handleDeleteApplication = async (jobId) => {
     setApplicationToDelete({ jobId })

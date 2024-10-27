@@ -1,37 +1,22 @@
-import React, { useState } from 'react';
-import { MapPin, Users, Clock, ChevronRight } from 'lucide-react';
-import ProgressBar from './ProgressBar';
-import JobDetails from './JobDetails';
+// src/pages/publishedWorkes/JobList.jsx
 
+import React from 'react';
+import { MapPin, Users, Clock, ChevronRight } from 'lucide-react';
+import ProgressBar from './ProgressBar'; // ודא שהנתיב נכון
 
 export default function JobList({
   jobs = [],
   jobApplicants = {},
+  isHistoryView,
   onDeleteJob,
   onEditJob,
   onOpenChat,
   onMarkJobCompleted,
-  setJobApplicants,
+  fetchEmployerJobs,
   setJobs,
+  setJobApplicants,
+  onSelectJob // קבלת הפונקציה
 }) {
-  const [selectedJob, setSelectedJob] = useState(null); // עוקב אחרי העבודה שנבחרה
-
-  if (selectedJob) {
-    return (
-      <JobDetails
-        job={selectedJob}
-        jobs={jobs}
-        setJobs={setJobs}
-        onDeleteJob={onDeleteJob}
-        onEditJob={onEditJob}
-        onOpenChat={onOpenChat}
-        onMarkJobCompleted={onMarkJobCompleted}
-        setJobApplicants={setJobApplicants}
-        goBack={() => setSelectedJob(null)} // חזרה לרשימת העבודות
-      />
-    );
-  }
-
   const getHiredCount = (jobId) => {
     const applicantsForJob = jobApplicants[jobId] || [];
     return applicantsForJob.filter((applicant) => applicant.hired).length;
@@ -43,7 +28,7 @@ export default function JobList({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto min-h-screen space-y-4">
+    <div className="w-full max-w-md mx-auto min-h-screen space-y-4 p-4 sm:p-6">
       {jobs.map((job) => {
         const hiredCount = getHiredCount(job.id);
         const totalWorkers = job.workersNeeded || 1;
@@ -51,7 +36,8 @@ export default function JobList({
         return (
           <div
             key={job.id}
-            className="bg-white rounded-xl shadow-md overflow-hidden"
+            className="bg-white rounded-xl shadow-md overflow-hidden cursor-pointer"
+            onClick={() => onSelectJob(job)} // קריאה לפונקציה כאשר לוחצים על העבודה כולה
           >
             <div className="p-4">
               <div className="flex justify-between items-start mb-3">
@@ -93,10 +79,7 @@ export default function JobList({
                 </div>
               </div>
             </div>
-            <div 
-              className="bg-gray-50 px-4 py-3 flex justify-between items-center border-t border-gray-200"
-              onClick={() => setSelectedJob(job)} // בחירת עבודה להצגה בפרטי עבודה
-            >
+            <div className="bg-gray-50 px-4 py-3 flex justify-between items-center border-t border-gray-200">
               <span className="text-sm font-medium text-gray-600">פרטים נוספים</span>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>

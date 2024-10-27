@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Container, Typography, Paper, Box, CircularProgress, Snackbar, AppBar, Toolbar, IconButton
+  Container, Typography, Paper, Box, CircularProgress, Snackbar, AppBar, Toolbar, IconButton, useMediaQuery
 } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 import { 
@@ -18,7 +18,7 @@ import DeleteJobDialog from './DeleteJobDialog';
 import EditJobDialog from './EditJobDialog';
 import ChatDialog from './ChatDialog';
 import JobCompletionRating from '../rating/JobCompletionRating';
-
+import JobDetails from './JobDetails'; // ודא שהייבוא נכון
 
 export default function MyWorksPage() {
   const { user, loading: authLoading } = useAuth();
@@ -37,47 +37,75 @@ export default function MyWorksPage() {
   const auth = getAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  // מצב למעקב אחרי עבודה שנבחרה
+  const [selectedJob, setSelectedJob] = useState(null);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-  useEffect(() => {
-    if (authLoading || !user) return;
+  // שימוש ב-useMediaQuery לזיהוי מסך קטן (מכשיר נייד)
+  const isMobile = useMediaQuery('(max-width:600px)');
 
+  // הגדרת הפונקציה fetchEmployerJobs
+  const fetchEmployerJobs = async () => {
+    if (!auth.currentUser) return;
     setLoading(true); // התחלת טעינה
 
-    const unsubscribe = onSnapshot(
-      query(collection(db, 'jobs'), where('employerId', '==', auth.currentUser.uid)),
-      async (snapshot) => {
-        const jobsList = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+    try {
+      const jobsQuery = query(
+        collection(db, 'jobs'),
+        where('employerId', '==', auth.currentUser.uid)
+      );
+      const jobsSnapshot = await getDocs(jobsQuery);
 
-        try {
-          // שליפת כל המועמדים לעבודות במקביל
-          const applicantsData = await fetchApplicantsForJobs(jobsList);
-          setJobs(jobsList);
-          setJobApplicants(applicantsData);
-        } catch (error) {
-          console.error('Error fetching applicants:', error);
-          setError('אירעה שגיאה בטעינת הנתונים. אנא נסה שוב.');
-        } finally {
-          setLoading(false); // סיום טעינה
-        }
-      },
-      (error) => {
-        console.error('Error fetching jobs:', error);
-        setError('אירעה שגיאה בטעינת הנתונים. אנא נסה שוב.');
-        setLoading(false); // סיום טעינה גם במקרה של שגיאה
+      const jobsList = jobsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // אם לא נמצאו עבודות, עצור את הטעינה והגדר רשימה ריקה
+      if (jobsList.length === 0) {
+        setJobs([]);
+        setLoading(false);
+        return;
       }
-    );
 
-    return () => unsubscribe(); // ניקוי מאזין כאשר הרכיב מתנתק
-  }, [authLoading, user]);
+      const jobIds = jobsList.map((job) => job.id);
 
-  // פונקציה עזר לשליפת כל המועמדים לעבודות
+      // שליפת המועמדים במנות עבור כל העבודות (Firestore 'in' queries תומך עד 10 ערכים)
+      const applicantsData = {};
+
+      const chunkSize = 10;
+      for (let i = 0; i < jobIds.length; i += chunkSize) {
+        const chunk = jobIds.slice(i, i + chunkSize);
+        const applicantsQuery = query(
+          collectionGroup(db, 'applicants'),
+          where('jobId', 'in', chunk)
+        );
+        const applicantsSnapshot = await getDocs(applicantsQuery);
+
+        applicantsSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          if (!applicantsData[data.jobId]) {
+            applicantsData[data.jobId] = [];
+          }
+          applicantsData[data.jobId].push(data);
+        });
+      }
+
+      setJobs(jobsList);
+      setJobApplicants(applicantsData);
+    } catch (error) {
+      console.error('Error fetching jobs or applicants:', error);
+      setError('אירעה שגיאה בטעינת הנתונים. אנא נסה שוב.');
+    } finally {
+      setLoading(false); // סיום טעינה
+    }
+  };
+
+  // פונקציה לעזרה בשליפת כל המועמדים לעבודות
   const fetchApplicantsForJobs = async (jobsList) => {
     const applicantsData = {};
 
@@ -107,56 +135,41 @@ export default function MyWorksPage() {
     return applicantsData;
   };
 
-  const fetchEmployerJobs = async () => {
-    if (!auth.currentUser) return;
+  useEffect(() => {
+    if (authLoading || !user) return;
+
     setLoading(true); // התחלת טעינה
 
-    try {
-      const jobsQuery = query(
-        collection(db, 'jobs'),
-        where('employerId', '==', auth.currentUser.uid)
-      );
-      const jobsSnapshot = await getDocs(jobsQuery);
+    const unsubscribe = onSnapshot(
+      query(collection(db, 'jobs'), where('employerId', '==', auth.currentUser.uid)),
+      async (snapshot) => {
+        const jobsList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      const jobsList = jobsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      // אם לא נמצאו עבודות, עצור את הטעינה והחזר מוקדם
-      if (jobsList.length === 0) {
-        setJobs([]); // הגדרת עבודות ריקות כדי למנוע שגיאות
-        setLoading(false);
-        return;
+        try {
+          const applicantsData = await fetchApplicantsForJobs(jobsList);
+          setJobs(jobsList);
+          setJobApplicants(applicantsData);
+        } catch (error) {
+          console.error('Error fetching applicants:', error);
+          setError('אירעה שגיאה בטעינת הנתונים. אנא נסה שוב.');
+        } finally {
+          setLoading(false); // סיום טעינה
+        }
+      },
+      (error) => {
+        console.error('Error fetching jobs:', error);
+        setError('אירעה שגיאה בטעינת הנתונים. אנא נסה שוב.');
+        setLoading(false); // סיום טעינה גם במקרה של שגיאה
       }
+    );
 
-      const jobIds = jobsList.map((job) => job.id);
+    return () => unsubscribe(); // ניקוי מאזין כאשר הרכיב מתנתק
+  }, [authLoading, user]);
 
-      // שליפת המועמדים במנות עבור כל העבודות
-      const applicantsQuery = query(
-        collectionGroup(db, 'applicants'),
-        where('jobId', 'in', jobIds)
-      );
-      const applicantsSnapshot = await getDocs(applicantsQuery);
-
-      const applicantsData = applicantsSnapshot.docs.reduce((acc, doc) => {
-        const data = doc.data();
-        if (!acc[data.jobId]) acc[data.jobId] = [];
-        acc[data.jobId].push(data);
-        return acc;
-      }, {});
-
-      setJobs(jobsList);
-      setJobApplicants(applicantsData);
-    } catch (error) {
-      console.error('Error fetching jobs or applicants:', error);
-      setError('אירעה שגיאה בטעינת הנתונים. אנא נסה שוב.');
-    } finally {
-      // עצירת הטעינה בכל מקרה
-      setLoading(false);
-    }
-  };
-
+  // פונקציה לטיפול במחיקת עבודה
   const handleDeleteJob = async () => {
     if (!jobToDelete) return;
 
@@ -180,6 +193,7 @@ export default function MyWorksPage() {
     }
   };
 
+  // פונקציה לטיפול בשמירת עבודה נערכה
   const handleSaveEditedJob = async (editedJob) => {
     try {
       const jobRef = doc(db, 'jobs', editedJob.id);
@@ -197,6 +211,7 @@ export default function MyWorksPage() {
     }
   };
 
+  // פונקציה לטיפול בשליחת הודעה
   const handleSendMessage = async (message) => {
     if (!selectedApplicant || !message.trim()) return;
 
@@ -242,6 +257,14 @@ export default function MyWorksPage() {
     }
   };
 
+  // פונקציה להצגת Snackbar
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+  // הגדרת עבודות פעילות ועבודות היסטוריות
   const activeJobs = useMemo(
     () => jobs.filter((job) => !job.isCompleted),
     [jobs]
@@ -252,44 +275,48 @@ export default function MyWorksPage() {
     [jobs]
   );
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
+  // פונקציה לטיפול בסגירת Snackbar
   const handleSnackbarClose = (event, reason) => {
     if (reason === 'clickaway') return;
     setSnackbarOpen(false);
   };
-  
-  const showSnackbar = (message, severity = 'success') => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setSnackbarOpen(true);
-  };
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <AppBar position="static" color="transparent" elevation={0}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6">
-            {activeTab === 0 ? 'עבודות פעילות' : 'היסטוריית עבודות'}
-          </Typography>
-          <Box>
-            <IconButton
-              color="primary"
-              onClick={() => setActiveTab(activeTab === 0 ? 1 : 0)}
-              aria-label="היסטוריה"
-              sx={{ mr: 1 }}
-            >
-              
-              {activeTab === 0 ? <HistoryIcon /> : <ArrowBackIcon/>}
-            </IconButton>
-            <IconButton color="primary" onClick={() => fetchEmployerJobs()} aria-label="רענן">
-              <RefreshIcon />
-            </IconButton>
-          </Box>
-        </Toolbar>
-      </AppBar>
+    <Container   maxWidth={false} // מבטל את הגבלת הרוחב
+  disableGutters // מבטל את ה-padding המובנה של ה-Container
+  sx={{ 
+    width: '100%', 
+    minHeight: '100vh', 
+    padding: 0, 
+    margin: 0 
+  }}>
+      {/* ה-AppBar יוצג רק אם אין עבודה שנבחרה או שהמסך אינו נייד */}
+      {(!selectedJob || !isMobile) && (
+        <AppBar position="static" color="transparent" elevation={0}>
+          <Toolbar sx={{ justifyContent: 'space-between' }}>
+            <Typography variant="h6">
+              {activeTab === 0 ? 'עבודות פעילות' : 'היסטוריית עבודות'}
+            </Typography>
+            <Box>
+              <IconButton
+                color="primary"
+                onClick={() => setActiveTab(activeTab === 0 ? 1 : 0)}
+                aria-label="היסטוריה"
+                sx={{ mr: 1 }}
+              >
+                {activeTab === 0 ? <HistoryIcon /> : <ArrowBackIcon />}
+              </IconButton>
+              <IconButton color="primary" onClick={fetchEmployerJobs} aria-label="רענן">
+                <RefreshIcon />
+              </IconButton>
+            </Box>
+          </Toolbar>
+        </AppBar>
+      )}
 
       <Paper>
         {loading || authLoading ? (
@@ -297,32 +324,64 @@ export default function MyWorksPage() {
             <CircularProgress />
           </Box>
         ) : (
-          <MyJobsList 
-            jobs={activeTab === 0 ? activeJobs : completedJobs} 
-            jobApplicants={jobApplicants}
-            isHistoryView={activeTab === 1}
-            onDeleteJob={(job) => {
-              setJobToDelete(job);
-              setOpenDeleteDialog(true);
-            }}
-            onEditJob={(job) => {
-              setJobToEdit(job);
-              setOpenEditDialog(true);
-            }}
-            onOpenChat={(applicant, jobId) => {
-              setSelectedApplicant({ ...applicant, jobId });
-              setOpenChatDialog(true);
-            }}
-            onMarkJobCompleted={(jobId) => {
-              setJobToRate(jobId);
-              setOpenRatingDialog(true);
-            }}
-            fetchEmployerJobs={fetchEmployerJobs}
-            setJobs={setJobs}
-            setJobApplicants={setJobApplicants}
-          />
+          // אם עבודה נבחרה ותצוגת נייד, הצג את פרטי העבודה
+          selectedJob && isMobile ? (
+            <JobDetails
+              job={selectedJob}
+              jobs={jobs}
+              setJobs={setJobs}
+              onDeleteJob={(job) => {
+                setJobToDelete(job);
+                setOpenDeleteDialog(true);
+              }}
+              onEditJob={(job) => {
+                setJobToEdit(job);
+                setOpenEditDialog(true);
+              }}
+              onOpenChat={(applicant, jobId) => {
+                setSelectedApplicant({ ...applicant, jobId });
+                setOpenChatDialog(true);
+              }}
+              onMarkJobCompleted={(jobId) => {
+                setJobToRate(jobId);
+                setOpenRatingDialog(true);
+              }}
+              setJobApplicants={setJobApplicants}
+              goBack={() => setSelectedJob(null)} // פונקציה לחזרה לרשימת העבודות
+              fetchEmployerJobs={fetchEmployerJobs} // העברת הפונקציה כפרופ אם נדרש
+            />
+          ) : (
+            // אחרת, הצג את רשימת העבודות
+            <MyJobsList 
+              jobs={activeTab === 0 ? activeJobs : completedJobs} 
+              jobApplicants={jobApplicants}
+              isHistoryView={activeTab === 1}
+              onDeleteJob={(job) => {
+                setJobToDelete(job);
+                setOpenDeleteDialog(true);
+              }}
+              onEditJob={(job) => {
+                setJobToEdit(job);
+                setOpenEditDialog(true);
+              }}
+              onOpenChat={(applicant, jobId) => {
+                setSelectedApplicant({ ...applicant, jobId });
+                setOpenChatDialog(true);
+              }}
+              onMarkJobCompleted={(jobId) => {
+                setJobToRate(jobId);
+                setOpenRatingDialog(true);
+              }}
+              fetchEmployerJobs={fetchEmployerJobs}
+              setJobs={setJobs}
+              setJobApplicants={setJobApplicants}
+              onSelectJob={(job) => setSelectedJob(job)} // פונקציה לבחירת עבודה
+            />
+          )
         )}
       </Paper>
+      
+      {/* שאר הדיאלוגים */}
       <DeleteJobDialog
         open={openDeleteDialog}
         onClose={() => setOpenDeleteDialog(false)}

@@ -1,15 +1,26 @@
+// src/pages/publishedWorkes/JobDetails.jsx
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   getDoc, doc, addDoc, setDoc, deleteDoc, collection, getDocs, updateDoc, serverTimestamp,  
+  query, where 
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import {
-  MapPin, DollarSign, Users, CheckCircle, UserPlus, Star, ChevronLeft, ChevronUp, Edit2, Trash2,
-  MessageCircle, User, Briefcase, ArrowUpDown, Calendar
+  MapPin, DollarSign, Users, CheckCircle, UserPlus, ChevronLeft, ChevronUp, Edit2, Trash2,
+  MessageCircle, User, Briefcase, ArrowUpDown, Calendar 
 } from 'lucide-react';
 import MySnackbar from 'styles/snackers/MySnackbar';
-import { setSnackbar, showSnackbar } from '../../styles/snackers/SnackbarUtils'
+import { setSnackbar, showSnackbar } from '../../styles/snackers/SnackbarUtils';
+import { Rating } from '@mui/material'; 
+
+// פונקציה לחישוב התקדמות
+const calculateProgress = (hired, total) => {
+  if (total === 0) return 0;
+  const progress = Math.round((hired / total) * 100);
+  return Math.min(progress, 100); // הגבלת ההתקדמות ל-100%
+};
 
 export default function JobDetails({
   job,
@@ -26,17 +37,16 @@ export default function JobDetails({
   const navigate = useNavigate();
   const [applicants, setApplicants] = useState([]);
   const [expandedWorker, setExpandedWorker] = useState(-1);
+  const [currentJob, setCurrentJob] = useState(job);
 
   const hiredCount = applicants.filter((applicant) => applicant.hired).length;
   const totalWorkers = job.workersNeeded || 1;
-  const progressPercentage = Math.round((hiredCount / totalWorkers) * 100);
+  const progressPercentage = calculateProgress(hiredCount, totalWorkers);
 
   const handleDelete = () => onDeleteJob(job.id);
   const handleEdit = () => onEditJob(job);
   const handleChat = () => onOpenChat(job);
   const handleComplete = () => onMarkJobCompleted(job.id);
-  const [currentJob, setCurrentJob] = useState(job);
-
 
   useEffect(() => {
     const fetchApplicants = async () => {
@@ -49,11 +59,45 @@ export default function JobDetails({
             const applicantData = applicantDoc.data();
             const userDoc = await getDoc(doc(db, 'users', applicantData.applicantId));
             const userData = userDoc.exists() ? userDoc.data() : {};
+
             return { ...applicantData, userData };
           })
         );
 
-        setApplicants(applicantsData);
+        const applicantIds = applicantsData.map(applicant => applicant.applicantId);
+        const chunkSize = 10;
+        const chunks = [];
+
+        for (let i = 0; i < applicantIds.length; i += chunkSize) {
+          chunks.push(applicantIds.slice(i, i + chunkSize));
+        }
+
+        let allRatings = [];
+
+        for (const chunk of chunks) {
+          const ratingsRef = collection(db, 'ratings');
+          const ratingsQuery = query(ratingsRef, where('ratedUser', 'in', chunk));
+          const ratingsSnapshot = await getDocs(ratingsQuery);
+          const ratingsData = ratingsSnapshot.docs.map(doc => doc.data());
+          allRatings = allRatings.concat(ratingsData);
+        }
+
+        const ratingsMap = allRatings.reduce((acc, rating) => {
+          const userId = rating.ratedUser;
+          if (!acc[userId]) acc[userId] = [];
+          acc[userId].push(rating.rating);
+          return acc;
+        }, {});
+
+        const applicantsWithRatings = applicantsData.map(applicant => {
+          const ratings = ratingsMap[applicant.applicantId] || [];
+          const averageRating = ratings.length > 0
+            ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+            : 0;
+          return { ...applicant, rating: averageRating };
+        });
+
+        setApplicants(applicantsWithRatings);
       } catch (error) {
         console.error('Error fetching applicants:', error);
       }
@@ -63,11 +107,10 @@ export default function JobDetails({
 
     const updatedJob = jobs.find((j) => j.id === job.id);
     if (updatedJob) {
-      setCurrentJob(updatedJob); // עדכון מיידי של המשרה הנוכחית
+      setCurrentJob(updatedJob);
     }
     setSnackbar(snackbarRef.current);
-  },  [jobs, job.id]);
-
+  }, [jobs, job.id]);
 
   const handleToggleFullyStaffed = async (jobId) => {
     try {
@@ -95,7 +138,7 @@ export default function JobDetails({
       showSnackbar(
         newIsFullyStaffed
           ? 'העבודה סומנה כמאוישת במלואה והוסרה מרשימת העבודות הפומביות'
-          : 'העבודה סומנה חזרה כאינה מאוישת, וכעת מוצגת ברשימת העבודות ',
+          : 'העבודה סומנה חזרה כאינה מאוישת, וכעת מוצגת ברשימת העבודות',
         newIsFullyStaffed ? 'success' : 'info'
       );
     } catch (error) {
@@ -107,14 +150,9 @@ export default function JobDetails({
   const handleToggleHired = async (jobId, applicantId, currentHiredStatus) => {
     try {
       const applicantRef = doc(db, 'jobs', jobId, 'applicants', applicantId);
-      const jobRef = doc(db, 'jobs', jobId);
       const userAcceptedJobsRef = doc(db, 'users', applicantId, 'acceptedJobs', jobId);
       const userApplicationsRef = doc(db, 'users', applicantId, 'applications', jobId);
 
-      const jobSnapshot = await getDoc(jobRef);
-      const jobData = jobSnapshot.data();
-  
-      // Update the hired status in Firebase
       if (!currentHiredStatus) {
         await updateDoc(applicantRef, { hired: true });
         await setDoc(userAcceptedJobsRef, { jobId, timestamp: serverTimestamp() });
@@ -128,29 +166,36 @@ export default function JobDetails({
           status: 'applied',
         });
       }
-  
-      // עדכון מיידי של רשימת המועמדים ב-state
-      setApplicants((prevApplicants) =>
-        prevApplicants.map((applicant) =>
+
+      setApplicants((prev) =>
+        prev.map((applicant) =>
           applicant.applicantId === applicantId
             ? { ...applicant, hired: !currentHiredStatus }
             : applicant
         )
       );
 
-      // Add a notification to Firebase
+      setJobApplicants((prev) => ({
+        ...prev,
+        [jobId]: prev[jobId].map((applicant) =>
+          applicant.applicantId === applicantId
+            ? { ...applicant, hired: !currentHiredStatus }
+            : applicant
+        ),
+      }));
+
       await addDoc(collection(db, 'notifications'), {
         userId: applicantId,
-        jobId: jobId,
-        jobTitle: jobData?.title || 'Unknown Job',
+        jobId,
+        jobTitle: currentJob.title || 'Unknown Job',
         type: currentHiredStatus ? 'hired_status_revoked' : 'hired_status_updated',
         message: currentHiredStatus
-          ? `הסטטוס שלך למשרה: ${jobData?.title} בוטל.`
-          : `התקבלת למשרה: ${jobData?.title}!`,
+          ? `הסטטוס שלך למשרה: ${currentJob.title} בוטל.`
+          : `התקבלת למשרה: ${currentJob.title}!`,
         timestamp: serverTimestamp(),
         isHistory: false,
       });
-  
+
       showSnackbar(
         currentHiredStatus
           ? 'הסטטוס שונה - המועמד כבר לא התקבל למשרה.'
@@ -162,9 +207,9 @@ export default function JobDetails({
       alert('אירעה שגיאה בעדכון הסטטוס.');
     }
   };
- 
+
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen flex flex-col" dir="rtl">
+    <div className="w-full sm:max-w-md sm:mx-auto bg-white min-h-screen flex flex-col" dir="rtl">
       <header className="px-4 py-3 bg-[#4285f4] text-white flex items-center justify-between">
         <button onClick={goBack} className="p-2">
           <ChevronLeft className="w-6 h-6" />
@@ -212,18 +257,18 @@ export default function JobDetails({
         </div>
 
         <div className="space-y-3 mb-8">
-        <button
-          onClick={() => handleToggleFullyStaffed(currentJob.id)}
-          className={`w-full py-3 rounded-lg flex items-center justify-center 
-            ${currentJob.isFullyStaffed ? 'bg-blue-500' : 'bg-amber-500'} text-white`}
-        >
-          {currentJob.isFullyStaffed ? (
-            <User className="w-5 h-5 ml-2" />
-          ) : (
-            <UserPlus className="w-5 h-5 ml-2" />
-          )}
-          {currentJob.isFullyStaffed ? 'בטל איוש מלא' : 'סמן כמאויש'}
-        </button>
+          <button
+            onClick={() => handleToggleFullyStaffed(currentJob.id)}
+            className={`w-full py-3 rounded-lg flex items-center justify-center 
+              ${currentJob.isFullyStaffed ? 'bg-blue-500' : 'bg-amber-500'} text-white`}
+          >
+            {currentJob.isFullyStaffed ? (
+              <User className="w-5 h-5 ml-2" />
+            ) : (
+              <UserPlus className="w-5 h-5 ml-2" />
+            )}
+            {currentJob.isFullyStaffed ? 'בטל איוש מלא' : 'סמן כמאויש'}
+          </button>
 
           <button
             onClick={handleComplete}
@@ -265,13 +310,13 @@ export default function JobDetails({
                 <div className="mr-3 flex-grow">
                   <h4 className="font-medium">{worker.userData?.name}</h4>
                   <div className="flex items-center mt-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${i < Math.floor(worker.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                      />
-                    ))}
-                    <span className="text-sm text-gray-600 mr-2">{worker.rating}</span>
+                    <Rating
+                      value={worker.rating || 0}
+                      precision={0.1}
+                      readOnly
+                      size="small"
+                    />
+                    <span className="text-sm text-gray-600 mr-2">{worker.rating ? worker.rating.toFixed(1) : '0.0'}</span>
                   </div>
                 </div>
                 <ChevronUp

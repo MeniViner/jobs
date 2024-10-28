@@ -32,7 +32,119 @@ const ReviewCard = ({ rating }) => (
   </Card>
 );
 
-export const RatingInput = ({ jobId, jobTitle, targetUserId, isEmployerRating, onRatingSubmitted }) => {
+// export const RatingInput = ({ jobId, jobTitle, targetUserId, isEmployerRating, onRatingSubmitted }) => {
+//   const [rating, setRating] = useState(0);
+//   const [review, setReview] = useState('');
+//   const { user } = useAuth();
+
+//   const handleSubmitRating = async () => {
+//     if (!user) {
+//       alert('You must be logged in to submit a rating.');
+//       return;
+//     }
+
+//     if (!jobId || !targetUserId) {
+//       console.error('Missing jobId or targetUserId.');
+//       alert('Invalid job or user information. Please try again.');
+//       return;
+//     }
+
+//     if (!rating) {
+//       alert('Please select a rating before submitting.');
+//       return;
+//     }
+
+//     try {
+//       const newRating = {
+//         jobId,
+//         ratedBy: user.uid,
+//         ratedUser: targetUserId,
+//         rating,
+//         review,
+//         isEmployerRating,
+//         createdAt: new Date(),
+//       };
+
+//       const docRef = await addDoc(collection(db, 'ratings'), newRating);
+
+//       const userRef = doc(db, 'users', targetUserId);
+//       const ratingsQuery = query(collection(db, 'ratings'), where('ratedUser', '==', targetUserId));
+//       const ratingsSnapshot = await getDocs(ratingsQuery);
+
+//       let totalRating = 0;
+//       ratingsSnapshot.forEach(doc => {
+//         totalRating += doc.data().rating;
+//       });
+
+//       const averageRating = totalRating / ratingsSnapshot.size;
+//       await updateDoc(userRef, { averageRating });
+
+//       // Send a notification to the rated user
+//       const notificationMessage = `המעסיק ${user.displayName || 'לא ידוע'} דירג אותך על העבודה ${jobTitle} !`;
+//       await addDoc(collection(db, 'notifications'), {
+//         userId: targetUserId,
+//         message: notificationMessage,
+//         status: 'new',
+//         isGlobal: false,
+//         isHistory: false,
+//         type: 'RatingReceived',
+//         timestamp: serverTimestamp(),
+//       });
+
+//       alert('Rating submitted successfully!');
+//       setRating(0);
+//       setReview('');
+
+//       if (onRatingSubmitted) {
+//         onRatingSubmitted({ id: docRef.id, ...newRating });
+//       }
+//     } catch (error) {
+//       console.error('Error submitting rating:', error);
+//       alert('Failed to submit rating. Please try again.');
+//     }
+//   };   
+
+//   return (
+//     <Box>
+//       <Typography component="legend">Rate this {isEmployerRating ? 'employee' : 'employer'}</Typography>
+//       <Rating
+//         name="rating"
+//         value={rating}
+//         onChange={(event, newValue) => {
+//           setRating(newValue);
+//         }}
+//       />
+//       <TextField
+//         fullWidth
+//         multiline
+//         rows={4}
+//         variant="outlined"
+//         label="Write your review"
+//         value={review}
+//         onChange={(e) => setReview(e.target.value)}
+//         margin="normal"
+//       />
+//       <Button 
+//         variant="contained" 
+//         color="primary" 
+//         onClick={handleSubmitRating} 
+//         disabled={!rating || !jobId || !targetUserId}
+//       >
+//         Submit Rating
+//       </Button>
+//     </Box>
+//   );
+// };
+
+
+export const RatingInput = ({
+  jobId,
+  jobTitle,
+  targetUserId,
+  isEmployerRating,
+  hasRated,
+  onRatingSubmitted,
+}) => {
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
   const { user } = useAuth();
@@ -40,12 +152,6 @@ export const RatingInput = ({ jobId, jobTitle, targetUserId, isEmployerRating, o
   const handleSubmitRating = async () => {
     if (!user) {
       alert('You must be logged in to submit a rating.');
-      return;
-    }
-
-    if (!jobId || !targetUserId) {
-      console.error('Missing jobId or targetUserId.');
-      alert('Invalid job or user information. Please try again.');
       return;
     }
 
@@ -65,14 +171,15 @@ export const RatingInput = ({ jobId, jobTitle, targetUserId, isEmployerRating, o
         createdAt: new Date(),
       };
 
-      const docRef = await addDoc(collection(db, 'ratings'), newRating);
+      await addDoc(collection(db, 'ratings'), newRating);
 
+      // Update the average rating for the user
       const userRef = doc(db, 'users', targetUserId);
       const ratingsQuery = query(collection(db, 'ratings'), where('ratedUser', '==', targetUserId));
       const ratingsSnapshot = await getDocs(ratingsQuery);
 
       let totalRating = 0;
-      ratingsSnapshot.forEach(doc => {
+      ratingsSnapshot.forEach((doc) => {
         totalRating += doc.data().rating;
       });
 
@@ -85,8 +192,6 @@ export const RatingInput = ({ jobId, jobTitle, targetUserId, isEmployerRating, o
         userId: targetUserId,
         message: notificationMessage,
         status: 'new',
-        isGlobal: false,
-        isHistory: false,
         type: 'RatingReceived',
         timestamp: serverTimestamp(),
       });
@@ -95,14 +200,16 @@ export const RatingInput = ({ jobId, jobTitle, targetUserId, isEmployerRating, o
       setRating(0);
       setReview('');
 
-      if (onRatingSubmitted) {
-        onRatingSubmitted({ id: docRef.id, ...newRating });
-      }
+      if (onRatingSubmitted) onRatingSubmitted();
     } catch (error) {
       console.error('Error submitting rating:', error);
       alert('Failed to submit rating. Please try again.');
     }
-  };   
+  };
+
+  if (hasRated) {
+    return <Typography>Thank you! Your rating has been submitted.</Typography>;
+  }
 
   return (
     <Box>
@@ -110,9 +217,7 @@ export const RatingInput = ({ jobId, jobTitle, targetUserId, isEmployerRating, o
       <Rating
         name="rating"
         value={rating}
-        onChange={(event, newValue) => {
-          setRating(newValue);
-        }}
+        onChange={(event, newValue) => setRating(newValue)}
       />
       <TextField
         fullWidth
@@ -128,7 +233,7 @@ export const RatingInput = ({ jobId, jobTitle, targetUserId, isEmployerRating, o
         variant="contained" 
         color="primary" 
         onClick={handleSubmitRating} 
-        disabled={!rating || !jobId || !targetUserId}
+        disabled={!rating}
       >
         Submit Rating
       </Button>

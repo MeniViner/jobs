@@ -7,6 +7,7 @@ import {
   doc, getDoc, addDoc, collection, query, where, getDocs, runTransaction 
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { useAuth } from '../../contexts/AuthContext'; // Ensure this is imported
 import { RatingInput } from './RatingSystem';
 
 const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => {
@@ -14,8 +15,11 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
   const [ratings, setRatings] = useState({});
   const [noShows, setNoShows] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedRatings, setSubmittedRatings] = useState({});
   const [loading, setLoading] = useState(true);  // New loading state
   const [error, setError] = useState(null);
+  const { user } = useAuth(); 
+
 
   useEffect(() => {
     if (open && jobId) fetchWorkers();
@@ -38,11 +42,15 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
     
           const userData = userDoc.exists() ? userDoc.data() : {};
           const img = userData.photoURL || userData.profileURL || '/default-avatar.png';
+
+          const hasRated = await checkIfRated(applicantData.applicantId);
   
           return { 
             id: applicantDoc.id, 
             name: userData.name || 'מועמד ללא שם', 
             img,
+            hasRated,
+            applicantId: applicantData.applicantId,
             ...applicantData 
           };
         })
@@ -55,6 +63,25 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
     } finally {
       setLoading(false);  // Stop loading
     }
+  };
+
+  const checkIfRated = async (workerId) => {
+    if (!user) return false; 
+    
+    const ratingsQuery = query(
+      collection(db, 'ratings'),
+      where('ratedUser', '==', workerId),
+      where('ratedBy', '==', user.uid)
+    );
+    const ratingsSnapshot = await getDocs(ratingsQuery);
+    return !ratingsSnapshot.empty;
+  };
+
+  const handleRatingSubmitted = (workerId) => {
+    setSubmittedRatings((prev) => ({
+      ...prev,
+      [workerId]: true,
+    }));
   };
   
 
@@ -149,6 +176,20 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
 
   const handleCloseError = () => setError(null);
 
+
+
+  
+  const renderWorkerRating = (worker) => (
+    <RatingInput
+      jobId={jobId}
+      jobTitle={jobTitle}
+      targetUserId={worker.applicantId}
+      isEmployerRating={true}
+      hasRated={worker.hasRated || submittedRatings[worker.id] || false}
+      onRatingSubmitted={() => handleRatingSubmitted(worker.id)}
+    />
+  );  
+
   return (
     <>
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -182,13 +223,15 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
                         </Typography>
                       </Box>
 
-                      <RatingInput
+                      {/* <RatingInput
                         jobId={jobId}  // Ensure jobId is passed here
                         jobTitle={jobTitle}
                         targetUserId={worker.applicantId}  // Ensure targetUserId is passed here
                         isEmployerRating={true}
                         onRatingChange={(rating, review) => handleRatingChange(worker.id, rating, review)}
-                      />
+                      /> */}
+
+                      {renderWorkerRating(worker)}
 
                       <FormControlLabel
                         control={
@@ -218,7 +261,7 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
       </Dialog>
       <Snackbar open={!!error} autoHideDuration={6000} onClose={handleCloseError}>
         <Alert onClose={handleCloseError} severity="error" sx={{ width: '100%' }}>
-          {error}
+          {"error" + error}
         </Alert>
       </Snackbar>
     </>

@@ -1,5 +1,3 @@
-// src/pages/publishedWorkes/JobDetails.jsx
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
@@ -9,11 +7,11 @@ import {
 import { db } from '../../services/firebase';
 import {
   MapPin, DollarSign, Users, CheckCircle, UserPlus, ChevronLeft, ChevronUp, Edit2, Trash2,
-  MessageCircle, User, Briefcase, ArrowUpDown, Calendar 
+  MessageCircle, User, Briefcase, ArrowUpDown, Calendar, Clock, Award, ChevronDown
 } from 'lucide-react';
 import MySnackbar from 'styles/snackers/MySnackbar';
 import { setSnackbar, showSnackbar } from '../../styles/snackers/SnackbarUtils';
-import { Avatar, Rating } from '@mui/material'; 
+import { Avatar, Rating } from '@mui/material';
 
 // פונקציה לחישוב התקדמות
 const calculateProgress = (hired, total) => {
@@ -23,28 +21,29 @@ const calculateProgress = (hired, total) => {
 };
 
 export default function JobDetails({
-  job,
-  jobs,
-  setJobs,
-  onDeleteJob,
-  onEditJob,
-  onOpenChat,
-  onMarkJobCompleted,
-  setJobApplicants,
-  goBack
-}) {
-  const snackbarRef = useRef();
-  const navigate = useNavigate();
-  const [applicants, setApplicants] = useState([]);
-  const [expandedWorker, setExpandedWorker] = useState(-1);
-  const [currentJob, setCurrentJob] = useState(job);
-  const [sortOrderDate, setSortOrderDate] = useState('asc'); // מצב מיון
-  const [sortOrderRating, setSortOrderRating] = useState('desc'); // מצב מיון
-  const [activeButton, setActiveButton] = useState('rating'); // שמירת כפתור פעיל
-
-  const hiredCount = applicants.filter((applicant) => applicant.hired).length;
-  const totalWorkers = job.workersNeeded || 1;
-  const progressPercentage = calculateProgress(hiredCount, totalWorkers);
+    job,
+    jobs,
+    setJobs,
+    onDeleteJob,
+    onEditJob,
+    onOpenChat,
+    onMarkJobCompleted,
+    setJobApplicants,
+    goBack
+  }) {
+    const snackbarRef = useRef();
+    const navigate = useNavigate();
+    const [applicants, setApplicants] = useState([]);
+    const [expandedWorker, setExpandedWorker] = useState(-1);
+    const [currentJob, setCurrentJob] = useState(job);
+    const [sortOrderDate, setSortOrderDate] = useState('asc');
+    const [sortOrderRating, setSortOrderRating] = useState('desc');
+    const [activeButton, setActiveButton] = useState('rating');
+    const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
+  
+    const hiredCount = applicants.filter((applicant) => applicant.hired).length;
+    const totalWorkers = job.workersNeeded || 1;
+    const progressPercentage = calculateProgress(hiredCount, totalWorkers);
 
   const handleDelete = () => onDeleteJob(job.id);
   const handleEdit = () => onEditJob(job);
@@ -238,58 +237,127 @@ export default function JobDetails({
   };
 
   return (
-    <div className="w-full sm:max-w-md sm:mx-auto bg-white min-h-screen flex flex-col" dir="rtl">
-      <header className="px-4 py-3 bg-[#4285f4] text-white flex items-center justify-between">
-        <button onClick={goBack} className="p-2">
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-lg font-medium flex-grow text-center">{currentJob.title}</h1>
-        <div className="flex items-center">
-          <button className="p-2" onClick={handleEdit}>
-            <Edit2 className="w-5 h-5" />
-          </button>
-          <button className="p-2" onClick={handleDelete}>
-            <Trash2 className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
-
-      <div className="p-4 flex-grow">
-        <p className="text-gray-600 mb-4">{currentJob.description}</p>
-
-        <div className="flex items-center text-gray-600 mb-2">
-          <MapPin className="w-4 h-4 ml-2" />
-          <span>{currentJob.location}</span>
-        </div>
-
-        <div className="flex items-center text-gray-600 mb-2">
-          <DollarSign className="w-4 h-4 ml-2" />
-          <span>₪{currentJob.salary} לשעה</span>
-        </div>
-
-        <div className="flex items-center text-gray-600">
-          <Users className="w-4 h-4 ml-2" />
-          <span>{hiredCount} / {totalWorkers} עובדים</span>
-        </div>
-
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">התקדמות המשימה</span>
-            <span className="text-sm font-medium text-[#4285f4]">{progressPercentage}%</span>
+        <div className="w-full min-h-screen bg-gradient-to-b from-gray-50 to-white">
+          {/* Header remains the same */}
+          <div className="sticky top-0 z-10 backdrop-blur-lg bg-white/80 border-b border-gray-100">
+            <header className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+              <button 
+                onClick={goBack} 
+                className="p-2 hover:bg-gray-100/80 rounded-full transition-all duration-200 active:scale-95"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-700" />
+              </button>
+              <h1 className="text-lg font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                {currentJob.title}
+              </h1>
+              <div className="flex items-center gap-2">
+                <button 
+                  className="p-2 hover:bg-gray-100/80 rounded-full transition-all duration-200 active:scale-95"
+                  onClick={handleEdit}
+                >
+                  <Edit2 className="w-5 h-5 text-gray-700" />
+                </button>
+                <button 
+                  className="p-2 hover:bg-red-50 rounded-full transition-all duration-200 active:scale-95"
+                  onClick={handleDelete}
+                >
+                  <Trash2 className="w-5 h-5 text-red-500" />
+                </button>
+              </div>
+            </header>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-[#4285f4] h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progressPercentage}%` }}
-            ></div>
-          </div>
-        </div>
+    
+          {/* Main Content */}
+          <div className="max-w-2xl mx-auto px-4 py-6">
+            {/* Collapsible Job Details Section */}
+            <div className="bg-white rounded-2xl shadow-lg shadow-blue-100/20 border border-gray-100 mb-6
+              backdrop-blur-xl bg-white/60 overflow-hidden">
+              <button
+                onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
+                className="w-full p-6 flex items-center justify-between hover:bg-gray-50/50 transition-all duration-200"
+              >
+                <span className="font-semibold text-gray-800">לחץ לפרטי עבודה</span>
+                {isDetailsExpanded ? (
+                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                )}
+              </button>
+              
+              {isDetailsExpanded && (
+                <div className="px-6 pb-6">
+                              <p className="text-gray-700 text-lg mb-6">{currentJob.description}</p>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="flex items-center text-gray-600 mb-1">
+                        <MapPin className="w-5 h-5 ml-2 text-blue-500" />
+                        <span className="text-sm text-gray-500">מיקום</span>
+                      </div>
+                      <span className="text-gray-800 font-medium">{currentJob.location}</span>
+                    </div>
+    
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="flex items-center text-gray-600 mb-1">
+                        <DollarSign className="w-5 h-5 ml-2 text-green-500" />
+                        <span className="text-sm text-gray-500">שכר לשעה</span>
+                      </div>
+                      <span className="text-gray-800 font-medium">₪{currentJob.salary}</span>
+                    </div>
+    
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="flex items-center text-gray-600 mb-1">
+                        <Users className="w-5 h-5 ml-2 text-purple-500" />
+                        <span className="text-sm text-gray-500">עובדים</span>
+                      </div>
+                      <span className="text-gray-800 font-medium">{hiredCount} / {totalWorkers}</span>
+                    </div>
+    
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="flex items-center text-gray-600 mb-1">
+                        <Clock className="w-5 h-5 ml-2 text-amber-500" />
+                        <span className="text-sm text-gray-500">סטטוס</span>
+                      </div>
+                      <span className="text-gray-800 font-medium">
+                        {currentJob.isFullyStaffed ? 'מאויש' : 'פתוח'}
+                      </span>
+                    </div>
+                  </div>
+    
+                  {/* Progress section */}
+         
+                </div>
+              )}
+            </div>
+
+            
+            <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+            <div className="mt-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <h3 className="text-gray-800 font-semibold mb-1">התקדמות המשימה</h3>
+                        <p className="text-sm text-gray-500">איוש משרות ומעקב</p>
+                      </div>
+                      <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 
+                        bg-clip-text text-transparent">{progressPercentage}%</span>
+                    </div>
+                    <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500 ease-out bg-gradient-to-r from-blue-500 to-blue-400"
+                        style={{ width: `${progressPercentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+        </div>
+        {/* Action Buttons */}
         <div className="space-y-3 mb-8">
           <button
             onClick={() => handleToggleFullyStaffed(currentJob.id)}
-            className={`w-full py-3 rounded-lg flex items-center justify-center 
-              ${currentJob.isFullyStaffed ? 'bg-blue-500' : 'bg-amber-500'} text-white`}
+            className={`w-full py-4 rounded-xl flex items-center justify-center transition-all duration-200
+              shadow-lg active:scale-[0.99] font-medium text-base
+              ${currentJob.isFullyStaffed 
+                ? 'bg-gradient-to-r from-blue-600 to-blue-500 shadow-blue-200' 
+                : 'bg-gradient-to-r from-amber-500 to-amber-400 shadow-amber-200'} text-white`}
           >
             {currentJob.isFullyStaffed ? (
               <User className="w-5 h-5 ml-2" />
@@ -301,96 +369,117 @@ export default function JobDetails({
 
           <button
             onClick={handleComplete}
-            className="w-full py-3 bg-[#34A853] text-white rounded-lg flex items-center justify-center"
+            className="w-full py-4 rounded-xl flex items-center justify-center transition-all duration-200
+              bg-gradient-to-r from-green-500 to-green-400 text-white shadow-lg shadow-green-200
+              active:scale-[0.99] font-medium text-base"
           >
             <CheckCircle className="w-5 h-5 ml-2" />
             סיים עבודה ועבור לדירוג עובדים
           </button>
         </div>
 
-        <div className="flex gap-2 mb-5">
+        {/* Sort Section */}
+        <div className="bg-white rounded-2xl p-4 shadow-lg shadow-blue-100/20 border border-gray-100 mb-6">
+          <div className="flex gap-3">
           <button
-            className={`border px-3 py-1.5 rounded-lg flex items-center text-sm 
-              ${activeButton === 'rating' ? 'border-blue-500' : 'border-gray-300'}`}            
+            className={`flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all
+              ${activeButton === 'rating' 
+                ? 'bg-blue-50 text-blue-600 border-2 border-blue-600' 
+                : 'bg-white border border-gray-200 text-gray-700'}`}
             onClick={sortByRating}
           >
-            <ArrowUpDown className="w-4 h-4 ml-1" />
+            <ArrowUpDown className="w-4 h-4 ml-2" />
             מיין לפי דירוג
           </button>
           <button
-            className={`border px-3 py-1.5 rounded-lg flex items-center text-sm 
-              ${activeButton === 'date' ? 'border-blue-500' : 'border-gray-300'}`}
+            className={`flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all
+              ${activeButton === 'date' 
+                ? 'bg-blue-50 text-blue-600 border-2 border-blue-600' 
+                : 'bg-white border border-gray-200 text-gray-700'}`}
             onClick={sortByDate}
           >
-            <Calendar className="w-4 h-4 ml-1" />
+            <Calendar className="w-4 h-4 ml-2" />
             מיין לפי תאריך
           </button>
+          </div>
         </div>
 
+        {/* Applicants List */}
         <div className="space-y-4">
           {applicants.map((worker, index) => (
-            <div key={worker.applicantId} className="bg-gray-50 rounded-lg shadow-sm">
+            <div key={worker.applicantId} 
+              className="group bg-white rounded-2xl shadow-lg shadow-blue-100/10 border border-gray-100 
+                overflow-hidden transition-all duration-200 hover:shadow-lg hover:shadow-blue-100/20">
               <div
-                className="flex items-center p-3 cursor-pointer"
+                className="flex items-center p-5 cursor-pointer"
                 onClick={() => setExpandedWorker(expandedWorker === index ? -1 : index)}
               >
                 <Avatar
                   src={worker.userData?.profileURL || worker.userData?.photoURL}
                   alt={worker.userData?.name}
-                  className="w-full h-full object-cover"
+                  className="w-14 h-14 rounded-full border-2 border-gray-100"
                 />
-                <div className="mr-3 flex-grow">
-                  <h4 className="font-medium">{worker.userData?.name}</h4>
-                  <div className="flex items-center mt-1">
+                <div className="mr-4 flex-grow">
+                  <h4 className="font-semibold text-gray-800 mb-1">{worker.userData?.name}</h4>
+                  <div className="flex items-center">
                     <Rating
                       value={worker.rating || 0}
                       precision={0.1}
                       readOnly
                       size="small"
                     />
-                    <span className="text-sm text-gray-600 mr-2">{worker.rating ? worker.rating.toFixed(1) : '0.0'}</span>
+                    <span className="text-sm text-gray-500 mr-2 font-medium">
+                      {worker.rating ? worker.rating.toFixed(1) : '0.0'}
+                    </span>
                   </div>
                 </div>
                 <ChevronUp
-                  className={`w-5 h-5 text-gray-400 transition-transform duration-300 
+                  className={`w-5 h-5 text-gray-400 transition-transform duration-300 group-hover:text-gray-600
                     ${expandedWorker === index ? 'rotate-180' : ''}`}
                 />
-
               </div>
+
               {expandedWorker === index && (
-                <div className="px-3 pb-3 pt-1 flex gap-2">
-                  <Link to={`/user/${worker.applicantId}`} style={{ textDecoration: 'none' }}>
-                    <button 
-                      className="border border-gray-300 px-4 py-2 rounded-lg flex items-center justify-center flex-1 text-sm"
-                    >
+                <div className="px-5 pb-5 grid grid-cols-3 gap-3 border-t border-gray-100 pt-4">
+                  <Link 
+                    to={`/user/${worker.applicantId}`} 
+                    className="text-decoration-none"
+                  >
+                    <button className="w-full h-11 rounded-xl flex items-center justify-center
+                      bg-gray-50 hover:bg-gray-100 transition-all duration-200 text-gray-700 
+                      text-sm font-medium active:scale-[0.98]">
                       <User className="w-4 h-4 ml-2" />
-                      צפה בפרופיל
+                      פרופיל
                     </button>
                   </Link>
+                  
                   <button
-                    className={`px-4 py-2 rounded-lg flex items-center justify-center flex-1 text-sm border 
-                      ${worker.hired ? 'bg-green-500 text-white' : 'bg-white text-gray-800 border-gray-300'}`}
-                    onClick={() =>
-                      handleToggleHired(currentJob.id, worker.applicantId, worker.hired)
-                    }
+                    className={`w-full h-11 rounded-xl flex items-center justify-center
+                      transition-all duration-200 text-sm font-medium active:scale-[0.98]
+                      ${worker.hired 
+                        ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-200/50' 
+                        : 'bg-blue-50 hover:bg-blue-100 text-blue-600'}`}
+                    onClick={() => handleToggleHired(currentJob.id, worker.applicantId, worker.hired)}
                   >
                     {worker.hired ? (
                       <CheckCircle className="w-4 h-4 ml-2" />
                     ) : (
                       <Briefcase className="w-4 h-4 ml-2" />
                     )}
-                    {worker.hired ? 'הועסק' : 'סמן כמועסק'}
+                    {worker.hired ? 'הועסק' : 'העסק'}
                   </button>
+
                   <button 
                     onClick={handleChat}
-                    className="border border-gray-300 px-4 py-2 rounded-lg flex items-center justify-center flex-1 text-sm"
+                    className="w-full h-11 rounded-xl flex items-center justify-center
+                      bg-gray-50 hover:bg-gray-100 transition-all duration-200 text-gray-700 
+                      text-sm font-medium active:scale-[0.98]"
                   >
                     <MessageCircle className="w-4 h-4 ml-2" />
                     צ'אט
                   </button>
                 </div>
               )}
-
             </div>
           ))}
         </div>

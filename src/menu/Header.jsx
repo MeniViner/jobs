@@ -126,7 +126,6 @@ export default function Header() {
       ];
 
   const desktopNavItems = [
-    { text: 'דף הבית', link: '/' },
     { text: 'עבודות', link: '/jobs' },
     { text: "צ'אט", link: '/job-chat', authRequired: true },
     { text: 'עבודות שמורות', link: '/saved-jobs', authRequired: true },

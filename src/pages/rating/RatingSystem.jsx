@@ -103,7 +103,7 @@ export const RatingInput = ({
   };
 
   if (hasRated) {
-    return <Typography>Thank you! Your rating has been submitted.</Typography>;
+    return <Typography>תודה! הדירוג שלך למשתמש זה נשמר בהצלחה.</Typography>;
   }
 
   return (

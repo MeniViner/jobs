@@ -4,7 +4,7 @@ import {
   Box, Snackbar, Alert, FormControlLabel, Checkbox, Paper, Avatar, Grid, CircularProgress
 } from '@mui/material';
 import { 
-  doc, getDoc, addDoc, collection, query, where, getDocs, runTransaction 
+  doc, getDoc, addDoc, collection, query, where, getDocs, runTransaction, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { useAuth } from '../../contexts/AuthContext'; // Ensure this is imported
@@ -71,7 +71,8 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
     const ratingsQuery = query(
       collection(db, 'ratings'),
       where('ratedUser', '==', workerId),
-      where('ratedBy', '==', user.uid)
+      where('ratedBy', '==', user.uid),
+      where('jobId', '==', jobId)  
     );
     const ratingsSnapshot = await getDocs(ratingsQuery);
     return !ratingsSnapshot.empty;
@@ -150,8 +151,26 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
     if (userDoc.exists()) {
       const userData = userDoc.data();
       const newNoShowCount = (userData.noShows || 0) + 1;
+      // עדכון מספר האזהרות למשתמש
       transaction.update(userRef, { noShows: newNoShowCount });
+
+      // שליחת התראה למשתמש
+      await sendWarningNotification(worker.applicantId, newNoShowCount);
     }
+  };
+
+  const sendWarningNotification = async (userId, warningCount) => {
+    const notificationMessage = `שימו לב! סומנת כהבריז. זוהי אזהרה מספר ${warningCount}.`;
+    
+    await addDoc(collection(db, 'notifications'), {
+      userId,
+      message: notificationMessage,
+      status: 'new',
+      type: 'NoShowWarning',
+      isGlobal: false,
+      isHistory: false,
+      timestamp: serverTimestamp(),
+    });
   };
 
   const saveRating = async (worker) => {
@@ -255,7 +274,7 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
             ביטול
           </Button>
           <Button onClick={handleSubmitRatings} color="primary" variant="contained" disabled={isSubmitting}>
-            {isSubmitting ? 'שולח...' : 'שלח דירוגים וסיים עבודה'}
+            {isSubmitting ? 'מסיים...' : 'סיים עבודה זו'}
           </Button>
         </DialogActions>
       </Dialog>

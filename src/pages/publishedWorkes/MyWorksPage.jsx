@@ -19,7 +19,20 @@ import EditJobDialog from './EditJobDialog';
 import ChatDialog from './ChatDialog';
 import JobCompletionRating from '../rating/JobCompletionRating';
 import JobDetails from './JobDetails'; // ודא שהייבוא נכון
+import { MapPin, History, RefreshCw, ArrowLeft, MessageSquare, Edit2, Trash2, CheckCircle, Users } from 'lucide-react';
 
+const TabButton = ({ active, onClick, children }) => (
+  <button
+    onClick={onClick}
+    className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+      active 
+        ? 'bg-blue-100 text-blue-600' 
+        : 'text-gray-500 hover:bg-gray-100'
+    }`}
+  >
+    {children}
+  </button>
+);
 export default function MyWorksPage() {
   const { user, loading: authLoading } = useAuth();
   const [jobs, setJobs] = useState([]);
@@ -296,26 +309,32 @@ export default function MyWorksPage() {
   }}>
       {/* ה-AppBar יוצג רק אם אין עבודה שנבחרה או שהמסך אינו נייד */}
       {(!selectedJob || !isMobile) && (
-        <AppBar position="static" color="transparent" elevation={0}>
-          <Toolbar sx={{ justifyContent: 'space-between' }}>
-            <Typography variant="h6">
-              {activeTab === 0 ? 'עבודות פעילות' : 'היסטוריית עבודות'}
-            </Typography>
-            <Box>
-              <IconButton
-                color="primary"
-                onClick={() => setActiveTab(activeTab === 0 ? 1 : 0)}
-                aria-label="היסטוריה"
-                sx={{ mr: 1 }}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center space-x-4 rtl:space-x-reverse">
+                <TabButton 
+                  active={activeTab === 0} 
+                  onClick={() => setActiveTab(0)}
+                >
+                  עבודות פעילות
+                </TabButton>
+                <TabButton 
+                  active={activeTab === 1} 
+                  onClick={() => setActiveTab(1)}
+                >
+                  היסטוריה
+                </TabButton>
+              </div>
+              <button
+                onClick={fetchEmployerJobs}
+                className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
               >
-                {activeTab === 0 ? <HistoryIcon /> : <ArrowBackIcon />}
-              </IconButton>
-              <IconButton color="primary" onClick={fetchEmployerJobs} aria-label="רענן">
-                <RefreshIcon />
-              </IconButton>
-            </Box>
-          </Toolbar>
-        </AppBar>
+                <RefreshCw className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <Paper>

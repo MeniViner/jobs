@@ -404,6 +404,7 @@ export default function MyWorksPage() {
         onSendMessage={handleSendMessage}
       />
       <JobCompletionRating
+        jobTitle={jobs.find((job) => job.id === selectedApplicant?.jobId)?.title || 'job not found'}
         open={openRatingDialog}
         onClose={() => {
           setOpenRatingDialog(false);

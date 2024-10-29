@@ -190,6 +190,7 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
       isPublic: false,
       isRated: true,
       noShows,
+      completedAt: serverTimestamp(),
     });
   };
 

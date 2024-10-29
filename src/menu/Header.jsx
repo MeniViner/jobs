@@ -135,6 +135,7 @@ export default function Header() {
 
   // רשימת דפים לדוגמה
   const examplePages = [
+    { text: 'היסטוריית העבודות שלי', link: '/my-job-history', authRequired: true },
     { text: 'דף דוגמה 1 (דוגמה)', link: '/example1' },
     { text: 'דף דוגמה 2 (דוגמה)', link: '/example2' },
     { text: 'דף דוגמה 3 (דוגמה)', link: '/example3' },

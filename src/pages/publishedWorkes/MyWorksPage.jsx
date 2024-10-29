@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Container, Typography, Paper, Box, CircularProgress, Snackbar, AppBar, Toolbar, IconButton, useMediaQuery
+  Container, Paper, Box, CircularProgress, Snackbar, useMediaQuery
 } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
-import { 
-  History as HistoryIcon, Refresh as RefreshIcon, ArrowBack as ArrowBackIcon
-} from '@mui/icons-material';
 import {
   collection, query, where, onSnapshot, doc, getDoc, getDocs, deleteDoc, updateDoc, addDoc, serverTimestamp, collectionGroup,
 } from 'firebase/firestore';
@@ -18,8 +15,9 @@ import DeleteJobDialog from './DeleteJobDialog';
 import EditJobDialog from './EditJobDialog';
 import ChatDialog from './ChatDialog';
 import JobCompletionRating from '../rating/JobCompletionRating';
-import JobDetails from './JobDetails'; // ודא שהייבוא נכון
-import { MapPin, History, RefreshCw, ArrowLeft, MessageSquare, Edit2, Trash2, CheckCircle, Users } from 'lucide-react';
+import JobDetails from './JobDetails'; 
+import { RefreshCw} from 'lucide-react';
+
 
 const TabButton = ({ active, onClick, children }) => (
   <button

@@ -108,6 +108,22 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, [db, user, authLoading, navigate]);
 
+  
+  useEffect(() => {
+    // Register the Service Worker manually
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/firebase-messaging-sw.js')
+        .then((registration) => {
+          console.log('Service Worker registered with scope:', registration.scope);
+        })
+        .catch((error) => {
+          console.error('Service Worker registration failed:', error);
+        });
+    }
+  }, []); // Runs once when the component mounts
+
+
   const handleMoveToHistory = async (notificationId) => {
     try {
       const notificationRef = doc(db, 'notifications', notificationId);

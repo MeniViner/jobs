@@ -3,12 +3,12 @@ importScripts('https://www.gstatic.com/firebasejs/9.6.11/firebase-messaging.js')
 
 // Initialize Firebase (using environment variables)
 const firebaseConfig = {
-  apiKey: self.env.REACT_APP_API_KEY,
-  authDomain: self.env.REACT_APP_AUTH_DOMAIN,
-  projectId: self.env.REACT_APP_PROJECT_ID,
-  storageBucket: self.env.REACT_APP_STORAGE_BUCKET,
-  messagingSenderId: self.env.REACT_APP_MESSAGING_SENDER_ID,
-  appId: self.env.REACT_APP_APP_ID,
+  apiKey: 'AIzaSyCa_KmQ9sMv9uUTTScgrKzMx5QZj1ceOko',
+  authDomain: 'wesocialjobs.firebaseapp.com',
+  projectId: 'wesocialjobs',
+  storageBucket: 'wesocialjobs.appspot.com',
+  messagingSenderId: '689261640578',
+  appId: '689261640578:web:814bf878e70a88bdb2ad9b',
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -20,7 +20,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/firebase-logo.png',
+    icon: '../images/logo.png',
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);

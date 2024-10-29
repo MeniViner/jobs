@@ -108,12 +108,12 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, [db, user, authLoading, navigate]);
 
-  
+
   useEffect(() => {
     // Register the Service Worker manually
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register('/firebase-messaging-sw.js')
+        .register('/firebase-messaging-sw.js', { scope: '/' }) // Set the scope explicitly
         .then((registration) => {
           console.log('Service Worker registered with scope:', registration.scope);
         })

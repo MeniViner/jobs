@@ -21,21 +21,29 @@ import NoNotificationsImage from '../../images/completed.svg';
 
 // Check if the user allowed notifications
 const canSendNotifications = () => {
-  return Notification.permission === 'granted';
+  const permission = Notification.permission;
+  console.log('Notification permission status:', permission);
+  return permission === 'granted';
 };
 
-// Function to send browser notifications
+// Function to send browser notifications with logs
 const sendBrowserNotification = (title, body) => {
+  new Notification('Test Notification', { body: 'This is a test.' });
+
   if (canSendNotifications()) {
-    new Notification(title, {
+    console.log('Sending notification:', { title, body });
+    const notification = new Notification(title, {
       body: body,
-      icon: '/images/logo.png', // Adjust to your icon
+      icon: '/images/logo.png', // Ensure the path is correct
     });
+
+    notification.onerror = (err) => console.error('Notification error:', err);
+    notification.onshow = () => console.log('Notification shown successfully.');
+    notification.onclick = () => console.log('Notification clicked!');
   } else {
     console.warn('Notifications are not allowed by the user.');
   }
 };
-
 
 
 export default function NotificationsPage() {
@@ -57,31 +65,104 @@ export default function NotificationsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (authLoading) return;
+  // useEffect(() => {
+  //   if (authLoading) return;
 
+  //   if (!user) {
+  //     setLoading(false);
+  //     navigate('/login');
+  //     return;
+  //   }
+
+  //   const fetchNotifications = async () => {
+  //     try {
+  //       const allNotificationsQuery = query(
+  //         collection(db, 'notifications'),
+  //         where('userId', '==', user.uid)
+  //       );
+
+  //       const unsubscribeAll = onSnapshot(allNotificationsQuery, async (snapshot) => {
+  //         const notificationsList = await Promise.all(
+  //           snapshot.docs.map(async (docSnapshot) => {
+  //             const notification = { id: docSnapshot.id, ...docSnapshot.data() };
+
+  //             if (notification.broadcastId) {
+  //               const broadcastRef = doc(db, 'broadcasts', notification.broadcastId);
+  //               const broadcastDoc = await getDoc(broadcastRef);
+
+  //               if (broadcastDoc.exists()) {
+  //                 notification.content = broadcastDoc.data().content;
+  //               } else {
+  //                 notification.content = 'הודעת ברודקאסט לא נמצאה.';
+  //               }
+  //             } else if (notification.type === 'application_submitted' || notification.message) {
+  //               notification.content = notification.message || 'התראת מערכת';
+  //             }
+
+  //               // Send a browser notification when a new notification is added
+  //               if (!notification.isHistory && notification.timestamp) {
+  //                 sendBrowserNotification(
+  //                   'New Notification',
+  //                   notification.content || 'You have a new notification.'
+  //                 );
+  //               }
+
+              
+
+  //             return notification;
+  //           })
+  //         );
+
+  //         notificationsList.sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds);
+
+  //         const activeNotifications = notificationsList.filter((n) => !n.isHistory);
+  //         const historyNotifications = notificationsList.filter((n) => n.isHistory);
+
+  //         setNotifications(activeNotifications);
+  //         setHistoryNotifications(historyNotifications);
+  //       });
+
+  //       setLoading(false);
+
+  //       return () => unsubscribeAll();
+  //     } catch (error) {
+  //       console.error('Error fetching notifications:', error);
+  //       setError('שגיאה בטעינת ההתראות.');
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchNotifications();
+  // }, [db, user, authLoading, navigate]);
+
+  useEffect(() => {
+    sendBrowserNotification();
+    if (authLoading) return;
+  
     if (!user) {
       setLoading(false);
       navigate('/login');
       return;
     }
-
+  
     const fetchNotifications = async () => {
       try {
         const allNotificationsQuery = query(
           collection(db, 'notifications'),
           where('userId', '==', user.uid)
         );
-
+  
         const unsubscribeAll = onSnapshot(allNotificationsQuery, async (snapshot) => {
+          console.log('New snapshot received with size:', snapshot.size);
           const notificationsList = await Promise.all(
             snapshot.docs.map(async (docSnapshot) => {
               const notification = { id: docSnapshot.id, ...docSnapshot.data() };
-
+              console.log('Processing notification:', notification);
+  
               if (notification.broadcastId) {
                 const broadcastRef = doc(db, 'broadcasts', notification.broadcastId);
                 const broadcastDoc = await getDoc(broadcastRef);
-
+  
                 if (broadcastDoc.exists()) {
                   notification.content = broadcastDoc.data().content;
                 } else {
@@ -90,32 +171,32 @@ export default function NotificationsPage() {
               } else if (notification.type === 'application_submitted' || notification.message) {
                 notification.content = notification.message || 'התראת מערכת';
               }
-
-                // Send a browser notification when a new notification is added
-                if (!notification.isHistory && notification.timestamp) {
-                  sendBrowserNotification(
-                    'New Notification',
-                    notification.content || 'You have a new notification.'
-                  );
-                }
-
-              
-
+  
+              // Check and send notification only if it's not history
+              if (!notification.isHistory && notification.timestamp) {
+                console.log('Attempting to send browser notification.');
+                sendBrowserNotification(
+                  'New Notification',
+                  notification.content || 'You have a new notification.'
+                );
+              } else {
+                console.log('Skipping notification - it is marked as history.');
+              }
+  
               return notification;
             })
           );
-
+  
           notificationsList.sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds);
-
+  
           const activeNotifications = notificationsList.filter((n) => !n.isHistory);
           const historyNotifications = notificationsList.filter((n) => n.isHistory);
-
+  
           setNotifications(activeNotifications);
           setHistoryNotifications(historyNotifications);
         });
-
+  
         setLoading(false);
-
         return () => unsubscribeAll();
       } catch (error) {
         console.error('Error fetching notifications:', error);
@@ -123,10 +204,11 @@ export default function NotificationsPage() {
         setLoading(false);
       }
     };
-
+  
     fetchNotifications();
   }, [db, user, authLoading, navigate]);
 
+  
   const handleMoveToHistory = async (notificationId) => {
     try {
       const notificationRef = doc(db, 'notifications', notificationId);
@@ -360,6 +442,11 @@ export default function NotificationsPage() {
             <IconButton onClick={() => navigate('/notification-settings')}>
               <SettingsIcon />
             </IconButton>
+            test
+            <IconButton onClick={() => navigate('/notification-test')}>
+              <SettingsIcon />
+            </IconButton>
+
             <Button
               variant="text"
               onClick={() => setShowHistory(!showHistory)}

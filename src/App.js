@@ -36,7 +36,7 @@ import NotificationsPage from './pages/notifications/NotificationsPage.js';
 import MobileMenuPage from './menu/MobileMenuPage';
 import HistoryPage from 'pages/WorkHistory';
 import NotificationSettings from 'pages/notifications/NotificationSettingsPage';
-
+import NotificationTestPage from 'pages/notifications/NotificationTestPage';
 
 
 const ProtectedAdminRoute = ({ children }) => {
@@ -117,6 +117,10 @@ function App() {
                 <Route path="/mobile-menu" element={<MobileMenuPage />} />
                 <Route path="/my-job-history" element={<HistoryPage />} />
                 <Route path="/notification-settings" element={<NotificationSettings />} />
+
+
+                <Route path="/notification-test" element={<NotificationTestPage />} />
+
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Box>

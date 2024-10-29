@@ -35,6 +35,7 @@ import EmployerRegistrationForm from './pages/profile/EmployerRegistrationForm.j
 import NotificationsPage from './pages/notifications/NotificationsPage.js';
 import MobileMenuPage from './menu/MobileMenuPage';
 import HistoryPage from 'pages/WorkHistory';
+import NotificationSettings from 'pages/notifications/NotificationSettingsPage';
 
 
 
@@ -115,6 +116,7 @@ function App() {
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/mobile-menu" element={<MobileMenuPage />} />
                 <Route path="/my-job-history" element={<HistoryPage />} />
+                <Route path="/notification-settings" element={<NotificationSettings />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Box>

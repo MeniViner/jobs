@@ -16,9 +16,26 @@ import {
 import { SwipeableList, SwipeableListItem } from '@sandstreamdev/react-swipeable-list';
 import '@sandstreamdev/react-swipeable-list/dist/styles.css';
 import NoNotificationsImage from '../../images/completed.svg';
-import { 
-  requestNotificationPermission, listenToForegroundNotifications 
-} from './notificationsConfig'; 
+
+
+
+// Check if the user allowed notifications
+const canSendNotifications = () => {
+  return Notification.permission === 'granted';
+};
+
+// Function to send browser notifications
+const sendBrowserNotification = (title, body) => {
+  if (canSendNotifications()) {
+    new Notification(title, {
+      body: body,
+      icon: '/images/logo.png', // Adjust to your icon
+    });
+  } else {
+    console.warn('Notifications are not allowed by the user.');
+  }
+};
+
 
 
 export default function NotificationsPage() {
@@ -31,31 +48,23 @@ export default function NotificationsPage() {
   const [showHistory, setShowHistory] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [isBannerVisible, setBannerVisible] = useState(true);  
+  const [isBannerVisible, setBannerVisible] = useState(true);
 
   useEffect(() => {
     const bannerClosed = localStorage.getItem('notificationBannerClosed');
     if (bannerClosed === 'true') {
       setBannerVisible(false);
     }
-    
   }, []);
 
   useEffect(() => {
     if (authLoading) return;
+
     if (!user) {
       setLoading(false);
       navigate('/login');
       return;
     }
-
-    // בקשת הרשאת התראות והאזנה להתראות קדמיות
-    const setupNotifications = async () => {
-      await requestNotificationPermission(user.uid); // בקשת הרשאה ושמירת הטוקן
-      listenToForegroundNotifications(); // האזנה להתראות קדמיות
-    };
-    setupNotifications();
-    
 
     const fetchNotifications = async () => {
       try {
@@ -82,6 +91,16 @@ export default function NotificationsPage() {
                 notification.content = notification.message || 'התראת מערכת';
               }
 
+                // Send a browser notification when a new notification is added
+                if (!notification.isHistory && notification.timestamp) {
+                  sendBrowserNotification(
+                    'New Notification',
+                    notification.content || 'You have a new notification.'
+                  );
+                }
+
+              
+
               return notification;
             })
           );
@@ -107,22 +126,6 @@ export default function NotificationsPage() {
 
     fetchNotifications();
   }, [db, user, authLoading, navigate]);
-
-
-  useEffect(() => {
-    // Register the Service Worker manually
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/firebase-messaging-sw.js', { scope: '/' }) // Set the scope explicitly
-        .then((registration) => {
-          console.log('Service Worker registered with scope:', registration.scope);
-        })
-        .catch((error) => {
-          console.error('Service Worker registration failed:', error);
-        });
-    }
-  }, []); // Runs once when the component mounts
-
 
   const handleMoveToHistory = async (notificationId) => {
     try {
@@ -354,7 +357,7 @@ export default function NotificationsPage() {
       <Grid container spacing={2}>
         <Grid item xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <IconButton>
+            <IconButton onClick={() => navigate('/notification-settings')}>
               <SettingsIcon />
             </IconButton>
             <Button

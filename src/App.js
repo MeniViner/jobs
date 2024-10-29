@@ -32,7 +32,7 @@ import UserProfilePage from './pages/profile/SocialProfile.js';
 import TopUsersPage from './pages/Management/TopUsersPage.js';
 import JobCompletionRating from './pages/rating/JobCompletionRating';
 import EmployerRegistrationForm from './pages/profile/EmployerRegistrationForm.jsx';
-import NotificationsPage from './pages/NotificationsPage.js';
+import NotificationsPage from './pages/notifications/NotificationsPage.js';
 import MobileMenuPage from './menu/MobileMenuPage';
 import HistoryPage from 'pages/WorkHistory';
 

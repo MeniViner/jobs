@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   getFirestore, collection, query, where, doc, deleteDoc, onSnapshot, updateDoc, writeBatch, getDoc
 } from 'firebase/firestore';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   Container, Typography, Box, Snackbar, Alert, CircularProgress, Paper,
   ListItem, ListItemText, Button, IconButton, Grid, Avatar, Tooltip
@@ -15,7 +15,10 @@ import {
 } from '@mui/icons-material';
 import { SwipeableList, SwipeableListItem } from '@sandstreamdev/react-swipeable-list';
 import '@sandstreamdev/react-swipeable-list/dist/styles.css';
-import NoNotificationsImage from '../images/completed.svg';
+import NoNotificationsImage from '../../images/completed.svg';
+import { 
+  requestNotificationPermission, listenToForegroundNotifications 
+} from './notificationsConfig'; 
 
 
 export default function NotificationsPage() {
@@ -28,23 +31,31 @@ export default function NotificationsPage() {
   const [showHistory, setShowHistory] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [isBannerVisible, setBannerVisible] = useState(true);
+  const [isBannerVisible, setBannerVisible] = useState(true);  
 
   useEffect(() => {
     const bannerClosed = localStorage.getItem('notificationBannerClosed');
     if (bannerClosed === 'true') {
       setBannerVisible(false);
     }
+    
   }, []);
 
   useEffect(() => {
     if (authLoading) return;
-
     if (!user) {
       setLoading(false);
       navigate('/login');
       return;
     }
+
+    // בקשת הרשאת התראות והאזנה להתראות קדמיות
+    const setupNotifications = async () => {
+      await requestNotificationPermission(user.uid); // בקשת הרשאה ושמירת הטוקן
+      listenToForegroundNotifications(); // האזנה להתראות קדמיות
+    };
+    setupNotifications();
+    
 
     const fetchNotifications = async () => {
       try {

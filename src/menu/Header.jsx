@@ -18,7 +18,7 @@ import {
   Home as HomeIcon,
   AdminPanelSettings as AdminIcon
 } from '@mui/icons-material'
-import { useNotificationCount } from '../pages/NotificationsPage'
+import { useNotificationCount } from '../pages/notifications/NotificationsPage'
 import MenuIcon from '@mui/icons-material/Menu'; 
 
 export default function Header() {

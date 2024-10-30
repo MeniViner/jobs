@@ -20,38 +20,38 @@ import NoNotificationsImage from '../../images/completed.svg';
 
 
 // Check if the user allowed notifications
-const canSendNotifications = () => {
-  const permission = Notification.permission;
-  return permission === 'granted';
-};
+const canSendNotifications = () => Notification.permission === 'granted';
 
-// Function to send browser notifications with logs
+// Send browser notifications if allowed
 const sendBrowserNotification = (title, body) => {
-
   if (canSendNotifications()) {
     const notification = new Notification(title, {
-      body: body,
-      icon: '/images/logo.png', // Ensure the path is correct
+      body,
+      icon: '/images/logo.png', // Make sure this path is correct
     });
-
     notification.onerror = (err) => console.error('Notification error:', err);
   } else {
-    console.warn('Notifications are not allowed by the user.');
+    console.warn('User denied notifications.');
   }
 };
 
-
 export default function NotificationsPage() {
   const db = getFirestore();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+
   const [notifications, setNotifications] = useState([]);
   const [historyNotifications, setHistoryNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [showHistory, setShowHistory] = useState(false);
-  const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
   const [isBannerVisible, setBannerVisible] = useState(true);
+
+    // Track sent notifications to avoid duplicate alerts
+    const [sentNotifications, setSentNotifications] = useState(() =>
+      JSON.parse(sessionStorage.getItem('sentNotifications')) || []
+    );
 
   useEffect(() => {
     const bannerClosed = localStorage.getItem('notificationBannerClosed');
@@ -154,14 +154,16 @@ export default function NotificationsPage() {
                 notification.content = notification.message || 'התראת מערכת';
               }
   
-              // Check and send notification only if it's not history
-              if (!notification.isHistory && notification.timestamp) {
-                sendBrowserNotification(
-                  'New Notification',
-                  notification.content || 'You have a new notification.'
-                );
-              } 
-  
+              // Send notification only if not already sent
+              if (!notification.isHistory && !sentNotifications.includes(notification.id)) {
+                sendBrowserNotification('New Notification', notification.content);
+                setSentNotifications((prev) => {
+                  const updatedSent = [...prev, notification.id];
+                  sessionStorage.setItem('sentNotifications', JSON.stringify(updatedSent));
+                  return updatedSent;
+                });
+              }
+
               return notification;
             })
           );
@@ -185,7 +187,7 @@ export default function NotificationsPage() {
     };
   
     fetchNotifications();
-  }, [db, user, authLoading, navigate]);
+  }, [db, user, authLoading, navigate, sentNotifications]);
 
   
   const handleMoveToHistory = async (notificationId) => {

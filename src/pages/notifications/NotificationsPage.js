@@ -22,24 +22,19 @@ import NoNotificationsImage from '../../images/completed.svg';
 // Check if the user allowed notifications
 const canSendNotifications = () => {
   const permission = Notification.permission;
-  console.log('Notification permission status:', permission);
   return permission === 'granted';
 };
 
 // Function to send browser notifications with logs
 const sendBrowserNotification = (title, body) => {
-  new Notification('Test Notification', { body: 'This is a test.' });
 
   if (canSendNotifications()) {
-    console.log('Sending notification:', { title, body });
     const notification = new Notification(title, {
       body: body,
       icon: '/images/logo.png', // Ensure the path is correct
     });
 
     notification.onerror = (err) => console.error('Notification error:', err);
-    notification.onshow = () => console.log('Notification shown successfully.');
-    notification.onclick = () => console.log('Notification clicked!');
   } else {
     console.warn('Notifications are not allowed by the user.');
   }
@@ -98,17 +93,7 @@ export default function NotificationsPage() {
   //             } else if (notification.type === 'application_submitted' || notification.message) {
   //               notification.content = notification.message || 'התראת מערכת';
   //             }
-
-  //               // Send a browser notification when a new notification is added
-  //               if (!notification.isHistory && notification.timestamp) {
-  //                 sendBrowserNotification(
-  //                   'New Notification',
-  //                   notification.content || 'You have a new notification.'
-  //                 );
-  //               }
-
               
-
   //             return notification;
   //           })
   //         );
@@ -136,7 +121,6 @@ export default function NotificationsPage() {
   // }, [db, user, authLoading, navigate]);
 
   useEffect(() => {
-    sendBrowserNotification();
     if (authLoading) return;
   
     if (!user) {
@@ -153,11 +137,9 @@ export default function NotificationsPage() {
         );
   
         const unsubscribeAll = onSnapshot(allNotificationsQuery, async (snapshot) => {
-          console.log('New snapshot received with size:', snapshot.size);
           const notificationsList = await Promise.all(
             snapshot.docs.map(async (docSnapshot) => {
               const notification = { id: docSnapshot.id, ...docSnapshot.data() };
-              console.log('Processing notification:', notification);
   
               if (notification.broadcastId) {
                 const broadcastRef = doc(db, 'broadcasts', notification.broadcastId);
@@ -174,14 +156,11 @@ export default function NotificationsPage() {
   
               // Check and send notification only if it's not history
               if (!notification.isHistory && notification.timestamp) {
-                console.log('Attempting to send browser notification.');
                 sendBrowserNotification(
                   'New Notification',
                   notification.content || 'You have a new notification.'
                 );
-              } else {
-                console.log('Skipping notification - it is marked as history.');
-              }
+              } 
   
               return notification;
             })

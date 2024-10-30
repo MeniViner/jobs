@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, FormControlLabel, Switch, Box, Button, Snackbar, Alert } from '@mui/material';
+import { 
+    Container, Typography, FormControlLabel, Switch, Box, Button, Snackbar, Alert, 
+} from '@mui/material';
+import {
+ ArrowLeftIcon
+} from 'lucide-react';  
+import { useNavigate } from 'react-router-dom';
+
 
 export default function NotificationSettings() {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState('');
   const [waitingForPermission, setWaitingForPermission] = useState(false); // מצב המתנה לאישור
+  const navigate = useNavigate();
+
 
   // טעינת ההעדפה הקודמת מ-LocalStorage
   useEffect(() => {
@@ -44,9 +53,21 @@ export default function NotificationSettings() {
 
   return (
     <Container maxWidth="sm" sx={{ mt: 5 }}>
-      <Typography variant="h4" gutterBottom>
-        הגדרות התראות
-      </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <Typography variant="h4" gutterBottom>
+                הגדרות התראות
+            </Typography>
+
+            <Button 
+                variant="outlined" 
+                color="secondary" 
+                onClick={() => navigate(-1)} 
+                sx={{ mr: 1 }}
+            >
+                <ArrowLeftIcon />
+            </Button>
+        </Box>
+
       <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <FormControlLabel
           control={

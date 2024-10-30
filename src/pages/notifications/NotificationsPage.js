@@ -23,17 +23,21 @@ import NoNotificationsImage from '../../images/completed.svg';
 const canSendNotifications = () => Notification.permission === 'granted';
 
 // Send browser notifications if allowed
-const sendBrowserNotification = (title, body) => {
-  if (canSendNotifications()) {
-    const notification = new Notification(title, {
+const sendBrowserNotification = async (title, body) => {
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    registration.showNotification(title, {
       body,
-      icon: '/images/logo.png', // Make sure this path is correct
+      icon: '/images/logo.png',
+      tag: 'notification',
+      renotify: true,
     });
-    notification.onerror = (err) => console.error('Notification error:', err);
-  } else {
-    console.warn('User denied notifications.');
+  } catch (error) {
+    console.error('Notification error:', error);
   }
 };
+
+
 
 export default function NotificationsPage() {
   const db = getFirestore();
@@ -191,6 +195,8 @@ export default function NotificationsPage() {
   //   fetchNotifications();
   // }, [db, user, authLoading, navigate, sentNotifications]);
 
+  let xs =5;
+  
   useEffect(() => {
     if (authLoading) return;
 
@@ -254,7 +260,47 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, [db, user, authLoading, navigate, sentNotifications]);
 
+  let m =5;
+
+  // useEffect(() => {
+  //   if (authLoading) return;
   
+  //   if (!user) {
+  //     setLoading(false);
+  //     navigate('/login');
+  //     return;
+  //   }
+  
+  //   const notificationsQuery = query(
+  //     collection(db, 'notifications'),
+  //     where('userId', '==', user.uid)
+  //   );
+  
+  //   const unsubscribe = onSnapshot(notificationsQuery, (snapshot) => {
+  //     snapshot.docs.forEach((docSnapshot) => {
+  //       const notification = { id: docSnapshot.id, ...docSnapshot.data() };
+  
+  //       if (!notification.isHistory && !sentNotifications.includes(notification.id)) {
+  //         sendBrowserNotification(
+  //           'New Notification',
+  //           notification.content || 'You have a new message.'
+  //         );
+  
+  //         setSentNotifications((prev) => {
+  //           const updated = [...prev, notification.id];
+  //           sessionStorage.setItem('sentNotifications', JSON.stringify(updated));
+  //           return updated;
+  //         });
+  //       }
+  //     });
+  
+  //     setNotifications(snapshot.docs.map((doc) => doc.data()));
+  //   });
+  
+  //   return () => unsubscribe();
+  // }, [db, user, authLoading, navigate, sentNotifications]);
+  
+
   const handleMoveToHistory = async (notificationId) => {
     try {
       const notificationRef = doc(db, 'notifications', notificationId);

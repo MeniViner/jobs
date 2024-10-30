@@ -176,12 +176,15 @@ const JobCompletionRating = ({ open, onClose, jobId, jobTitle, onComplete }) => 
   const saveRating = async (worker) => {
     await addDoc(collection(db, 'ratings'), {
       jobId,
-      workerId: worker.applicantId,
+      ratedBy: user.uid, // הוסף שדה זה כדי לזהות אותך כמדרג
+      ratedUser: worker.applicantId, // השתמש בשדה עקבי לזיהוי המשתמש שקיבל את הביקורת
       rating: ratings[worker.id].rating,
       review: ratings[worker.id].review,
-      timestamp: new Date(),
+      isEmployerRating: true, // אם רלוונטי
+      createdAt: new Date(), // עדיף להשתמש ב-createdAt כדי להיות עקבי
     });
   };
+  
 
   const updateJobCompletion = async (transaction) => {
     const jobRef = doc(db, 'jobs', jobId);

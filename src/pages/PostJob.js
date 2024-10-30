@@ -1,50 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Container, Typography, TextField, Button, Grid, MenuItem, Snackbar, Paper, IconButton,
-  Box, CircularProgress, Switch, FormControlLabel, Alert, ThemeProvider, createTheme
-} from '@mui/material';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../services/firebase';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import { getAuth } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
-
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-  typography: {
-    fontFamily: 'Roboto, Arial, sans-serif',
-  },
-  components: {
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            '&:hover fieldset': {
-              borderColor: '#1976d2',
-            },
-          },
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          textTransform: 'none',
-          fontWeight: 'bold',
-        },
-      },
-    },
-  },
-});
 
 const jobTypes = [
   'משרה מלאה',
@@ -66,21 +24,22 @@ export default function PostJob() {
     startTime: '',
     endTime: '',
     workDates: [''],
-    workersNeeded: 1, 
-    requiresCar: false, 
+    workersNeeded: 1,
+    requiresCar: false,
   });
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'info'
   });
-  const [businessName, setBusinessName] = useState('');  
+  const [businessName, setBusinessName] = useState('');
   const [businessLoading, setBusinessLoading] = useState(true);
   const [isFlexibleTime, setIsFlexibleTime] = useState(false);
   const [isFlexibleDates, setIsFlexibleDates] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [showValidationError, setShowValidationError] = useState(false);
+  const navigate = useNavigate();
 
-  const navigate = useNavigate(); 
-  
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
@@ -90,10 +49,10 @@ export default function PostJob() {
       }
       setAuthLoading(false);
     });
-  
+
     return () => unsubscribe();
   }, [navigate]);
-  
+
   const fetchBusinessName = async () => {
     try {
       const user = auth.currentUser;
@@ -114,14 +73,14 @@ export default function PostJob() {
       setBusinessLoading(false);
     }
   };
-  
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setJobData((prevData) => ({
       ...prevData,
-      [name]: type === 'checkbox' ? checked : 
-              name === 'workersNeeded' ? Math.max(1, parseInt(value) || 1) : 
-              value
+      [name]: type === 'checkbox' ? checked :
+        name === 'workersNeeded' ? Math.max(1, parseInt(value) || 1) :
+          value
     }));
   };
 
@@ -150,19 +109,11 @@ export default function PostJob() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (
-      !jobData.title || 
-      !jobData.location || 
-      !jobData.type || 
-      !jobData.salary || 
-      !jobData.description ||
-      (!isFlexibleTime && (!jobData.startTime || !jobData.endTime)) ||
-      (!isFlexibleDates && jobData.workDates.some(date => !date))
-    ) {
-      setSnackbar({ open: true, message: 'נא למלא את כל השדות הנדרשים', severity: 'error' });
+    if (!validateStep(currentStep)) {
+      setShowValidationError(true);
       return;
     }
-  
+
     try {
       const user = getAuth().currentUser;
       if (!user) {
@@ -172,7 +123,7 @@ export default function PostJob() {
 
       const jobToSubmit = {
         ...jobData,
-        requiresCar: jobData.requiresCar || false, 
+        requiresCar: jobData.requiresCar || false,
         employerId: user.uid,
         companyName: businessName,
         isFlexibleTime,
@@ -180,309 +131,408 @@ export default function PostJob() {
         workDates: isFlexibleDates ? [] : jobData.workDates.filter(date => date),
       };
 
-      const docRef = await addDoc(collection(db, 'jobs'), {
+      await addDoc(collection(db, 'jobs'), {
         ...jobToSubmit,
         postedBy: user.uid
       });
-      // console.log("Document written with ID: ", docRef.id);
+      
       setSnackbar({ open: true, message: 'המשרה פורסמה בהצלחה!', severity: 'success' });
-      setJobData({
-        title: '',
-        location: '',
-        type: '',
-        salary: '',
-        description: '',
-        fullDescription: '',
-        startTime: '',
-        endTime: '',
-        workDates: [''],
-        workersNeeded: 1,
-        requiresCar: false, 
-      });
-      navigate('/my-published-jobs'); 
+      navigate('/my-published-jobs');
     } catch (error) {
       console.error("Error adding document: ", error);
       setSnackbar({ open: true, message: `אירעה שגיאה בפרסום המשרה: ${error.message}`, severity: 'error' });
     }
   };
-  
+
+  const validateStep = (step) => {
+    switch (step) {
+      case 1:
+        return jobData.title && jobData.type;
+      case 2:
+        return jobData.location && jobData.salary;
+      case 3:
+        if (!isFlexibleTime && (!jobData.startTime || !jobData.endTime)) return false;
+        if (!isFlexibleDates && jobData.workDates.some(date => !date)) return false;
+        return true;
+      case 4:
+        return jobData.description && jobData.workersNeeded;
+      default:
+        return false;
+    }
+  };
+
+  const goToNextStep = () => {
+    if (!validateStep(currentStep)) {
+      setShowValidationError(true);
+      return;
+    }
+    setShowValidationError(false);
+    setCurrentStep(prev => prev + 1);
+  };
+
+  const goToPrevStep = () => {
+    setShowValidationError(false);
+    setCurrentStep(prev => prev - 1);
+  };
+
   if (authLoading || businessLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
+      <div className="fixed inset-0 flex items-center justify-center bg-white">
+        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
     );
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <Container dir="rtl" maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-          <Typography variant="h4" gutterBottom align="center" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-            פרסום משרה חדשה
-          </Typography>
-          <Typography variant="h6" gutterBottom align="center" sx={{ color: '#666' }}>
-            {businessName ? `מפרסם: ${businessName}` : 'לא נמצא שם חברה'}
-          </Typography>
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
-              <Grid item xs={6}>
-                <TextField
-                  required
-                  fullWidth
-                  label="כותרת המשרה"
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
+        <div className="flex items-center justify-between px-4 h-14">
+          {currentStep > 1 ? (
+            <button 
+              onClick={goToPrevStep}
+              className="text-blue-500 text-lg font-medium"
+            >
+              חזור
+            </button>
+          ) : (
+            <div className="w-16"></div>
+          )}
+          
+          <div className="text-base font-semibold">
+            משרה חדשה {currentStep}/4
+          </div>
+          
+          <div className="w-16"></div>
+        </div>
+        
+        {/* Progress Bar */}
+        <div className="h-1 bg-gray-200">
+          <div 
+            className="h-full bg-blue-500 transition-all duration-300"
+            style={{ width: `${(currentStep / 4) * 100}%` }}
+          ></div>
+        </div>
+      </header>
+
+      {/* Main Form */}
+      <form onSubmit={handleSubmit} className="pt-16 pb-20">
+        <div className="max-w-md mx-auto">
+          {currentStep === 1 && (
+            <div className="space-y-6 p-4">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-800">כותרת המשרה</label>
+                <p className="text-xs text-gray-500">לדוגמה: מלצר/ית למסעדה איטלקית</p>
+                <input
+                  type="text"
+                  placeholder="הכנס/י כותרת"
                   name="title"
                   value={jobData.title}
                   onChange={handleChange}
-                  variant="outlined"
+                  className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0 text-base"
+                  required
                 />
-              </Grid>
-              <Grid item xs={6} sm={6}>
-                <TextField
-                  required
-                  fullWidth
-                  select
-                  label="סוג משרה"
-                  name="type"
-                  value={jobData.type}
-                  onChange={handleChange}
-                  variant="outlined"
-                >
-                  {jobTypes.map((option) => (
-                    <MenuItem key={option} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item xs={6} sm={6}>
-                <TextField
-                  required
-                  fullWidth
-                  label="מיקום"
+              </div>
+
+              <div className="space-y-1 relative">
+                <label className="block text-sm font-medium text-gray-800">סוג משרה</label>
+                <p className="text-xs text-gray-500">בחר/י את סוג המשרה המתאים</p>
+                <div className="relative">
+                  <CustomSelect
+                    options={jobTypes}
+                    selectedOption={jobData.type}
+                    onSelect={(value) => setJobData({ ...jobData, type: value })}
+                    placeholder="בחר/י סוג משרה"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 2 && (
+            <div className="space-y-6 p-4">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-800">מיקום</label>
+                <p className="text-xs text-gray-500">ציין/י את מיקום המשרה</p>
+                <input
+                  type="text"
+                  placeholder="עיר או כתובת"
                   name="location"
                   value={jobData.location}
                   onChange={handleChange}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={6} sm={6}>
-                <TextField
+                  className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0 text-base"
                   required
-                  fullWidth
-                  label="שכר (בש״ח לשעה)"
-                  name="salary"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-800">שכר לשעה (₪)</label>
+                <p className="text-xs text-gray-500">הכנס/י את השכר המוצע לשעה</p>
+                <input
                   type="number"
+                  placeholder="לדוגמה: 50"
+                  name="salary"
                   value={jobData.salary}
                   onChange={handleChange}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={6} sm={6}>
-                <TextField
+                  className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0 text-base"
                   required
-                  fullWidth
-                  label="מספר עובדים נדרש"
-                  name="workersNeeded"
-                  type="number"
-                  value={jobData.workersNeeded}
-                  onChange={handleChange}
-                  variant="outlined"
-                  InputProps={{
-                    inputProps: { min: 1 },
-                  }}
                 />
-              </Grid>
-              <Grid item xs={6}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={jobData.requiresCar}
-                      onChange={(e) => setJobData({ ...jobData, requiresCar: e.target.checked })}
-                      color="primary"
-                    />
-                  }
-                  label="האם דרוש רכב?"
-                  sx={{
-                    '.MuiFormControlLabel-label': {
-                      fontSize: '1rem',
-                      fontWeight: 500,
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
+              </div>
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div className="space-y-6 p-4">
+              {/* Flexible Time */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-800">שעות גמישות</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
                       checked={isFlexibleTime}
                       onChange={() => setIsFlexibleTime(!isFlexibleTime)}
-                      color="primary"
+                      className="sr-only peer"
                     />
-                  }
-                  label="שעות גמישות?"
-                  sx={{
-                    width: '100%',
-                    marginBottom: '16px',
-                    '.MuiFormControlLabel-label': {
-                      fontSize: '1rem',
-                      fontWeight: 500,
-                    },
-                  }}
-                />
+                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600">
+                      <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-all peer-checked:translate-x-full"></div>
+                    </div>
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500">בחר/י אם שעות העבודה גמישות</p>
+
                 {!isFlexibleTime && (
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <TextField
-                        required
-                        fullWidth
-                        label="שעת התחלה"
-                        name="startTime"
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="block text-sm font-medium text-gray-800">שעת התחלה</label>
+                      <input
                         type="time"
+                        name="startTime"
                         value={jobData.startTime}
                         onChange={handleChange}
-                        InputLabelProps={{ shrink: true }}
-                        inputProps={{ step: 300 }}
-                        variant="outlined"
+                        className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0 text-base"
+                        required={!isFlexibleTime}
                       />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <TextField
-                        required
-                        fullWidth
-                        label="שעת סיום"
-                        name="endTime"
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-sm font-medium text-gray-800">שעת סיום</label>
+                      <input
                         type="time"
+                        name="endTime"
                         value={jobData.endTime}
                         onChange={handleChange}
-                        InputLabelProps={{ shrink: true }}
-                        inputProps={{ step: 300 }}
-                        variant="outlined"
+                        className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0 text-base"
+                        required={!isFlexibleTime}
                       />
-                    </Grid>
-                  </Grid>
+                    </div>
+                  </div>
                 )}
-              </Grid>
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
+              </div>
+
+              {/* Flexible Dates */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-800">תאריכים גמישים</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
                       checked={isFlexibleDates}
                       onChange={() => setIsFlexibleDates(!isFlexibleDates)}
-                      color="primary"
+                      className="sr-only peer"
                     />
-                  }
-                  label="תאריכים גמישים?"
-                  sx={{
-                    width: '100%',
-                    marginBottom: '16px',
-                    '.MuiFormControlLabel-label': {
-                      fontSize: '1rem',
-                      fontWeight: 500,
-                    },
-                  }}
-                />
+                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600">
+                      <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-all peer-checked:translate-x-full"></div>
+                    </div>
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500">בחר/י אם תאריכי העבודה גמישים</p>
+
                 {!isFlexibleDates && (
-                  <>
+                  <div className="space-y-4">
                     {jobData.workDates.map((date, index) => (
-                      <Grid container spacing={2} key={index} alignItems="center">
-                        <Grid item xs>
-                          <TextField
-                            fullWidth
-                            label={`תאריך עבודה ${index + 1}`}
-                            type="date"
-                            value={date}
-                            onChange={(e) => handleDateChange(e.target.value, index)}
-                            InputLabelProps={{ shrink: true }}
-                            margin="normal"
-                            variant="outlined"
-                          />
-                        </Grid>
-                        <Grid item>
-                          <IconButton
+                      <div key={index} className="flex items-center">
+                        <input
+                          type="date"
+                          value={date}
+                          onChange={(e) => handleDateChange(e.target.value, index)}
+                          className="flex-1 h-12 px-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0 text-base"
+                          required={!isFlexibleDates}
+                        />
+                        {jobData.workDates.length > 1 && (
+                          <button
+                            type="button"
                             onClick={() => removeWorkDate(index)}
-                            disabled={jobData.workDates.length === 1}
+                            className="ml-2 p-2 text-red-500"
                           >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Grid>
-                      </Grid>
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     ))}
-                    <Button 
-                      startIcon={<AddIcon />} 
-                      onClick={addWorkDate} 
-                      sx={{ mt: 2 }}
-                      variant="outlined"
+                    <button
+                      type="button"
+                      onClick={addWorkDate}
+                      className="w-full h-12 border border-blue-500 text-blue-500 rounded-lg font-medium text-base"
                     >
-                      הוסף תאריך עבודה
-                    </Button>
-                  </>
+                      + הוסף תאריך
+                    </button>
+                  </div>
                 )}
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  multiline
-                  rows={2}
-                  label="תיאור המשרה בקצרה"
+              </div>
+            </div>
+          )}
+
+          {currentStep === 4 && (
+            <div className="space-y-6 p-4">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-800">תיאור קצר</label>
+                <p className="text-xs text-gray-500">תאר/י את המשרה בקצרה</p>
+                <textarea
+                  placeholder="הכנס/י תיאור קצר"
                   name="description"
                   value={jobData.description}
                   onChange={handleChange}
-                  variant="outlined"
+                  className="w-full h-24 px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0 text-base resize-none"
+                  required
                 />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={4}
-                  label="תיאור מפורט"
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-800">פירוט נוסף (אופציונלי)</label>
+                <p className="text-xs text-gray-500">הוסף/י מידע נוסף על המשרה</p>
+                <textarea
+                  placeholder="הכנס/י פירוט נוסף"
                   name="fullDescription"
                   value={jobData.fullDescription}
                   onChange={handleChange}
-                  variant="outlined"
+                  className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0 text-base resize-none"
                 />
-              </Grid>
-              <Grid item xs={12}>
-                <Button 
-                  type="submit" 
-                  variant="contained" 
-                  color="primary" 
-                  fullWidth
-                  size="large"
-                  sx={{ 
-                    mt: 2, 
-                    py: 1.5,
-                    fontSize:  '1.1rem',
-                    boxShadow: '0 4px 6px rgba(25, 118, 210, 0.25)',
-                    '&:hover': {
-                      boxShadow: '0 6px 8px rgba(25, 118, 210, 0.3)',
-                    },
-                  }}
-                >
-                  פרסם משרה
-                </Button>
-              </Grid>
-            </Grid>
-          </form>
-        </Paper>
+              </div>
 
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-800">דרוש רכב</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={jobData.requiresCar}
+                      onChange={(e) => setJobData({ ...jobData, requiresCar: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:bg-blue-600">
+                      <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-all peer-checked:translate-x-full"></div>
+                    </div>
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500">סמן/י אם המשרה דורשת רכב</p>
+
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-800">מספר עובדים נדרש</label>
+                  <p className="text-xs text-gray-500">ציין/י כמה עובדים נדרשים למשרה</p>
+                  <input
+                    type="number"
+                    name="workersNeeded"
+                    value={jobData.workersNeeded}
+                    onChange={handleChange}
+                    min="1"
+                    className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0 text-base"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Navigation */}
+        <div className="fixed bottom-20 left-0 right-0 bg-white border-t border-gray-200 p-4">
+          {showValidationError && (
+            <div className="mb-2 text-red-500 text-center">
+              נא למלא את כל השדות הנדרשים לפני המשך.
+            </div>
+          )}
+          {currentStep < 4 ? (
+            <button
+              type="button"
+              onClick={goToNextStep}
+              className={`w-full h-12 rounded-lg text-white font-medium text-lg ${
+                validateStep(currentStep) ? 'bg-blue-600' : 'bg-gray-400 cursor-not-allowed'
+              }`}
+            >
+              המשך
+            </button>
+          ) : (
+            <button
+              type="submit"
+              className={`w-full h-12 rounded-lg text-white font-medium text-lg ${
+                validateStep(currentStep) ? 'bg-blue-600' : 'bg-gray-400 cursor-not-allowed'
+              }`}
+            >
+              פרסם משרה
+            </button>
+          )}
+        </div>
+      </form>
+
+      {/* Snackbar */}
+      {snackbar.open && (
+        <div 
+          className={`fixed bottom-24 left-4 right-4 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+            snackbar.severity === 'success' ? 'bg-green-500' : 'bg-red-500'
+          }`}
         >
-          <Alert
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity={snackbar.severity}
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Container>
-    </ThemeProvider>
+          <p className="text-white text-center text-base">{snackbar.message}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Custom Select Component
+function CustomSelect({ options, selectedOption, onSelect, placeholder }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef();
+
+  const handleOptionClick = (option) => {
+    onSelect(option);
+    setIsOpen(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectRef.current && !selectRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={selectRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-0 text-base flex items-center justify-between"
+      >
+        <span>{selectedOption || placeholder}</span>
+        <svg className={`w-4 h-4 text-gray-500 transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 14a1 1 0 01-.707-.293l-5-5a1 1 0 011.414-1.414L10 11.586l4.293-4.293a1 1 0 011.414 1.414l-5 5A1 1 0 0110 14z" />
+        </svg>
+      </button>
+      {isOpen && (
+        <div className="absolute w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+          {options.map((option) => (
+            <div
+              key={option}
+              onClick={() => handleOptionClick(option)}
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+            >
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

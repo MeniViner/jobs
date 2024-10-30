@@ -119,41 +119,109 @@ export default function NotificationsPage() {
 
   //   fetchNotifications();
   // }, [db, user, authLoading, navigate]);
+  
+  let x =5;
+
+  // useEffect(() => {
+  //   if (authLoading) return;
+  
+  //   if (!user) {
+  //     setLoading(false);
+  //     navigate('/login');
+  //     return;
+  //   }
+  
+  //   const fetchNotifications = async () => {
+  //     try {
+  //       const allNotificationsQuery = query(
+  //         collection(db, 'notifications'),
+  //         where('userId', '==', user.uid)
+  //       );
+  
+  //       const unsubscribeAll = onSnapshot(allNotificationsQuery, async (snapshot) => {
+  //         const notificationsList = await Promise.all(
+  //           snapshot.docs.map(async (docSnapshot) => {
+  //             const notification = { id: docSnapshot.id, ...docSnapshot.data() };
+  
+  //             if (notification.broadcastId) {
+  //               const broadcastRef = doc(db, 'broadcasts', notification.broadcastId);
+  //               const broadcastDoc = await getDoc(broadcastRef);
+  
+  //               if (broadcastDoc.exists()) {
+  //                 notification.content = broadcastDoc.data().content;
+  //               } else {
+  //                 notification.content = 'הודעת ברודקאסט לא נמצאה.';
+  //               }
+  //             } else if (notification.type === 'application_submitted' || notification.message) {
+  //               notification.content = notification.message || 'התראת מערכת';
+  //             }
+  
+  //             // Send notification only if not already sent
+  //             if (!notification.isHistory && !sentNotifications.includes(notification.id)) {
+  //               sendBrowserNotification('New Notification', notification.content);
+  //               setSentNotifications((prev) => {
+  //                 const updatedSent = [...prev, notification.id];
+  //                 sessionStorage.setItem('sentNotifications', JSON.stringify(updatedSent));
+  //                 return updatedSent;
+  //               });
+  //             }
+
+  //             return notification;
+  //           })
+  //         );
+  
+  //         notificationsList.sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds);
+  
+  //         const activeNotifications = notificationsList.filter((n) => !n.isHistory);
+  //         const historyNotifications = notificationsList.filter((n) => n.isHistory);
+  
+  //         setNotifications(activeNotifications);
+  //         setHistoryNotifications(historyNotifications);
+  //       });
+  
+  //       setLoading(false);
+  //       return () => unsubscribeAll();
+  //     } catch (error) {
+  //       console.error('Error fetching notifications:', error);
+  //       setError('שגיאה בטעינת ההתראות.');
+  //       setLoading(false);
+  //     }
+  //   };
+  
+  //   fetchNotifications();
+  // }, [db, user, authLoading, navigate, sentNotifications]);
 
   useEffect(() => {
     if (authLoading) return;
-  
+
     if (!user) {
       setLoading(false);
       navigate('/login');
       return;
     }
-  
+
     const fetchNotifications = async () => {
       try {
-        const allNotificationsQuery = query(
+        const notificationsQuery = query(
           collection(db, 'notifications'),
           where('userId', '==', user.uid)
         );
-  
-        const unsubscribeAll = onSnapshot(allNotificationsQuery, async (snapshot) => {
+
+        const unsubscribe = onSnapshot(notificationsQuery, async (snapshot) => {
           const notificationsList = await Promise.all(
             snapshot.docs.map(async (docSnapshot) => {
               const notification = { id: docSnapshot.id, ...docSnapshot.data() };
-  
+
               if (notification.broadcastId) {
                 const broadcastRef = doc(db, 'broadcasts', notification.broadcastId);
                 const broadcastDoc = await getDoc(broadcastRef);
-  
-                if (broadcastDoc.exists()) {
-                  notification.content = broadcastDoc.data().content;
-                } else {
-                  notification.content = 'הודעת ברודקאסט לא נמצאה.';
-                }
-              } else if (notification.type === 'application_submitted' || notification.message) {
+                notification.content = broadcastDoc.exists()
+                  ? broadcastDoc.data().content
+                  : 'הודעת ברודקאסט לא נמצאה.';
+              } else {
                 notification.content = notification.message || 'התראת מערכת';
               }
-  
+
               // Send notification only if not already sent
               if (!notification.isHistory && !sentNotifications.includes(notification.id)) {
                 sendBrowserNotification('New Notification', notification.content);
@@ -167,25 +235,22 @@ export default function NotificationsPage() {
               return notification;
             })
           );
-  
+
           notificationsList.sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds);
-  
-          const activeNotifications = notificationsList.filter((n) => !n.isHistory);
-          const historyNotifications = notificationsList.filter((n) => n.isHistory);
-  
-          setNotifications(activeNotifications);
-          setHistoryNotifications(historyNotifications);
+
+          setNotifications(notificationsList.filter((n) => !n.isHistory));
+          setHistoryNotifications(notificationsList.filter((n) => n.isHistory));
+          setLoading(false);
         });
-  
-        setLoading(false);
-        return () => unsubscribeAll();
+
+        return () => unsubscribe();
       } catch (error) {
         console.error('Error fetching notifications:', error);
         setError('שגיאה בטעינת ההתראות.');
         setLoading(false);
       }
     };
-  
+
     fetchNotifications();
   }, [db, user, authLoading, navigate, sentNotifications]);
 

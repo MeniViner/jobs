@@ -237,11 +237,11 @@ const LoginPage = () => {
                   className="w-full bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!userType}
                 >
-                  המשך כ
+                  המשך
                   {userType === 'teenager'
-                    ? 'עובד'
+                    ? 'כעובד'
                     : userType === 'employer'
-                    ? 'מעסיק'
+                    ? 'כמעסיק'
                     : ''}
                 </button>
 

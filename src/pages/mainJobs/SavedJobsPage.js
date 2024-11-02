@@ -9,11 +9,11 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'
 import {
   collection, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, arrayRemove, serverTimestamp
 } from 'firebase/firestore'
-import { db } from '../services/firebase'
-import { useAuth } from '../contexts/AuthContext'
+import { db } from '../../services/firebase'
+import { useAuth } from '../../contexts/AuthContext'
 import { Link, useNavigate } from 'react-router-dom'
 import { Box, CircularProgress, Snackbar, Alert } from '@mui/material'
-import NoNotificationsImage from '../images/completed.svg';
+import NoNotificationsImage from '../../images/completed.svg';
 
 
 export default function SavedJobsPage() {

@@ -4,6 +4,9 @@
   "private": true,
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
     "@cloudinary/url-gen": "^1.21.0",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",

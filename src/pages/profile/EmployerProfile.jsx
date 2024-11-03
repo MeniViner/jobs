@@ -1,23 +1,24 @@
+// EmployerProfile.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Avatar, IconButton, List, ListItem, ListItemText, ListItemIcon, Button, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, Divider, LinearProgress,
-  Menu, MenuItem, CircularProgress,
+  Menu, MenuItem, CircularProgress, ListItemAvatar,
 } from '@mui/material';
 import {
-  ArrowBack as ArrowBackIcon, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon,
+  ArrowBack as ArrowBackIcon, ChevronLeft as ChevronLeftIcon,
   Edit as EditIcon, Star as StarIcon, Add as AddIcon, Delete as DeleteIcon, Security as SecurityIcon,
-  Payment as PaymentIcon, Notifications as NotificationsSettingsIcon, Lock as PrivacyIcon,
+  Payment as PaymentIcon, Notifications as NotificationsSettingsIcon,
   Settings as PreferencesIcon, Person as PersonIcon, PhotoCamera as PhotoCameraIcon, Business as BusinessIcon,
   RateReview as RateReviewIcon,
 } from '@mui/icons-material';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { RatingDisplay } from '../rating/RatingSystem';
 import { ContactMethodsManager } from '../../components/code parts/ContactMethodsManager';
 import { SendFeedback } from '../../components/code parts/FeedbackManager';
-
 
 export default function EmployerProfile({
   profileData,
@@ -30,14 +31,13 @@ export default function EmployerProfile({
   const navigate = useNavigate();
   const [editingPersonalInfo, setEditingPersonalInfo] = useState(false);
   const [editingBusinessInfo, setEditingBusinessInfo] = useState(false);
+  const [editingRatings, setEditingRatings] = useState(false);
+  const [editingFeedback, setEditingFeedback] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [editedData, setEditedData] = useState(profileData);
   const [newProfilePicture, setNewProfilePicture] = useState(null);
   const [newBannerImage, setNewBannerImage] = useState(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
-  const [showSecurity, setShowSecurity] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [showRating, setShowRating] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [shouldScrollTop, setShouldScrollTop] = useState(false);
@@ -45,7 +45,8 @@ export default function EmployerProfile({
   const db = getFirestore();
   const userId = auth.currentUser ? auth.currentUser.uid : null;
   const [contactMethods, setContactMethods] = useState(profileData.contactMethods || []);
-
+  const [ratings, setRatings] = useState([]);
+  const [showSecurity, setShowSecurity] = useState(false);
 
   const CloudinaryUpload = async (file, callback) => {
     const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
@@ -110,7 +111,7 @@ export default function EmployerProfile({
             businessType: employerData.businessType || '',
             description: employerData.description || '',
             email: employerData.email || '',
-            phone: employerData.phoneNumber  || '',
+            phone: employerData.phoneNumber || '',
           });
           setCompletionPercentage(
             calculateCompletionPercentage({ ...userData, ...employerData })
@@ -128,6 +129,27 @@ export default function EmployerProfile({
       setShouldScrollTop(false);
     }
   }, [shouldScrollTop]);
+
+  useEffect(() => {
+    if (editingRatings) {
+      fetchRatings();
+    }
+  }, [editingRatings]);
+
+  const fetchRatings = async () => {
+    try {
+      const ratingsRef = collection(db, 'ratings');
+      const q = query(ratingsRef, where('recipientId', '==', userId));
+      const querySnapshot = await getDocs(q);
+      const ratingsData = [];
+      querySnapshot.forEach((doc) => {
+        ratingsData.push({ id: doc.id, ...doc.data() });
+      });
+      setRatings(ratingsData);
+    } catch (error) {
+      console.error('Error fetching ratings:', error);
+    }
+  };
 
   const calculateCompletionPercentage = (data) => {
     const fields = [
@@ -159,7 +181,7 @@ export default function EmployerProfile({
     try {
       const user = auth.currentUser;
       if (user) {
-        const collection = [
+        const collectionName = [
           'companyName',
           'businessType',
           'companyDescription',
@@ -172,7 +194,7 @@ export default function EmployerProfile({
         ].includes(field)
           ? 'employers'
           : 'users';
-        const docRef = doc(db, collection, user.uid);
+        const docRef = doc(db, collectionName, user.uid);
         await updateDoc(docRef, { [field]: value });
         setEditedData({ ...editedData, [field]: value });
         setEditingField(null);
@@ -263,14 +285,8 @@ export default function EmployerProfile({
             autoFocus
             margin="dense"
             fullWidth
-            multiline={['companyDescription', 'description'].includes(
-              editingField
-            )}
-            rows={
-              ['companyDescription', 'description'].includes(editingField)
-                ? 4
-                : 1
-            }
+            multiline={['companyDescription', 'description'].includes(editingField)}
+            rows={['companyDescription', 'description'].includes(editingField) ? 4 : 1}
             value={editedData[editingField] || ''}
             onChange={(e) =>
               setEditedData({ ...editedData, [editingField]: e.target.value })
@@ -322,11 +338,33 @@ export default function EmployerProfile({
 
   const handleEditPersonalInfo = () => {
     setEditingPersonalInfo(true);
+    setEditingBusinessInfo(false);
+    setEditingRatings(false);
+    setEditingFeedback(false);
     setShouldScrollTop(true);
   };
 
   const handleEditBusinessInfo = () => {
     setEditingBusinessInfo(true);
+    setEditingPersonalInfo(false);
+    setEditingRatings(false);
+    setEditingFeedback(false);
+    setShouldScrollTop(true);
+  };
+
+  const handleEditRatings = () => {
+    setEditingRatings(true);
+    setEditingPersonalInfo(false);
+    setEditingBusinessInfo(false);
+    setEditingFeedback(false);
+    setShouldScrollTop(true);
+  };
+
+  const handleEditFeedback = () => {
+    setEditingFeedback(true);
+    setEditingPersonalInfo(false);
+    setEditingBusinessInfo(false);
+    setEditingRatings(false);
     setShouldScrollTop(true);
   };
 
@@ -337,16 +375,19 @@ export default function EmployerProfile({
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             mb: 2,
           }}
         >
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            פרטים אישיים
-          </Typography>
-          <IconButton onClick={() => setEditingPersonalInfo(false)}>
+          <IconButton onClick={() => {
+            setEditingPersonalInfo(false);
+            setShouldScrollTop(true);
+          }}>
             <ArrowBackIcon />
           </IconButton>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', flexGrow: 1, textAlign: 'center' }}>
+            פרטים אישיים
+          </Typography>
+          <Box width={48} />
         </Box>
         <List>
           {['name', 'phone', 'email', 'location'].map((field) => (
@@ -355,18 +396,16 @@ export default function EmployerProfile({
                 primary={getFieldLabel(field)}
                 secondary={editedData[field] || 'לא סופק'}
               />
-              <ListItemIcon>
-                <IconButton edge="end" onClick={() => handleEdit(field)}>
-                  {editedData[field] ? <EditIcon /> : <AddIcon />}
-                </IconButton>
-              </ListItemIcon>
+              <IconButton edge="end" onClick={() => handleEdit(field)}>
+                {editedData[field] ? <EditIcon /> : <AddIcon />}
+              </IconButton>
             </ListItem>
           ))}
         </List>
-      <ContactMethodsManager
-        contactMethods={contactMethods}
-        setContactMethods={setContactMethods}
-      />
+        <ContactMethodsManager
+          contactMethods={contactMethods}
+          setContactMethods={setContactMethods}
+        />
       </Box>
     );
   };
@@ -378,16 +417,19 @@ export default function EmployerProfile({
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             mb: 2,
           }}
         >
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-            פרטי העסק
-          </Typography>
-          <IconButton onClick={() => setEditingBusinessInfo(false)}>
+          <IconButton onClick={() => {
+            setEditingBusinessInfo(false);
+            setShouldScrollTop(true);
+          }}>
             <ArrowBackIcon />
           </IconButton>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', flexGrow: 1, textAlign: 'center' }}>
+            פרטי העסק
+          </Typography>
+          <Box width={48} />
         </Box>
         <List>
           {[
@@ -408,17 +450,65 @@ export default function EmployerProfile({
                 primary={getFieldLabel(field)}
                 secondary={editedData[field] || 'לא סופק'}
               />
-              <ListItemIcon>
-                <IconButton edge="end" onClick={() => handleEdit(field)}>
-                  {editedData[field] ? <EditIcon /> : <AddIcon />}
-                </IconButton>
-              </ListItemIcon>
+              <IconButton edge="end" onClick={() => handleEdit(field)}>
+                {editedData[field] ? <EditIcon /> : <AddIcon />}
+              </IconButton>
             </ListItem>
           ))}
         </List>
       </Box>
     );
   };
+
+  const renderRatings = () => (
+    <Box>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2,
+        }}
+      >
+        <IconButton onClick={() => {
+          setEditingRatings(false);
+          setShouldScrollTop(true);
+        }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', flexGrow: 1, textAlign: 'center' }}>
+          דירוגים
+        </Typography>
+        <Box width={48} />
+      </Box>
+      <Box sx={{ pl: 4, pr: 2, py: 2 }}>
+        <RatingDisplay userId={auth.currentUser?.uid} isEmployer={true} />
+      </Box>
+    </Box>
+  );
+
+  const renderFeedback = () => (
+    <Box>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2,
+        }}
+      >
+        <IconButton onClick={() => {
+          setEditingFeedback(false);
+          setShouldScrollTop(true);
+        }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', flexGrow: 1, textAlign: 'center' }}>
+          משוב למפתחי האתר
+        </Typography>
+        <Box width={48} />
+      </Box>
+      <SendFeedback />
+    </Box>
+  );
 
   const renderMainContent = () => (
     <>
@@ -444,7 +534,6 @@ export default function EmployerProfile({
             }}
             onClick={handleOpenMenu}
           >
-            
             <PhotoCameraIcon fontSize="small" />
           </IconButton>
           {loading && (
@@ -468,7 +557,7 @@ export default function EmployerProfile({
                 handleCloseMenu();
               }}
             >
-              החלף  תמונה
+              החלף תמונה
             </MenuItem>
             {newProfilePicture && (
               <MenuItem onClick={handleDeleteProfilePicture}>מחק תמונה</MenuItem>
@@ -577,25 +666,22 @@ export default function EmployerProfile({
           <ChevronLeftIcon />
         </ListItem>
         <Divider />
-        <ListItem button onClick={() => setShowRating(!showRating)}>
+
+        <ListItem button onClick={handleEditRatings}>
           <ListItemIcon>
             <StarIcon />
           </ListItemIcon>
           <ListItemText primary="דירוגים" />
           <ChevronLeftIcon />
         </ListItem>
-        {showRating && (
-          <Box sx={{ pl: 4, pr: 2, py: 2 }}>
-            <RatingDisplay userId={auth.currentUser?.uid} isEmployer={true} />
-          </Box>
-        )}
         <Divider />
+
         <ListItem button onClick={() => navigate('/company-info')}>
           <ListItemIcon>
             <BusinessIcon />
           </ListItemIcon>
           <ListItemText primary="מידע ושיתוף" />
-        <ChevronLeftIcon />
+          <ChevronLeftIcon />
         </ListItem>
         <Divider />
 
@@ -606,7 +692,6 @@ export default function EmployerProfile({
           <ListItemText primary="התחברות ואבטחה" />
           <ChevronLeftIcon />
         </ListItem>
-        <Divider />
         {showSecurity && (
           <Box sx={{ pl: 4, pr: 2, py: 2 }}>
             {profileData.pendingDeletion ? (
@@ -634,20 +719,19 @@ export default function EmployerProfile({
             )}
           </Box>
         )}
-        <ListItem button onClick={() => setShowFeedback(!showFeedback)}>
-          <ListItemIcon><RateReviewIcon /></ListItemIcon>
+        <Divider />
+
+        <ListItem button onClick={handleEditFeedback}>
+          <ListItemIcon>
+            <RateReviewIcon />
+          </ListItemIcon>
           <ListItemText primary="משוב למפתחי האתר" />
           <ChevronLeftIcon />
         </ListItem>
-        {showFeedback && (
-          <Box sx={{ pl: 4, pr: 2, py: 2 }}>
-            <SendFeedback />
-          </Box>
-        )}
         <Divider />
+
         {[
           { key: 'payments', icon: <PaymentIcon />, label: 'תשלומים (יגיע בקרוב)' },
-          // { key: 'privacy', icon: <PrivacyIcon />, label: 'פרטיות ושיתוף' },
           { key: 'preferences', icon: <PreferencesIcon />, label: 'העדפות' },
         ].map((item) => (
           <React.Fragment key={item.key}>
@@ -677,18 +761,14 @@ export default function EmployerProfile({
 
   return (
     <Box sx={{ bgcolor: 'background.paper', minHeight: '100vh' }}>
-      <Box
-        sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-      >
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1, textAlign: 'left' }}>
-          פרופיל מעסיק
-        </Typography>
-      </Box>
-
       {editingPersonalInfo
         ? renderPersonalInfo()
         : editingBusinessInfo
         ? renderBusinessInfo()
+        : editingRatings
+        ? renderRatings()
+        : editingFeedback
+        ? renderFeedback()
         : renderMainContent()}
 
       {renderEditDialog()}

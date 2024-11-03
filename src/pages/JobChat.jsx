@@ -2,21 +2,21 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   Box, List, ListItem, ListItemText, ListItemAvatar, Avatar, Typography, TextField, IconButton, AppBar,
-  Toolbar, Divider, Badge, CircularProgress, Button, Dialog, DialogActions, DialogContent,
-  DialogContentText, DialogTitle, Menu, MenuItem, useTheme, Snackbar, Alert
+  Toolbar, Divider, Badge, CircularProgress, Dialog, DialogActions, DialogContent,
+  DialogContentText, DialogTitle, Menu, MenuItem, Snackbar, Alert, Button, useMediaQuery
 } from '@mui/material';
-import { 
-  Send as SendIcon, ArrowBack as ArrowBackIcon,MoreVert as MoreVertIcon,
-  Work as WorkIcon, Delete as DeleteIcon, Chat as ChatIcon, ExitToApp as ExitToAppIcon
+import {
+  Send as SendIcon, ArrowBack as ArrowBackIcon, MoreVert as MoreVertIcon,
+  Work as WorkIcon, Delete as DeleteIcon, Chat as ChatIcon, ExitToApp as ExitToAppIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
-import { 
+import {
   collection, query, where, onSnapshot, serverTimestamp, orderBy,
-  getDocs, updateDoc, deleteDoc, doc, addDoc, 
+  getDocs, updateDoc, deleteDoc, doc, addDoc,
 } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { AuthContext } from '../contexts/AuthContext';
-import { useParams, useNavigate } from 'react-router-dom';
-
+import { useParams, useNavigate, Link } from 'react-router-dom';
 
 export default function JobChat() {
   const { user, loading: authLoading } = useContext(AuthContext);
@@ -30,15 +30,14 @@ export default function JobChat() {
   const [isEmployerView, setIsEmployerView] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [chatToDelete, setChatToDelete] = useState(null);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const { jobId } = useParams();
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'info',
   });
+  const { jobId } = useParams();
   const navigate = useNavigate();
-  const theme = useTheme();
+  const isMobile = useMediaQuery('(max-width:600px)');
 
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -49,16 +48,15 @@ export default function JobChat() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/login'); // Only navigate after authentication is loaded
+      navigate('/login');
     }
   }, [user, authLoading, navigate]);
-  
+
   useEffect(() => {
     if (user) {
-      // Ensure that isEmployer is a boolean value
       setIsEmployerView(!!user.isEmployer);
-    } 
-  }, [user, navigate]);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (isEmployerView === null) return;
@@ -66,22 +64,21 @@ export default function JobChat() {
     const fetchData = async () => {
       setLoading(true);
       if (isEmployerView) {
-        // Employer view logic
         const jobsQuery = query(collection(db, 'jobs'), where('employerId', '==', user.uid));
         const unsubscribe = onSnapshot(jobsQuery, async (snapshot) => {
-          const jobsList = snapshot.docs.map(doc => ({ 
-            id: doc.id, 
-            ...doc.data(), 
-            applicantCount: 0, 
-            unreadCount: 0, 
-            lastMessageTimestamp: null 
+          const jobsList = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            applicantCount: 0,
+            unreadCount: 0,
+            lastMessageTimestamp: null
           }));
-          
+
           for (let job of jobsList) {
             const chatsQuery = query(collection(db, 'jobChats'), where('jobId', '==', job.id));
             const chatsSnapshot = await getDocs(chatsQuery);
             job.applicantCount = chatsSnapshot.size;
-            
+
             let unreadCount = 0;
             let lastMessageTimestamp = null;
             for (let chatDoc of chatsSnapshot.docs) {
@@ -100,7 +97,7 @@ export default function JobChat() {
             job.unreadCount = unreadCount;
             job.lastMessageTimestamp = lastMessageTimestamp;
           }
-          
+
           jobsList.sort((a, b) => {
             if (a.lastMessageTimestamp && b.lastMessageTimestamp) {
               return b.lastMessageTimestamp - a.lastMessageTimestamp;
@@ -121,15 +118,14 @@ export default function JobChat() {
         });
         return () => unsubscribe();
       } else {
-        // Employee view logic
         const chatsQuery = query(collection(db, 'jobChats'), where('applicantId', '==', user.uid));
         const unsubscribe = onSnapshot(chatsQuery, async (snapshot) => {
-          const chatsList = snapshot.docs.map(doc => ({ 
-            id: doc.id, 
-            ...doc.data(), 
-            unreadCount: 0 
+          const chatsList = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            unreadCount: 0
           }));
-          
+
           for (let chat of chatsList) {
             const messagesQuery = query(
               collection(db, 'jobChats', chat.id, 'messages'),
@@ -139,7 +135,7 @@ export default function JobChat() {
             const messagesSnapshot = await getDocs(messagesQuery);
             chat.unreadCount = messagesSnapshot.size;
           }
-          
+
           chatsList.sort((a, b) => {
             if (a.timestamp && b.timestamp) {
               return b.timestamp.toDate() - a.timestamp.toDate();
@@ -171,10 +167,10 @@ export default function JobChat() {
       where('jobId', '==', jobId)
     );
     const unsubscribe = onSnapshot(chatsQuery, async (snapshot) => {
-      let chatList = snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data(), 
-        unreadCount: 0 
+      let chatList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        unreadCount: 0
       }));
 
       for (let chat of chatList) {
@@ -228,9 +224,9 @@ export default function JobChat() {
     );
 
     await Promise.all(updatePromises);
-    
+
     setChats(prevChats => {
-      const updatedChats = prevChats.map(chat => 
+      const updatedChats = prevChats.map(chat =>
         chat.id === chatId ? { ...chat, unreadCount: 0 } : chat
       );
       return updatedChats;
@@ -269,7 +265,7 @@ export default function JobChat() {
       text: newMessage,
       senderId: user.uid,
       recipientId: recipientId,
-      senderName: user.displayName || 'Anonymous',
+      senderName: user.name || 'Anonymous',
       timestamp: serverTimestamp(),
       read: false
     };
@@ -284,7 +280,7 @@ export default function JobChat() {
       await updateDoc(jobRef, { lastMessageTimestamp: serverTimestamp() });
 
       setJobs(prevJobs => {
-        const updatedJobs = prevJobs.map(job => 
+        const updatedJobs = prevJobs.map(job =>
           job.id === selectedChat.jobId ? { ...job, lastMessageTimestamp: new Date() } : job
         );
         return updatedJobs.sort((a, b) => b.lastMessageTimestamp - a.lastMessageTimestamp);
@@ -295,7 +291,7 @@ export default function JobChat() {
     scrollToBottom();
 
     setChats(prevChats => {
-      const updatedChats = prevChats.map(chat => 
+      const updatedChats = prevChats.map(chat =>
         chat.id === selectedChat.id ? { ...chat, timestamp: new Date() } : chat
       );
       return updatedChats.sort((a, b) => b.timestamp - a.timestamp);
@@ -327,7 +323,6 @@ export default function JobChat() {
         message: 'אירעה שגיאה במחיקת השיחה',
         severity: 'warning',
       });
-
     }
   };
 
@@ -335,13 +330,13 @@ export default function JobChat() {
     try {
       const chatsQuery = query(collection(db, 'jobChats'), where('jobId', '==', job.id));
       const chatsSnapshot = await getDocs(chatsQuery);
-      
+
       for (let chatDoc of chatsSnapshot.docs) {
         const messagesQuery = query(collection(db, 'jobChats', chatDoc.id, 'messages'));
         const messagesSnapshot = await getDocs(messagesQuery);
         const deletePromises = messagesSnapshot.docs.map(doc => deleteDoc(doc.ref));
         await Promise.all(deletePromises);
-        
+
         await deleteDoc(chatDoc.ref);
       }
 
@@ -351,7 +346,6 @@ export default function JobChat() {
         setSelectedChat(null);
         setMessages([]);
       }
-      setAnchorEl(null);
     } catch (error) {
       console.error("Error deleting job chat:", error);
       setSnackbar({
@@ -359,7 +353,6 @@ export default function JobChat() {
         message: 'אירעה שגיאה במחיקת שיחות העבודה',
         severity: 'warning',
       });
-
     }
   };
 
@@ -371,107 +364,174 @@ export default function JobChat() {
     }
   };
 
-  const renderJobList = () => (
-    <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-      {jobs.map((job) => (
-        <ListItem 
-          button 
-          key={job.id} 
-          onClick={() => handleJobSelect(job)}
-          sx={{
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            '&:last-child': { borderBottom: 'none' },
+  // רכיב ChatListItem
+  const ChatListItem = ({ chat }) => {
+    const [anchorElChat, setAnchorElChat] = useState(null);
+
+    const profileName = isEmployerView ? chat.applicantName : chat.employerName;
+    const profileId = isEmployerView ? chat.applicantId : chat.employerId;
+    const profilePhotoURL = isEmployerView ? chat.applicantPhotoURL : chat.employerPhotoURL;
+
+    return (
+      <ListItem
+        button
+        onClick={() => handleChatSelect(chat)}
+        sx={{
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          '&:last-child': { borderBottom: 'none' },
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+      >
+        <ListItemAvatar>
+          <Link to={`/user/${profileId}`} style={{ textDecoration: 'none' }}>
+          <Avatar
+                      src={user.profileURL || user.photoURL || '/placeholder.svg'}
+                      alt={user.name || 'User'}
+                      sx={{ width: 32, height: 32 }}
+                    />
+          </Link>
+        </ListItemAvatar>
+        <ListItemText
+          primary={
+            <Link to={`/user/${profileId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              {profileName}
+            </Link>
+          }
+          secondary={
+            <Link to={`/user/${profileId}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              {profileName}
+            </Link>
+          }
+          primaryTypographyProps={{ fontWeight: 'medium' }}
+        />
+        {chat.unreadCount > 0 && (
+          <Badge badgeContent={chat.unreadCount} color="error" sx={{ mr: 1 }}>
+            <ChatIcon color="action" />
+          </Badge>
+        )}
+        <IconButton
+          edge="end"
+          aria-label="more"
+          onClick={(e) => {
+            e.stopPropagation();
+            setAnchorElChat(e.currentTarget);
           }}
         >
-          <ListItemAvatar>
-            <Avatar sx={{ bgcolor: 'primary.main' }}>
-              <WorkIcon />
-            </Avatar>
-          </ListItemAvatar>
-          <ListItemText 
-            primary={job.title} 
-            secondary={`${job.applicantCount} מועמדים`}
-            primaryTypographyProps={{ fontWeight: 'medium' }}
-          />
-          {job.unreadCount > 0 && (
-            <Badge badgeContent={job.unreadCount} color="primary" sx={{ mr: 1 }}>
-              <ChatIcon color="action" />
-            </Badge>
-          )}
-          <IconButton
-            edge="end"
-            aria-label="more"
-            onClick={(e) => {
-              e.stopPropagation();
-              setAnchorEl(e.currentTarget);
+          <MoreVertIcon />
+        </IconButton>
+        <Menu
+          anchorEl={anchorElChat}
+          open={Boolean(anchorElChat)}
+          onClose={() => {
+            setAnchorElChat(null);
+          }}
+        >
+          <MenuItem
+            onClick={() => {
+              setChatToDelete(chat);
+              setOpenDeleteDialog(true);
+              setAnchorElChat(null);
             }}
           >
-            <MoreVertIcon />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={() => setAnchorEl(null)}
+            מחק שיחה
+          </MenuItem>
+        </Menu>
+      </ListItem>
+    );
+  };
+
+  // רכיב JobListItem
+  const JobListItem = ({ job }) => {
+    const [anchorElJob, setAnchorElJob] = useState(null);
+
+    return (
+      <ListItem
+        button
+        onClick={() => handleJobSelect(job)}
+        sx={{
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          '&:last-child': { borderBottom: 'none' },
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+      >
+        <ListItemAvatar>
+          <Avatar sx={{ bgcolor: 'primary.main' }}>
+            <WorkIcon />
+          </Avatar>
+        </ListItemAvatar>
+        <ListItemText
+          primary={
+            <Link to={`/job/${job.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              {job.title}
+            </Link>
+          }
+          secondary={`${job.applicantCount} מועמדים`}
+          primaryTypographyProps={{ fontWeight: 'medium' }}
+        />
+        {job.unreadCount > 0 && (
+          <Badge badgeContent={job.unreadCount} color="error" sx={{ mr: 1 }}>
+            <ChatIcon color="action" />
+          </Badge>
+        )}
+        <IconButton
+          edge="end"
+          aria-label="more"
+          onClick={(e) => {
+            e.stopPropagation();
+            setAnchorElJob(e.currentTarget);
+          }}
+        >
+          <MoreVertIcon />
+        </IconButton>
+        <Menu
+          anchorEl={anchorElJob}
+          open={Boolean(anchorElJob)}
+          onClose={() => {
+            setAnchorElJob(null);
+          }}
+        >
+          <MenuItem
+            onClick={() => {
+              handleDeleteJobChat(job);
+              setAnchorElJob(null);
+            }}
           >
-            <MenuItem onClick={() => handleDeleteJobChat(job)}>מחק שיחות עבודה</MenuItem>
-          </Menu>
-        </ListItem>
-      ))}
-    </List>
-  );
+            מחק שיחות עבודה
+          </MenuItem>
+        </Menu>
+      </ListItem>
+    );
+  };
 
   const renderChatList = () => (
     <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
       {chats.map((chat) => (
-        <ListItem 
-          button 
-          key={chat.id} 
-          onClick={() => handleChatSelect(chat)}
-          sx={{
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            '&:last-child': { borderBottom: 'none' },
-          }}
-        >
-          <ListItemAvatar>
-            <Avatar src={`https://picsum.photos/seed/${isEmployerView ? chat.applicantId : chat.employerId}/200`} />
-          </ListItemAvatar>
-          <ListItemText 
-            primary={chat.jobTitle} 
-            secondary={isEmployerView ? chat.applicantName : chat.employerName}
-            primaryTypographyProps={{ fontWeight: 'medium' }}
-          />
-          {chat.unreadCount > 0 && (
-            <Badge badgeContent={chat.unreadCount} color="primary" sx={{ mr: 1 }}>
-              <ChatIcon color="action" />
-            </Badge>
-          )}
-          <IconButton 
-            edge="end" 
-            aria-label="delete"
-            onClick={(e) => {
-              e.stopPropagation();
-              setChatToDelete(chat);
-              setOpenDeleteDialog(true);
-            }}
-          >
-            <DeleteIcon />
-          </IconButton>
-        </ListItem>
+        <ChatListItem key={chat.id} chat={chat} />
+      ))}
+    </List>
+  );
+
+  const renderJobList = () => (
+    <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+      {jobs.map((job) => (
+        <JobListItem key={job.id} job={job} />
       ))}
     </List>
   );
 
   const renderMessages = () => (
-    <Box 
-      sx={{ 
-        flexGrow: 1, 
-        overflowY: 'auto', 
-        p: 2, 
-        bgcolor: 'grey.100' 
-      }} 
-      ref={chatContainerRef} 
+    <Box
+      sx={{
+        flexGrow: 1,
+        overflowY: 'auto',
+        p: 2,
+        bgcolor: 'background.default',
+        backgroundImage: 'url(/chat-background.png)',
+        backgroundSize: 'cover',
+      }}
+      ref={chatContainerRef}
     >
       {messages.map((message) => (
         <Box
@@ -485,14 +545,15 @@ export default function JobChat() {
           <Box
             sx={{
               maxWidth: '70%',
-              p: 2,
-              borderRadius: 4,
-              bgcolor: message.senderId === user.uid ? 'primary.main' : 'background.paper',
+              p: 1.5,
+              borderRadius: 2,
+              bgcolor: message.senderId === user.uid ? 'primary.main' : 'grey.200',
               color: message.senderId === user.uid ? 'primary.contrastText' : 'text.primary',
+              boxShadow: 1,
             }}
           >
             <Typography variant="body1">{message.text}</Typography>
-            <Typography variant="caption" display="block" sx={{ mt: 1, opacity: 0.7 }}>
+            <Typography variant="caption" display="block" sx={{ mt: 0.5, opacity: 0.7 }}>
               {message.timestamp?.toDate().toLocaleString()}
             </Typography>
           </Box>
@@ -502,15 +563,7 @@ export default function JobChat() {
     </Box>
   );
 
-  if (authLoading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="90vh">
-        <CircularProgress />
-      </Box>
-    );
-  }  
-
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="90vh">
         <CircularProgress />
@@ -519,82 +572,84 @@ export default function JobChat() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="fixed" color="primary" elevation={0} sx={{ top: 0, zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+    <Box sx={{ height: '100vh', bgcolor: 'background.default' }}>
+      {/* AppBar */}
+      <AppBar position="fixed" color="inherit" elevation={1}>
         <Toolbar>
           {(selectedJob || selectedChat) && (
             <IconButton edge="start" color="inherit" onClick={() => {
-              setSelectedJob(null);
-              setSelectedChat(null);
+              if (selectedChat) {
+                handleExitChat();
+              } else {
+                setSelectedJob(null);
+              }
             }} sx={{ mr: 2 }}>
               <ArrowBackIcon />
             </IconButton>
           )}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {selectedChat ? (isEmployerView ? selectedChat.applicantName : selectedChat.employerName) : (isEmployerView ? 'צ\'אט מעסיק' : 'צ\'אט עובד')}
+            {selectedChat ? (isEmployerView ? selectedChat.applicantName : selectedChat.employerName) : (isEmployerView ? 'הודעות מעסיק' : 'הודעות עובד')}
           </Typography>
+          {selectedChat && (
+            <Button
+              color="inherit"
+              startIcon={<ExitToAppIcon />}
+              onClick={handleExitChat}
+            >
+              יציאה מהצ'אט
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
       <Toolbar />
 
-      <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden', mt: -5 }}>
-        {!selectedChat ? (
-          <Box sx={{ height: '100%', width: '100%' }}>
+      {/* Content */}
+      <Box sx={{ display: 'flex', height: `calc(100% - ${isMobile ? '56px' : '64px'})`, flexDirection: isMobile ? 'column' : 'row' }}>
+        {/* Sidebar */}
+        {(!selectedChat || isMobile) && (
+          <Box sx={{ width: isMobile ? '100%' : 300, borderRight: isMobile ? 'none' : '1px solid', borderColor: 'divider', overflowY: 'auto' }}>
             {isEmployerView ? (
               selectedJob ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <Typography variant="h6" sx={{ p: 2, bgcolor: 'background.paper' }}>
+                <Box>
+                  <Typography variant="h6" sx={{ p: 2 }}>
                     {selectedJob.title}
                   </Typography>
                   <Divider />
-                  <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-                    {renderChatList()}
-                  </Box>
+                  {renderChatList()}
                 </Box>
               ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <Typography variant="h6" sx={{ p: 2, bgcolor: 'background.paper' }}>
-                    כל המשרות
+                <Box>
+                  <Typography variant="h6" sx={{ p: 2 }}>
+                    המשרות שלך
                   </Typography>
                   <Divider />
-                  <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-                    {renderJobList()}
-                  </Box>
+                  {renderJobList()}
                 </Box>
               )
             ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <Typography variant="h6" sx={{ p: 2, bgcolor: 'background.paper' }}>
-                  הצ'אטים שלי
+              <Box>
+                <Typography variant="h6" sx={{ p: 2 }}>
+                  השיחות שלך
                 </Typography>
                 <Divider />
-                <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-                  {renderChatList()}
-                </Box>
+                {renderChatList()}
               </Box>
             )}
           </Box>
-        ) : (
-          <Box sx={{ 
-            height: '100%', 
-            width: '100%', 
-            display: 'flex', 
-            flexDirection: 'column',
-            mt: 2,
-          }}>
-            {/* Message Area */}
+        )}
+
+        {/* Chat Area */}
+        {selectedChat && (
+          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
             {renderMessages()}
 
             {/* Message Input */}
-            <Box sx={{ 
-              p: 2, 
-              bgcolor: 'background.paper', 
-              display: 'flex', 
+            <Box sx={{
+              p: 2,
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
               alignItems: 'center',
-              position: 'fixed',
-              bottom: 60,
-              left: 0,
-              right: 0,
             }}>
               <TextField
                 fullWidth
@@ -612,15 +667,6 @@ export default function JobChat() {
               <IconButton color="primary" onClick={handleSendMessage}>
                 <SendIcon />
               </IconButton>
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<ExitToAppIcon />}
-                onClick={handleExitChat}
-                sx={{ ml: 1 }}
-              >
-                צא מצ'אט
-              </Button>
             </Box>
           </Box>
         )}
@@ -646,6 +692,8 @@ export default function JobChat() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -660,7 +708,6 @@ export default function JobChat() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
     </Box>
   );
 }

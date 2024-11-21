@@ -346,3 +346,543 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
+
+// LoginPage.js
+
+// import React, { useState, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import {
+//   getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged
+// } from 'firebase/auth';
+// import {
+//   getDoc, setDoc, doc
+// } from 'firebase/firestore';
+// import { db } from '../../services/firebase';
+// import { MapPin, Phone, Briefcase, Star, User } from 'lucide-react';
+// import { FcGoogle } from 'react-icons/fc'; // ייבוא האייקון של Google
+
+// const LoginPage = () => {
+//   const [user, setUser] = useState(null);
+//   const [formData, setFormData] = useState({
+//     location: '',
+//     age: '',
+//     experience: '',
+//     expertise: '',
+//     phoneNumber: '',
+//   });
+//   const [isNewUser, setIsNewUser] = useState(false);
+//   const [error, setError] = useState(null);
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [step, setStep] = useState('login');
+//   const [userType, setUserType] = useState('');
+
+//   const navigate = useNavigate();
+//   const auth = getAuth();
+
+//   useEffect(() => {
+//     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+//       if (firebaseUser) {
+//         checkUserExists(firebaseUser);
+//       } else {
+//         setUser(null);
+//         setIsNewUser(false);
+//       }
+//     });
+
+//     return () => unsubscribe();
+//   }, [auth]);
+
+//   const checkUserExists = async (firebaseUser) => {
+//     setIsLoading(true);
+//     try {
+//       const userDocRef = doc(db, 'users', firebaseUser.uid);
+//       const userDoc = await getDoc(userDocRef);
+
+//       if (userDoc.exists()) {
+//         // המשתמש קיים, ניתוב לעמוד הבית
+//         navigate('/');
+//       } else {
+//         // משתמש חדש, הצגת טופס השלמת פרופיל
+//         setUser(firebaseUser);
+//         setIsNewUser(true);
+//         setStep('completeProfile');
+//       }
+//     } catch (error) {
+//       console.error('Error checking user existence:', error);
+//       setError('אירעה שגיאה בבדיקת קיום המשתמש.');
+//     }
+//     setIsLoading(false);
+//   };
+
+//   const handleGoogleSignIn = async () => {
+//     setIsLoading(true);
+//     const provider = new GoogleAuthProvider();
+//     try {
+//       await signInWithPopup(auth, provider);
+//       // onAuthStateChanged יטפל בשאר
+//     } catch (error) {
+//       console.error('Error signing in with Google:', error);
+//       setError('אירעה שגיאה בהתחברות עם Google.');
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const handleUserTypeContinue = () => {
+//     if (userType) {
+//       handleGoogleSignIn();
+//     } else {
+//       setError('אנא בחר סוג חשבון.');
+//     }
+//   };
+
+//   const handleInputChange = (e) => {
+//     setFormData({ ...formData, [e.target.name]: e.target.value });
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     setIsLoading(true);
+//     try {
+//       const userData = {
+//         uid: user.uid,
+//         email: user.email,
+//         name: user.displayName,
+//         photoURL: user.photoURL,
+//         ...formData,
+//         isEmployer: userType === 'employer',
+//         isEmployee: userType === 'teenager',
+//         createdAt: new Date(),
+//       };
+
+//       await setDoc(doc(db, 'users', user.uid), userData);
+//       navigate('/');
+//     } catch (error) {
+//       console.error('Error creating user profile:', error);
+//       setError('אירעה שגיאה ביצירת הפרופיל.');
+//     }
+//     setIsLoading(false);
+//   };
+
+//   // הגדרת סגנונות בתוך הרכיב
+//   const styles = {
+//     container: {
+//       minHeight: '100vh',
+//       background: 'linear-gradient(to bottom, #F9FAFB, #FFFFFF)',
+//       display: 'flex',
+//       alignItems: 'center',
+//       justifyContent: 'center',
+//       padding: '0 1rem',
+//     },
+//     card: {
+//       width: '100%',
+//       maxWidth: '28rem',
+//     },
+//     loadingSpinner: {
+//       display: 'flex',
+//       justifyContent: 'center',
+//     },
+//     spinner: {
+//       width: '2rem',
+//       height: '2rem',
+//       border: '2px solid #3B82F6',
+//       borderTopColor: 'transparent',
+//       borderRadius: '50%',
+//       animation: 'spin 1s linear infinite',
+//     },
+//     errorMessage: {
+//       marginBottom: '1.5rem',
+//       padding: '1rem',
+//       backgroundColor: '#FEF2F2',
+//       border: '1px solid #FECACA',
+//       color: '#DC2626',
+//       borderRadius: '0.75rem',
+//       fontSize: '0.875rem',
+//     },
+//     // הוספת סגנונות נוספים לפי הצורך
+//   };
+
+//   return (
+//     <div style={styles.container}>
+//       <div style={styles.card}>
+//         {isLoading ? (
+//           <div style={styles.loadingSpinner}>
+//             <div style={styles.spinner}></div>
+//           </div>
+//         ) : (
+//           <>
+//             {error && (
+//               <div style={styles.errorMessage}>
+//                 {error}
+//               </div>
+//             )}
+
+//             {!user && step === 'login' && (
+//               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+//                 <div style={{ textAlign: 'center' }}>
+//                   <h1 style={{
+//                     fontSize: '1.875rem',
+//                     fontWeight: 'bold',
+//                     background: 'linear-gradient(to right, #2563EB, #4F46E5)',
+//                     WebkitBackgroundClip: 'text',
+//                     color: 'transparent'
+//                   }}>
+//                     WorkMatch
+//                   </h1>
+//                   <p style={{ marginTop: '0.5rem', color: '#4B5563' }}>
+//                     ההזדמנות שלך למצוא את המשרות או העובדים הטובים ביותר
+//                   </p>
+//                 </div>
+
+//                 <button
+//                   onClick={() => setStep('selectUserType')}
+//                   style={{
+//                     width: '100%',
+//                     backgroundColor: '#2563EB',
+//                     color: '#FFFFFF',
+//                     padding: '0.75rem 1.5rem',
+//                     borderRadius: '0.75rem',
+//                     transition: 'background-color 0.2s',
+//                     fontWeight: '500',
+//                     cursor: 'pointer',
+//                   }}
+//                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1D4ED8'}
+//                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563EB'}
+//                 >
+//                   יצירת חשבון חדש
+//                 </button>
+
+//                 <div style={{ position: 'relative' }}>
+//                   <div style={{
+//                     position: 'absolute',
+//                     inset: '0',
+//                     display: 'flex',
+//                     alignItems: 'center',
+//                   }}>
+//                     <div style={{ width: '100%', borderTop: '1px solid #E5E7EB' }}></div>
+//                   </div>
+//                   <div style={{
+//                     position: 'relative',
+//                     display: 'flex',
+//                     justifyContent: 'center',
+//                     fontSize: '0.875rem',
+//                   }}>
+//                     <span style={{
+//                       padding: '0 0.5rem',
+//                       backgroundColor: '#FFFFFF',
+//                       color: '#6B7280'
+//                     }}>יש לך כבר חשבון?</span>
+//                   </div>
+//                 </div>
+
+//                 <button
+//                   onClick={handleGoogleSignIn}
+//                   style={{
+//                     width: '100%',
+//                     display: 'flex',
+//                     alignItems: 'center',
+//                     justifyContent: 'center',
+//                     gap: '0.75rem',
+//                     backgroundColor: '#FFFFFF',
+//                     border: '1px solid #E5E7EB',
+//                     color: '#374151',
+//                     padding: '0.75rem 1.5rem',
+//                     borderRadius: '0.75rem',
+//                     transition: 'background-color 0.2s',
+//                     fontWeight: '500',
+//                     cursor: 'pointer',
+//                   }}
+//                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+//                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}
+//                 >
+//                   <FcGoogle style={{ width: '1.25rem', height: '1.25rem' }} />
+//                   <span>התחבר עם Google</span>
+//                 </button>
+//               </div>
+//             )}
+
+//             {step === 'selectUserType' && (
+//               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+//                 <div style={{ textAlign: 'center' }}>
+//                   <h1 style={{
+//                     fontSize: '1.875rem',
+//                     fontWeight: 'bold',
+//                     background: 'linear-gradient(to right, #2563EB, #4F46E5)',
+//                     WebkitBackgroundClip: 'text',
+//                     color: 'transparent'
+//                   }}>
+//                     בחר את הדרך שלך
+//                   </h1>
+//                   <p style={{ marginTop: '0.5rem', color: '#4B5563' }}>
+//                     בחר את סוג החשבון שמתאר אותך בצורה הטובה ביותר
+//                   </p>
+//                 </div>
+
+//                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+//                   <button
+//                     onClick={() => setUserType('teenager')}
+//                     style={{
+//                       width: '100%',
+//                       padding: '1rem',
+//                       borderRadius: '0.75rem',
+//                       border: '1px solid',
+//                       borderColor: userType === 'teenager' ? '#BFDBFE' : '#E5E7EB',
+//                       backgroundColor: userType === 'teenager' ? '#EFF6FF' : '#FFFFFF',
+//                       textAlign: 'left',
+//                       transition: 'all 0.2s',
+//                       boxShadow: userType === 'teenager' ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
+//                       cursor: 'pointer',
+//                     }}
+//                   >
+//                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+//                       <div
+//                         style={{
+//                           padding: '0.5rem',
+//                           borderRadius: '0.5rem',
+//                           backgroundColor: userType === 'teenager' ? '#2563EB' : '#F3F4F6',
+//                           color: userType === 'teenager' ? '#FFFFFF' : '#6B7280',
+//                         }}
+//                       >
+//                         <User style={{ width: '1.5rem', height: '1.5rem' }} />
+//                       </div>
+//                       <div>
+//                         <h3 style={{ fontWeight: '600', color: '#111827' }}>אני עובד</h3>
+//                         <p style={{ marginTop: '0.25rem', fontSize: '0.875rem', color: '#6B7280' }}>
+//                           מחפש הזדמנויות עבודה והבנת הזכויות שלי
+//                         </p>
+//                       </div>
+//                     </div>
+//                   </button>
+
+//                   <button
+//                     onClick={() => setUserType('employer')}
+//                     style={{
+//                       width: '100%',
+//                       padding: '1rem',
+//                       borderRadius: '0.75rem',
+//                       border: '1px solid',
+//                       borderColor: userType === 'employer' ? '#BFDBFE' : '#E5E7EB',
+//                       backgroundColor: userType === 'employer' ? '#EFF6FF' : '#FFFFFF',
+//                       textAlign: 'left',
+//                       transition: 'all 0.2s',
+//                       boxShadow: userType === 'employer' ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
+//                       cursor: 'pointer',
+//                     }}
+//                   >
+//                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+//                       <div
+//                         style={{
+//                           padding: '0.5rem',
+//                           borderRadius: '0.5rem',
+//                           backgroundColor: userType === 'employer' ? '#2563EB' : '#F3F4F6',
+//                           color: userType === 'employer' ? '#FFFFFF' : '#6B7280',
+//                         }}
+//                       >
+//                         <Briefcase style={{ width: '1.5rem', height: '1.5rem' }} />
+//                       </div>
+//                       <div>
+//                         <h3 style={{ fontWeight: '600', color: '#111827' }}>אני מעסיק</h3>
+//                         <p style={{ marginTop: '0.25rem', fontSize: '0.875rem', color: '#6B7280' }}>
+//                           מעוניין להעסיק עובדים לעסק שלי
+//                         </p>
+//                       </div>
+//                     </div>
+//                   </button>
+//                 </div>
+
+//                 <button
+//                   onClick={handleUserTypeContinue}
+//                   style={{
+//                     width: '100%',
+//                     backgroundColor: userType ? '#2563EB' : '#93C5FD',
+//                     color: '#FFFFFF',
+//                     padding: '0.75rem 1.5rem',
+//                     borderRadius: '0.75rem',
+//                     transition: 'background-color 0.2s',
+//                     fontWeight: '500',
+//                     cursor: userType ? 'pointer' : 'not-allowed',
+//                   }}
+//                   disabled={!userType}
+//                   onMouseEnter={(e) => {
+//                     if (userType) e.currentTarget.style.backgroundColor = '#1D4ED8';
+//                   }}
+//                   onMouseLeave={(e) => {
+//                     if (userType) e.currentTarget.style.backgroundColor = '#2563EB';
+//                   }}
+//                 >
+//                   המשך
+//                   {userType === 'teenager'
+//                     ? ' כעובד'
+//                     : userType === 'employer'
+//                     ? ' כמעסיק'
+//                     : ''}
+//                 </button>
+
+//                 <button
+//                   onClick={() => setStep('login')}
+//                   style={{ width: '100%', color: '#4B5563', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'underline', cursor: 'pointer' }}
+//                 >
+//                   חזרה לכניסה
+//                 </button>
+//               </div>
+//             )}
+
+//             {user && isNewUser && step === 'completeProfile' && (
+//               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+//                 <div style={{ textAlign: 'center' }}>
+//                   <h1 style={{
+//                     fontSize: '1.875rem',
+//                     fontWeight: 'bold',
+//                     background: 'linear-gradient(to right, #2563EB, #4F46E5)',
+//                     WebkitBackgroundClip: 'text',
+//                     color: 'transparent'
+//                   }}>
+//                     השלם את הפרופיל שלך
+//                   </h1>
+//                   <p style={{ marginTop: '0.5rem', color: '#4B5563' }}>ספר לנו עוד על עצמך</p>
+//                 </div>
+
+//                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+//                   <div style={{ position: 'relative' }}>
+//                     <MapPin style={{ position: 'absolute', left: '0.75rem', top: '0.875rem', width: '1.25rem', height: '1.25rem', color: '#9CA3AF' }} />
+//                     <input
+//                       type="text"
+//                       name="location"
+//                       placeholder="מיקום"
+//                       value={formData.location}
+//                       onChange={handleInputChange}
+//                       style={{
+//                         width: '100%',
+//                         paddingLeft: '2.5rem',
+//                         paddingRight: '1rem',
+//                         paddingTop: '0.75rem',
+//                         paddingBottom: '0.75rem',
+//                         border: '1px solid #E5E7EB',
+//                         borderRadius: '0.75rem',
+//                         outline: 'none',
+//                         fontSize: '1rem',
+//                       }}
+//                       required
+//                     />
+//                   </div>
+
+//                   <div style={{ position: 'relative' }}>
+//                     <User style={{ position: 'absolute', left: '0.75rem', top: '0.875rem', width: '1.25rem', height: '1.25rem', color: '#9CA3AF' }} />
+//                     <input
+//                       type="number"
+//                       name="age"
+//                       placeholder="גיל"
+//                       value={formData.age}
+//                       onChange={handleInputChange}
+//                       style={{
+//                         width: '100%',
+//                         paddingLeft: '2.5rem',
+//                         paddingRight: '1rem',
+//                         paddingTop: '0.75rem',
+//                         paddingBottom: '0.75rem',
+//                         border: '1px solid #E5E7EB',
+//                         borderRadius: '0.75rem',
+//                         outline: 'none',
+//                         fontSize: '1rem',
+//                       }}
+//                       required
+//                     />
+//                   </div>
+
+//                   <div style={{ position: 'relative' }}>
+//                     <Briefcase style={{ position: 'absolute', left: '0.75rem', top: '0.875rem', width: '1.25rem', height: '1.25rem', color: '#9CA3AF' }} />
+//                     <input
+//                       type="text"
+//                       name="experience"
+//                       placeholder="התמחאות"
+//                       value={formData.experience}
+//                       onChange={handleInputChange}
+//                       style={{
+//                         width: '100%',
+//                         paddingLeft: '2.5rem',
+//                         paddingRight: '1rem',
+//                         paddingTop: '0.75rem',
+//                         paddingBottom: '0.75rem',
+//                         border: '1px solid #E5E7EB',
+//                         borderRadius: '0.75rem',
+//                         outline: 'none',
+//                         fontSize: '1rem',
+//                       }}
+//                       required
+//                     />
+//                   </div>
+
+//                   <div style={{ position: 'relative' }}>
+//                     <Star style={{ position: 'absolute', left: '0.75rem', top: '0.875rem', width: '1.25rem', height: '1.25rem', color: '#9CA3AF' }} />
+//                     <input
+//                       type="text"
+//                       name="expertise"
+//                       placeholder="ניסיון"
+//                       value={formData.expertise}
+//                       onChange={handleInputChange}
+//                       style={{
+//                         width: '100%',
+//                         paddingLeft: '2.5rem',
+//                         paddingRight: '1rem',
+//                         paddingTop: '0.75rem',
+//                         paddingBottom: '0.75rem',
+//                         border: '1px solid #E5E7EB',
+//                         borderRadius: '0.75rem',
+//                         outline: 'none',
+//                         fontSize: '1rem',
+//                       }}
+//                       required
+//                     />
+//                   </div>
+
+//                   <div style={{ position: 'relative' }}>
+//                     <Phone style={{ position: 'absolute', left: '0.75rem', top: '0.875rem', width: '1.25rem', height: '1.25rem', color: '#9CA3AF' }} />
+//                     <input
+//                       type="tel"
+//                       name="phoneNumber"
+//                       placeholder="מספר טלפון"
+//                       value={formData.phoneNumber}
+//                       onChange={handleInputChange}
+//                       style={{
+//                         width: '100%',
+//                         paddingLeft: '2.5rem',
+//                         paddingRight: '1rem',
+//                         paddingTop: '0.75rem',
+//                         paddingBottom: '0.75rem',
+//                         border: '1px solid #E5E7EB',
+//                         borderRadius: '0.75rem',
+//                         outline: 'none',
+//                         fontSize: '1rem',
+//                       }}
+//                       required
+//                     />
+//                   </div>
+
+//                   <button
+//                     type="submit"
+//                     style={{
+//                       width: '100%',
+//                       backgroundColor: '#2563EB',
+//                       color: '#FFFFFF',
+//                       padding: '0.75rem 1.5rem',
+//                       borderRadius: '0.75rem',
+//                       transition: 'background-color 0.2s',
+//                       fontWeight: '500',
+//                       cursor: 'pointer',
+//                     }}
+//                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1D4ED8'}
+//                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563EB'}
+//                   >
+//                     יצירת חשבון
+//                   </button>
+//                 </form>
+//               </div>
+//             )}
+//           </>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default LoginPage;

@@ -28,6 +28,9 @@ self.addEventListener('push', function (event) {
   
     event.waitUntil(
       self.registration.showNotification(data.title || 'New Notification', options)
+      .catch((error) => {
+        console.error('Failed to display notification:', error);
+      })
     );
   });
   

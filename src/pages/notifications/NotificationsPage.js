@@ -22,20 +22,20 @@ import NoNotificationsImage from '../../images/completed.svg';
 // Check if the user allowed notifications
 const canSendNotifications = () => Notification.permission === 'granted';
 
-// Send browser notifications if allowed
-const sendBrowserNotification = async (title, body) => {
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    registration.showNotification(title, {
-      body,
-      icon: '/images/logo.png',
-      tag: 'notification',
-      renotify: true,
-    });
-  } catch (error) {
-    console.error('Notification error:', error);
-  }
-};
+// // Send browser notifications if allowed
+// const sendBrowserNotification = async (title, body) => {
+//   try {
+//     const registration = await navigator.serviceWorker.ready;
+//     registration.showNotification(title, {
+//       body,
+//       icon: '/images/logo.png',
+//       tag: 'notification',
+//       renotify: true,
+//     });
+//   } catch (error) {
+//     console.error('Notification error:', error);
+//   }
+// };
 
 
 
@@ -230,7 +230,7 @@ export default function NotificationsPage() {
 
               // Send notification only if not already sent
               if (!notification.isHistory && !sentNotifications.includes(notification.id)) {
-                sendBrowserNotification('New Notification', notification.content);
+                // sendBrowserNotification('New Notification', notification.content);
                 setSentNotifications((prev) => {
                   const updatedSent = [...prev, notification.id];
                   sessionStorage.setItem('sentNotifications', JSON.stringify(updatedSent));

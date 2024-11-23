@@ -1,18 +1,18 @@
-// כל התוכן כפי ששלחת, ללא שינויים במבנה המקורי
+// UserProfilePage.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-  Box, Typography, Avatar, Paper, Stack, Chip, CircularProgress, Rating, IconButton, Divider
+  Box, Typography, Avatar, Paper, Stack, Chip, CircularProgress, Rating, IconButton, Divider, Button, Menu, MenuItem
 } from '@mui/material';
 import {
-  Verified, Language, LocationOn, Work, School, Email, Phone, Business, DirectionsCar, NewReleases, Star
+  Verified, Language, LocationOn, Work, School, Email, Phone, Business, DirectionsCar, NewReleases, Star, Sort
 } from '@mui/icons-material';
 import {
   getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs
 } from 'firebase/firestore';
 import { ContactIconsDisplay } from '../../components/code parts/ContactMethodsManager';
-import { db } from '../../services/firebase'
-
+import { db } from '../../services/firebase';
 
 // הרכיב הראשי של דף הפרופיל
 export default function UserProfilePage() {
@@ -23,6 +23,26 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState([]);
   const [jobsWorkedCount, setJobsWorkedCount] = useState(0);
+
+  // משתנים חדשים לניהול הצגת הביקורות
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [sortAnchorEl, setSortAnchorEl] = useState(null);
+  const [sortOption, setSortOption] = useState('date_desc'); // ברירת מחדל: תאריך יורד
+
+  // פונקציה למיון הביקורות
+  const sortReviews = (reviews, option) => {
+    const sortedReviews = [...reviews];
+    if (option === 'date_desc') {
+      sortedReviews.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+    } else if (option === 'date_asc') {
+      sortedReviews.sort((a, b) => a.createdAt.seconds - b.createdAt.seconds);
+    } else if (option === 'rating_desc') {
+      sortedReviews.sort((a, b) => b.rating - a.rating);
+    } else if (option === 'rating_asc') {
+      sortedReviews.sort((a, b) => a.rating - b.rating);
+    }
+    return sortedReviews;
+  };
 
   // טעינת נתוני משתמש
   useEffect(() => {
@@ -83,7 +103,7 @@ export default function UserProfilePage() {
             },
           }));
 
-          setReviews(reviewsWithProfiles);
+          setReviews(sortReviews(reviewsWithProfiles, sortOption));
         } else {
           console.error('User does not exist');
         }
@@ -95,7 +115,7 @@ export default function UserProfilePage() {
     };
 
     fetchUserData();
-  }, [db, userId]);
+  }, [db, userId, sortOption]);
 
   if (loading) {
     return (
@@ -116,37 +136,44 @@ export default function UserProfilePage() {
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', p: 2 }}>
       {isEmployer ? (
-        <EmployerProfile profileData={profileData} reviews={reviews} />
+        <EmployerProfile
+          profileData={profileData}
+          reviews={reviews}
+          showAllReviews={showAllReviews}
+          setShowAllReviews={setShowAllReviews}
+          sortAnchorEl={sortAnchorEl}
+          setSortAnchorEl={setSortAnchorEl}
+          setSortOption={setSortOption}
+          sortOption={sortOption}
+        />
       ) : (
-        <EmployeeProfile profileData={profileData} reviews={reviews} jobsWorkedCount={jobsWorkedCount} />
+        <EmployeeProfile
+          profileData={profileData}
+          reviews={reviews}
+          jobsWorkedCount={jobsWorkedCount}
+          showAllReviews={showAllReviews}
+          setShowAllReviews={setShowAllReviews}
+          sortAnchorEl={sortAnchorEl}
+          setSortAnchorEl={setSortAnchorEl}
+          setSortOption={setSortOption}
+          sortOption={sortOption}
+        />
       )}
     </Box>
   );
 }
 
-const updateAverageRating = async (db, userId, averageRating) => {
-  try {
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      averageRating: averageRating,
-    });
-    console.log('Average rating updated successfully!');
-  } catch (error) {
-    console.error('Error updating average rating:', error);
-  }
-};
-
-
 function ProfileHeader({ profileData, isEmployer, reviews, jobsWorkedCount }) {
-  const averageRating = reviews.length > 0
-    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-    : 0;
-    
-  useEffect(() => {
-    if (averageRating !== null) {
-      updateAverageRating(db, profileData.id, averageRating);
-    }
-  }, [averageRating, profileData.id, db]);
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+      : 0;
+
+  // useEffect(() => {
+  //   if (averageRating !== null) {
+  //     updateAverageRating(db, profileData.id, averageRating);
+  //   }
+  // }, [averageRating, profileData.id, db]);
 
   let workerStatusIcon;
   if (!isEmployer) {
@@ -228,7 +255,29 @@ function ProfileHeader({ profileData, isEmployer, reviews, jobsWorkedCount }) {
   );
 }
 
-function EmployerProfile({ profileData, reviews }) {
+function EmployerProfile({
+  profileData,
+  reviews,
+  showAllReviews,
+  setShowAllReviews,
+  sortAnchorEl,
+  setSortAnchorEl,
+  setSortOption,
+  sortOption,
+}) {
+  const handleSortMenuOpen = (event) => {
+    setSortAnchorEl(event.currentTarget);
+  };
+
+  const handleSortMenuClose = () => {
+    setSortAnchorEl(null);
+  };
+
+  const handleSortOptionChange = (option) => {
+    setSortOption(option);
+    handleSortMenuClose();
+  };
+
   return (
     <Box>
       <ProfileHeader profileData={profileData} isEmployer={true} reviews={reviews} />
@@ -255,7 +304,7 @@ function EmployerProfile({ profileData, reviews }) {
             <ContactIconsDisplay contactMethods={profileData.contactMethods} />
           </>
         )}
-        
+
         {profileData.description && (
           <>
             <Typography variant="h6" sx={{ fontWeight: 'bold', mt: 3 }}>
@@ -269,14 +318,44 @@ function EmployerProfile({ profileData, reviews }) {
 
         <Divider sx={{ my: 3 }} />
 
-        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          הביקורות של {profileData.name}
-        </Typography>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            הביקורות של {profileData.name}
+          </Typography>
+          <IconButton onClick={handleSortMenuOpen}>
+            <Sort />
+          </IconButton>
+          <Menu
+            anchorEl={sortAnchorEl}
+            open={Boolean(sortAnchorEl)}
+            onClose={handleSortMenuClose}
+          >
+            <MenuItem onClick={() => handleSortOptionChange('date_desc')}>
+              תאריך (מהחדש לישן)
+            </MenuItem>
+            <MenuItem onClick={() => handleSortOptionChange('date_asc')}>
+              תאריך (מהישן לחדש)
+            </MenuItem>
+            <MenuItem onClick={() => handleSortOptionChange('rating_desc')}>
+              דירוג (מהגבוה לנמוך)
+            </MenuItem>
+            <MenuItem onClick={() => handleSortOptionChange('rating_asc')}>
+              דירוג (מהנמוך לגבוה)
+            </MenuItem>
+          </Menu>
+        </Box>
 
         {reviews.length > 0 ? (
-          reviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
-          ))
+          <>
+            {(showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))}
+            {reviews.length > 3 && (
+              <Button onClick={() => setShowAllReviews(!showAllReviews)}>
+                {showAllReviews ? 'הצג פחות' : 'הצג עוד'}
+              </Button>
+            )}
+          </>
         ) : (
           <Typography variant="body2" color="text.secondary">
             אין ביקורות להצגה.
@@ -287,7 +366,30 @@ function EmployerProfile({ profileData, reviews }) {
   );
 }
 
-function EmployeeProfile({ profileData, reviews, jobsWorkedCount }) {
+function EmployeeProfile({
+  profileData,
+  reviews,
+  jobsWorkedCount,
+  showAllReviews,
+  setShowAllReviews,
+  sortAnchorEl,
+  setSortAnchorEl,
+  setSortOption,
+  sortOption,
+}) {
+  const handleSortMenuOpen = (event) => {
+    setSortAnchorEl(event.currentTarget);
+  };
+
+  const handleSortMenuClose = () => {
+    setSortAnchorEl(null);
+  };
+
+  const handleSortOptionChange = (option) => {
+    setSortOption(option);
+    handleSortMenuClose();
+  };
+
   return (
     <Box>
       <ProfileHeader
@@ -360,14 +462,44 @@ function EmployeeProfile({ profileData, reviews, jobsWorkedCount }) {
 
         <Divider sx={{ my: 3 }} />
 
-        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          הביקורות של {profileData.name}
-        </Typography>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            הביקורות של {profileData.name}
+          </Typography>
+          <IconButton onClick={handleSortMenuOpen}>
+            <Sort />
+          </IconButton>
+          <Menu
+            anchorEl={sortAnchorEl}
+            open={Boolean(sortAnchorEl)}
+            onClose={handleSortMenuClose}
+          >
+            <MenuItem onClick={() => handleSortOptionChange('date_desc')}>
+              תאריך (מהחדש לישן)
+            </MenuItem>
+            <MenuItem onClick={() => handleSortOptionChange('date_asc')}>
+              תאריך (מהישן לחדש)
+            </MenuItem>
+            <MenuItem onClick={() => handleSortOptionChange('rating_desc')}>
+              דירוג (מהגבוה לנמוך)
+            </MenuItem>
+            <MenuItem onClick={() => handleSortOptionChange('rating_asc')}>
+              דירוג (מהנמוך לגבוה)
+            </MenuItem>
+          </Menu>
+        </Box>
 
         {reviews.length > 0 ? (
-          reviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
-          ))
+          <>
+            {(showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))}
+            {reviews.length > 3 && (
+              <Button onClick={() => setShowAllReviews(!showAllReviews)}>
+                {showAllReviews ? 'הצג פחות' : 'הצג עוד'}
+              </Button>
+            )}
+          </>
         ) : (
           <Typography variant="body2" color="text.secondary">
             אין ביקורות להצגה.

@@ -337,7 +337,7 @@ export default function MyWorksPage() {
 
       <Paper>
         {loading || authLoading ? (
-          <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+          <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
             <CircularProgress />
           </Box>
         ) : (

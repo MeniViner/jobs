@@ -1,20 +1,41 @@
+// AdminUsersPage.js
+
 import React, { useState, useEffect, useContext } from 'react';
-import { 
-  Container, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead,
-  TableRow, Switch, Button, Box, CircularProgress, TextField, InputAdornment 
-} from '@mui/material';
-import { Search } from '@mui/icons-material';
-import { collection, getDocs, getDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Navigate, Link } from 'react-router-dom';
+import {
+  Avatar,
+  Button,
+  Switch,
+  FormControlLabel,
+  TextField,
+  Typography,
+  CircularProgress,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Toolbar,
+  Box,
+} from '@mui/material';
+import { Search } from '@mui/icons-material';
 
-
-export default function AdminUsersPage({ setTab }) {
+const AdminUsersPage = ({ setTab }) => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAllUsers, setShowAllUsers] = useState(false);
+  const [filterBy, setFilterBy] = useState('');
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -24,175 +45,233 @@ export default function AdminUsersPage({ setTab }) {
   }, [user]);
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      const filtered = users.filter(user =>
-        user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    let filtered = users;
+
+    // חיפוש
+    if (searchTerm) {
+      filtered = users.filter(
+        (user) =>
+          ((user.name?.toLowerCase() || user.displayName?.toLowerCase() || '').includes(searchTerm.toLowerCase())) ||
+          (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
       );
-      setFilteredUsers(filtered);
-    }, 300); // Adjust debounce delay as needed
-  
-    return () => clearTimeout(delayDebounceFn); // Cleanup the timeout
-  }, [users, searchTerm]);
- 
-  const getEmployerDetails = async (userDoc) => {
-    const employerRef = doc(db, 'employers', userDoc.id);
-    const employerDoc = await getDoc(employerRef);
-    return employerDoc.exists() ? employerDoc.data() : {};
-  };
-  
+    }
+
+    // מיון לפי מנהלים או מעסיקים
+    if (filterBy === 'admins') {
+      filtered = filtered.filter((user) => user.isAdmin);
+    } else if (filterBy === 'employers') {
+      filtered = filtered.filter((user) => user.isEmployer);
+    }
+
+    // הצגת כל המשתמשים או רק בעלי הרשאות
+    if (!showAllUsers && !searchTerm) {
+      filtered = filtered.filter(
+        (user) => user.isAdmin || user.isEmployer || user.pendingEmployer
+      );
+    }
+
+    setFilteredUsers(filtered);
+  }, [users, searchTerm, showAllUsers, filterBy]);
+
   const fetchUsers = async () => {
     try {
       const usersCollection = collection(db, 'users');
       const userSnapshot = await getDocs(usersCollection);
-      const userList = await Promise.all(userSnapshot.docs.map(async (userDoc) => {
-        const userData = userDoc.data();
-        const employerDetails = userData.pendingEmployer || userData.isEmployer ? await getEmployerDetails(userDoc) : {};
-        return { id: userDoc.id, ...userData, ...employerDetails, displayName: userData.displayName || userData.name || 'לא צוין' };
+      const userList = userSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
       }));
-  
       setUsers(userList);
       setFilteredUsers(userList);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    } finally {
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching users: ', err);
       setLoading(false);
     }
   };
-  
+
   const handlePermissionToggle = async (userId, permission, currentValue) => {
     try {
       const userRef = doc(db, 'users', userId);
-      const updates = { [permission]: !currentValue };
-  
-      if (permission === 'isEmployer') {
-        updates.pendingEmployer = false;
-        updates.role = !currentValue ? 'employer' : 'user';
-      }
-  
-      await updateDoc(userRef, updates);
-  
-      setUsers(prevUsers => {
-        const updatedUsers = [...prevUsers];
-        const index = updatedUsers.findIndex(user => user.id === userId);
-        if (index !== -1) {
-          updatedUsers[index] = { ...updatedUsers[index], ...updates };
-        }
-        return updatedUsers;
-      });
+      await updateDoc(userRef, { [permission]: !currentValue });
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId ? { ...user, [permission]: !currentValue } : user
+        )
+      );
     } catch (error) {
-      console.error(`Error updating user ${permission}:`, error);
+      console.error('Error updating permission:', error);
     }
-  };
-  
-
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value);
   };
 
   if (!user?.isAdmin) {
     return <Navigate to="/" replace />;
   }
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box sx={{ p: 3, maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Header Section */}
+      <Typography variant="h4" sx={{ mb: 2, fontWeight: 'bold' }}>
         ניהול משתמשים והרשאות
       </Typography>
-      <TextField
-        fullWidth
-        variant="outlined"
-        placeholder="חיפוש לפי שם או אימייל"
-        value={searchTerm}
-        onChange={handleSearchChange}
-        sx={{ mb: 2 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <Search />
-            </InputAdornment>
-          ),
-        }}
-      />
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer sx={{ maxHeight: 440 }}>
-          <Table stickyHeader aria-label="sticky table">
+      <Typography variant="subtitle1" sx={{ mb: 4 }}>
+        נהל הרשאות משתמשים ובקשות מעסיקים
+      </Typography>
+
+      {/* Search and Filters */}
+      <Toolbar disableGutters sx={{ mb: 3, gap: 2, flexWrap: 'wrap' }}>
+        <TextField
+          variant="outlined"
+          placeholder="חיפוש לפי שם או אימייל..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{ flex: 1, minWidth: '250px' }}
+          InputProps={{
+            startAdornment: <Search sx={{ mr: 1 }} />,
+          }}
+        />
+        <FormControl variant="outlined" sx={{ minWidth: '150px' }}>
+          <InputLabel id="filter-by-label">מיין לפי</InputLabel>
+          <Select
+            labelId="filter-by-label"
+            value={filterBy}
+            onChange={(e) => setFilterBy(e.target.value)}
+            label="מיין לפי"
+          >
+            <MenuItem value="">הכל</MenuItem>
+            <MenuItem value="admins">מנהלים</MenuItem>
+            <MenuItem value="employers">מעסיקים</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showAllUsers}
+              onChange={() => setShowAllUsers(!showAllUsers)}
+              color="primary"
+            />
+          }
+          label="הצג את כל המשתמשים"
+        />
+      </Toolbar>
+
+      {loading ? (
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
+          <CircularProgress />
+        </Box>
+      ) : (
+        <TableContainer component={Paper} elevation={1}>
+          <Table>
             <TableHead>
               <TableRow>
-                <TableCell>שם משתמש</TableCell>
-                <TableCell>אימייל</TableCell>
-                <TableCell>מנהל</TableCell>
-                <TableCell>מעסיק</TableCell>
-                <TableCell>סטטוס מעסיק</TableCell>
+                <TableCell>משתמש</TableCell>
+                <TableCell>הרשאות</TableCell>
+                <TableCell>סטטוס</TableCell>
                 <TableCell>פעולות</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-            {filteredUsers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  לא נמצאו משתמשים
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.displayName || 'Unknown'}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={user.isAdmin || false}
-                      onChange={() => handlePermissionToggle(user.id, 'isAdmin', user.isAdmin)}
-                      inputProps={{ 'aria-label': 'admin status' }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={user.isEmployer || false}
-                      onChange={() => handlePermissionToggle(user.id, 'isEmployer', user.isEmployer)}
-                      inputProps={{ 'aria-label': 'employer status' }}
-                      disabled={user.pendingEmployer}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {user.isEmployer ? 'מאושר' : user.pendingEmployer ? 'ממתין לאישור' : 'לא מעסיק'}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      component={Link}
-                      to={`/user/${user.id}`}
-                      variant="outlined"
-                      size="small"
-                      sx={{ mr: 1 }}
-                    >
-                      צפייה בפרופיל
-                    </Button>
-                    {user.pendingEmployer && (
-                      <Button
-                        onClick={() => setTab(1)} 
-                        variant="contained"
-                        size="small"
-                        color="primary"
-                      >
-                        בקשה לאישור
-                      </Button>
-                    )}
+              {filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    לא נמצאו משתמשים
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
+              ) : (
+                filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <Box display="flex" alignItems="center">
+                        <Avatar
+                          src={user.profileURL || user.photoURL || '/placeholder.svg'}
+                          alt={user.name || user.displayName || 'User'}
+                          sx={{ width: 40, height: 40, mr: 2 }}
+                        />
+                        <Box>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                            {user.name || user.displayName || 'לא צוין'}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            {user.email}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" flexDirection="column">
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={user.isAdmin || false}
+                              onChange={() =>
+                                handlePermissionToggle(
+                                  user.id,
+                                  'isAdmin',
+                                  user.isAdmin
+                                )
+                              }
+                              color="primary"
+                            />
+                          }
+                          label="מנהל"
+                        />
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={user.isEmployer || false}
+                              onChange={() =>
+                                handlePermissionToggle(
+                                  user.id,
+                                  'isEmployer',
+                                  user.isEmployer
+                                )
+                              }
+                              disabled={user.pendingEmployer}
+                              color="primary"
+                            />
+                          }
+                          label="מעסיק"
+                        />
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      {user.isEmployer ? (
+                        <Typography color="primary">מאושר</Typography>
+                      ) : user.pendingEmployer ? (
+                        <Typography color="secondary">ממתין לאישור</Typography>
+                      ) : (
+                        <Typography color="textSecondary">לא מעסיק</Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        component={Link}
+                        to={`/user/${user.id}`}
+                        variant="outlined"
+                        size="small"
+                        sx={{ mr: 1 }}
+                      >
+                        צפייה בפרופיל
+                      </Button>
+                      {user.pendingEmployer && (
+                        <Button
+                          onClick={() => setTab(1)}
+                          color="primary"
+                          size="small"
+                        >
+                          בקשה לאישור
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
           </Table>
         </TableContainer>
-      </Paper>
-    </Container>
+      )}
+    </Box>
   );
-}
+};
+
+export default AdminUsersPage;

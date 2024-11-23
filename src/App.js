@@ -10,6 +10,7 @@ import { CacheProvider } from '@emotion/react';
 import createCache from '@emotion/cache';
 import CompanyInfoPage from 'pages/CompanyInfoPage';
 import JobDetails from 'pages/publishedWorkes/JobDetails';
+import UserReviews from 'pages/UserReviews';
 // ייבוא כל הרכיבים שלך
 import PostJob from './pages/PostJob';
 import AdminStatisticsPage from './pages/Management/AdminStatisticsPage.js';
@@ -19,7 +20,7 @@ import HomePage from './pages/recycling basket/HomePage';
 // import JobListPage from './pages/JobListPage';
 import JobListPage from 'pages/mainJobs/JobListPage';
 
-import SavedJobsPage from './pages/SavedJobsPage';
+import SavedJobsPage from './pages/mainJobs/SavedJobsPage';
 import ManageUsers from './pages/Management/ManageUsers';
 import AccountPage from './pages/profile/AccountPage';
 import JobChat from './pages/JobChat';
@@ -98,7 +99,7 @@ function App() {
                   }
                 />
 
-
+                  <Route path="/my-reviews" element={<UserReviews />} />
                 <Route path="/company-info" element={<CompanyInfoPage />} />
                 <Route path="/job/:id" element={<JobDetails />} />
                 <Route path="/jobs" element={<JobListPage />} />

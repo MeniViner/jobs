@@ -1,25 +1,27 @@
+// EmployeeProfile.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Avatar, IconButton, List, ListItem, ListItemText, ListItemIcon, Button, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, Divider, LinearProgress,
-  Menu, MenuItem, CircularProgress,
+  Menu, MenuItem, CircularProgress, ListItemAvatar,
 } from '@mui/material';
 import { Business as BusinessIcon } from '@mui/icons-material';
+import { RatingDisplay } from '../rating/RatingSystem';
 
 import {
-  ArrowBack as ArrowBackIcon, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon,
+  ArrowBack as ArrowBackIcon, ChevronLeft as ChevronLeftIcon,
   Edit as EditIcon, Star as StarIcon, Add as AddIcon, Delete as DeleteIcon, Security as SecurityIcon,
-  Payment as PaymentIcon, Notifications as NotificationsSettingsIcon, Lock as PrivacyIcon,
+  Payment as PaymentIcon, Notifications as NotificationsSettingsIcon,
   Settings as PreferencesIcon, Person as PersonIcon, PhotoCamera as PhotoCameraIcon, Home as HomeIcon,
   RateReview as RateReviewIcon,
 } from '@mui/icons-material';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { RatingDisplay } from '../rating/RatingSystem';
-import { ContactMethodsManager } from '../../components/code parts/ContactMethodsManager';
 import { SendFeedback } from '../../components/code parts/FeedbackManager';
-
+import { ContactMethodsManager } from '../../components/code parts/ContactMethodsManager';
+import { db } from '../../services/firebase';
 
 export default function EmployeeProfile({
   profileData,
@@ -31,22 +33,24 @@ export default function EmployeeProfile({
 }) {
   const navigate = useNavigate();
   const [editingPersonalInfo, setEditingPersonalInfo] = useState(false);
+  const [editingRatings, setEditingRatings] = useState(false);
+  const [editingFeedback, setEditingFeedback] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [editedData, setEditedData] = useState(profileData);
   const [newProfilePicture, setNewProfilePicture] = useState(null);
   const [completionPercentage, setCompletionPercentage] = useState(0);
-  const [showSecurity, setShowSecurity] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [showRating, setShowRating] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [employerRequestStatus, setEmployerRequestStatus] = useState(null);
   const [shouldScrollTop, setShouldScrollTop] = useState(false);
   const auth = getAuth();
-  const db = getFirestore();
+  const [showRating, setShowRating] = useState(false);
+
   const userId = auth.currentUser ? auth.currentUser.uid : null;
   const [contactMethods, setContactMethods] = useState(profileData.contactMethods || []);
-
+  const [ratings, setRatings] = useState([]);
+  const [showSecurity, setShowSecurity] = useState(false); // השארתי את showSecurity אם אתה משתמש בו
+  const db = getFirestore();
 
   const CloudinaryUpload = async (file, callback) => {
     const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
@@ -92,7 +96,7 @@ export default function EmployeeProfile({
       window.scrollTo(0, 0);
       setShouldScrollTop(false);
     }
-  }, [shouldScrollTop]); // Update 2
+  }, [shouldScrollTop]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -107,10 +111,31 @@ export default function EmployeeProfile({
         }
       }
     };
-  
+
     fetchUserData();
   }, [auth.currentUser, db]);
-  
+
+  useEffect(() => {
+    if (editingRatings) {
+      fetchRatings();
+    }
+  }, [editingRatings]);
+
+  const fetchRatings = async () => {
+    try {
+      const ratingsRef = collection(db, 'ratings');
+      const q = query(ratingsRef, where('recipientId', '==', userId));
+      const querySnapshot = await getDocs(q);
+      const ratingsData = [];
+      querySnapshot.forEach((doc) => {
+        ratingsData.push({ id: doc.id, ...doc.data() });
+      });
+      setRatings(ratingsData);
+    } catch (error) {
+      console.error('Error fetching ratings:', error);
+    }
+  };
+
   const calculateCompletionPercentage = (data) => {
     const fields = [
       'name',
@@ -223,8 +248,24 @@ export default function EmployeeProfile({
     navigate('/employer-registration');
   };
 
-  const handleEditPersonalInfo = () => { // Update 3
+  const handleEditPersonalInfo = () => {
     setEditingPersonalInfo(true);
+    setEditingRatings(false);
+    setEditingFeedback(false);
+    setShouldScrollTop(true);
+  };
+
+  const handleEditRatings = () => {
+    setEditingRatings(true);
+    setEditingPersonalInfo(false);
+    setEditingFeedback(false);
+    setShouldScrollTop(true);
+  };
+
+  const handleEditFeedback = () => {
+    setEditingFeedback(true);
+    setEditingPersonalInfo(false);
+    setEditingRatings(false);
     setShouldScrollTop(true);
   };
 
@@ -316,16 +357,19 @@ export default function EmployeeProfile({
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
           mb: 2,
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          פרטים אישיים
-        </Typography>
-        <IconButton onClick={() => setEditingPersonalInfo(false)}>
+        <IconButton onClick={() => {
+          setEditingPersonalInfo(false);
+          setShouldScrollTop(true);
+        }}>
           <ArrowBackIcon />
         </IconButton>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', flexGrow: 1, textAlign: 'center' }}>
+          פרטים אישיים
+        </Typography>
+        <Box width={48} />
       </Box>
       <List>
         {[
@@ -353,11 +397,9 @@ export default function EmployeeProfile({
                   : editedData[field] || 'לא סופק'
               }
             />
-            <ListItemIcon>
-              <IconButton edge="end" onClick={() => handleEdit(field)}>
-                {editedData[field] !== undefined ? <EditIcon /> : <AddIcon />}
-              </IconButton>
-            </ListItemIcon>
+            <IconButton edge="end" onClick={() => handleEdit(field)}>
+              {editedData[field] !== undefined ? <EditIcon /> : <AddIcon />}
+            </IconButton>
           </ListItem>
         ))}
       </List>
@@ -365,6 +407,59 @@ export default function EmployeeProfile({
         contactMethods={contactMethods}
         setContactMethods={setContactMethods}
       />
+    </Box>
+  );
+
+  const renderRatings = () => (
+    <Box>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2,
+        }}
+      >
+        <IconButton onClick={() => {
+          setEditingRatings(false);
+          setShouldScrollTop(true);
+        }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', flexGrow: 1, textAlign: 'center' }}>
+          דירוגים
+        </Typography>
+        <Box width={48} />
+      </Box>
+      {/* מציגים את הדירוגים ללא תנאי */}
+      <Box sx={{ pl: 4, pr: 2, py: 2 }}>
+        <RatingDisplay userId={auth.currentUser?.uid} isEmployer={false} />
+      </Box>
+    </Box>
+  );
+  
+  
+
+  const renderFeedback = () => (
+    <Box>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          mb: 2,
+        }}
+      >
+        <IconButton onClick={() => {
+          setEditingFeedback(false);
+          setShouldScrollTop(true);
+        }}>
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', flexGrow: 1, textAlign: 'center' }}>
+          משוב למפתחי האתר
+        </Typography>
+        <Box width={48} />
+      </Box>
+      <SendFeedback />
     </Box>
   );
 
@@ -509,7 +604,7 @@ export default function EmployeeProfile({
       </Typography>
 
       <List>
-        <ListItem button onClick={handleEditPersonalInfo}> {/* Update 4 */}
+        <ListItem button onClick={handleEditPersonalInfo}>
           <ListItemIcon>
             <PersonIcon />
           </ListItemIcon>
@@ -517,25 +612,20 @@ export default function EmployeeProfile({
           <ChevronLeftIcon />
         </ListItem>
         <Divider />
-        <ListItem button onClick={() => setShowRating(!showRating)}>
+        <ListItem button onClick={handleEditRatings}>
           <ListItemIcon>
             <StarIcon />
           </ListItemIcon>
           <ListItemText primary="דירוגים" />
           <ChevronLeftIcon />
         </ListItem>
-        {showRating && (
-          <Box sx={{ pl: 4, pr: 2, py: 2 }}>
-            <RatingDisplay userId={auth.currentUser?.uid} isEmployer={false} />
-          </Box>
-        )}
         <Divider />
         <ListItem button onClick={() => navigate('/company-info')}>
           <ListItemIcon>
             <BusinessIcon />
           </ListItemIcon>
           <ListItemText primary="מידע ושיתוף" />
-        <ChevronLeftIcon />
+          <ChevronLeftIcon />
         </ListItem>
         <Divider />
         <ListItem button onClick={() => setShowSecurity(!showSecurity)}>
@@ -572,21 +662,18 @@ export default function EmployeeProfile({
             )}
           </Box>
         )}
-                <ListItem button onClick={() => setShowFeedback(!showFeedback)}>
-          <ListItemIcon><RateReviewIcon /></ListItemIcon>
+        <Divider />
+        <ListItem button onClick={handleEditFeedback}>
+          <ListItemIcon>
+            <RateReviewIcon />
+          </ListItemIcon>
           <ListItemText primary="משוב למפתחי האתר" />
           <ChevronLeftIcon />
         </ListItem>
-        {showFeedback && (
-          <Box sx={{ pl: 4, pr: 2, py: 2 }}>
-            <SendFeedback />
-          </Box>
-        )}
         <Divider />
         {[
           { key: 'payments', icon: <PaymentIcon />, label: 'תשלומים (יגיע בקרוב)' },
           { key: 'notifications', icon: <NotificationsSettingsIcon />, label: 'התראות' },
-          // { key: 'privacy', icon: <PrivacyIcon />, label: 'פרטיות ושיתוף' },
           { key: 'preferences', icon: <PreferencesIcon />, label: 'העדפות' },
         ].map((item) => (
           <React.Fragment key={item.key}>
@@ -616,7 +703,13 @@ export default function EmployeeProfile({
 
   return (
     <Box sx={{ bgcolor: 'background.paper', minHeight: '100vh' }}>
-      {editingPersonalInfo ? renderPersonalInfo() : renderMainContent()}
+      {editingPersonalInfo
+        ? renderPersonalInfo()
+        : editingRatings
+        ? renderRatings()
+        : editingFeedback
+        ? renderFeedback()
+        : renderMainContent()}
 
       {renderEditDialog()}
 

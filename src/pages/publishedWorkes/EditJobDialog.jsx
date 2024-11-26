@@ -64,7 +64,7 @@ export default function EditJobDialog({ open, handleClose, job, handleSave }) {
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Grid container spacing={2}>
-            <Grid item xs={6}>
+            <Grid item xs={12}>
               <TextField
                 name="title"
                 label="כותרת המשרה"
@@ -96,6 +96,17 @@ export default function EditJobDialog({ open, handleClose, job, handleSave }) {
                 name="location"
                 label="מיקום"
                 value={editedJob.location || ''}
+                onChange={handleChange}
+                fullWidth
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                name="workersNeeded"
+                label="מספר עובדים נדרש"
+                type="number"
+                value={editedJob.workersNeeded || ''}
                 onChange={handleChange}
                 fullWidth
                 variant="outlined"

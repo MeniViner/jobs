@@ -24,72 +24,55 @@ export default function ApprovalRequests({ onCountUpdate }) {
   const [processing, setProcessing] = useState(false);
   const db = getFirestore();
 
-  // useEffect(() => {
-  //   setLoading(true);
-  //   setError('');
-
-  //   const employerQuery = query(collection(db, 'employers'), where('status', '==', 'pending'));
-  //   const deletionQuery = query(collection(db, 'users'), where('pendingDeletion', '==', true));
-
-  //   const unsubscribeEmployers = onSnapshot(
-  //     employerQuery,
-  //     (snapshot) => {
-  //       const employers = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  //       setPendingEmployers(employers);
-  //       setFilteredEmployers(employers);
-  //       updateTotalCount(employers.length, pendingDeletions.length);
-  //       setLoading(false);
-  //     },
-  //     (err) => {
-  //       console.error('Error fetching employer requests:', err);
-  //       setError('שגיאה בטעינת בקשות מעסיקים');
-  //       setLoading(false);
-  //     }
-  //   );
-
-  //   const unsubscribeDeletions = onSnapshot(
-  //     deletionQuery,
-  //     (snapshot) => {
-  //       const deletions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  //       setPendingDeletions(deletions);
-  //       setFilteredDeletions(deletions);
-  //       updateTotalCount(pendingEmployers.length, deletions.length);
-  //       setLoading(false);
-  //     },
-  //     (err) => {
-  //       console.error('Error fetching deletion requests:', err);
-  //       setError('שגיאה בטעינת בקשות מחיקה');
-  //       setLoading(false);
-  //     }
-  //   );
-
-  //   return () => {
-  //     unsubscribeEmployers();
-  //     unsubscribeDeletions();
-  //   };
-  // }, [db, onCountUpdate]);
-
   useEffect(() => {
     setLoading(true);
-  
+    setError('');
+
+    const employerQuery = query(collection(db, 'employers'), where('status', '==', 'pending'));
     const deletionQuery = query(collection(db, 'users'), where('pendingDeletion', '==', true));
+
+    const unsubscribeEmployers = onSnapshot(
+      employerQuery,
+      (snapshot) => {
+        const employers = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setPendingEmployers(employers);
+        setFilteredEmployers(employers);
+        updateTotalCount(employers.length, pendingDeletions.length);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error fetching employer requests:', err);
+        setError('שגיאה בטעינת בקשות מעסיקים');
+        setLoading(false);
+      }
+    );
+
     const unsubscribeDeletions = onSnapshot(
       deletionQuery,
       (snapshot) => {
         const deletions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         setPendingDeletions(deletions);
-        setFilteredDeletions(deletions); // Only if filtering is required
-        onCountUpdate(deletions.length);
+        setFilteredDeletions(deletions);
+        
+        updateTotalCount(pendingEmployers.length, deletions.length);
+        // setFilteredDeletions(deletions); // Only if filtering is required
+
         setLoading(false);
       },
       (err) => {
         console.error('Error fetching deletion requests:', err);
+        setError('שגיאה בטעינת בקשות מחיקה');
         setLoading(false);
       }
     );
-  
-    return () => unsubscribeDeletions(); // Ensure proper cleanup
+
+    return () => {
+      unsubscribeEmployers();
+      unsubscribeDeletions();
+    };
   }, [db, onCountUpdate]);
+
+
 
   const handleCountUpdate = useCallback((count) => {
     onCountUpdate(count); // Ensure this doesn't trigger state changes repeatedly

@@ -386,10 +386,10 @@ export default function JobChat() {
         <ListItemAvatar>
           <Link to={`/user/${profileId}`} style={{ textDecoration: 'none' }}>
           <Avatar
-                      src={user.profileURL || user.photoURL || '/placeholder.svg'}
-                      alt={user.name || 'User'}
-                      sx={{ width: 32, height: 32 }}
-                    />
+            src={user.profileURL || user.photoURL || '/placeholder.svg'}
+            alt={user.name || 'User'}
+            sx={{ width: 32, height: 32 }}
+          />
           </Link>
         </ListItemAvatar>
         <ListItemText

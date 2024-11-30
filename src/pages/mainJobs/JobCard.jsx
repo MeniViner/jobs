@@ -1,16 +1,7 @@
 import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Bookmark, 
-  Briefcase, 
-  MapPin, 
-  Clock, 
-  ChevronDown, 
-  ChevronUp, 
-  CheckCircle, 
-  Calendar, 
-  Users,
-  Building2
+  Bookmark, Briefcase, MapPin, Clock, ChevronDown, ChevronUp, CheckCircle, Calendar, Users,
 } from 'lucide-react';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import { Link } from 'react-router-dom';

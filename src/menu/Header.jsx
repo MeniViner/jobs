@@ -196,10 +196,12 @@ export default function Header() {
         <AppBar 
           position="fixed" 
           color="default" 
-          elevation={0} 
+          // elevation={0} 
+          elevation={scrolled ? 4 : 0}
           sx={{ 
             top: 0, 
-            borderBottom: '1px solid rgba(0, 0, 0, 0.12)', 
+            // borderBottom: '1px solid rgba(0, 0, 0, 0.12)', 
+            borderBottom: scrolled ? 'none' : '1px solid rgba(0, 0, 0, 0.12)',
             zIndex: theme.zIndex.drawer + 2,
             backgroundColor: 'background.paper',
           }}
@@ -230,18 +232,38 @@ export default function Header() {
               WorkMatch
             </Typography>
 
-            {/* אייקון התראות */}
-            <IconButton
-              onClick={() => navigate('/notifications')}
-              sx={{ p: '10px' }}
-              aria-label="notifications"
-            >
-              <Badge badgeContent={notificationCount} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
+            {/* אייקון פרופיל והתראות בצד שמאל */}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              {/* אייקון התראות */}
+              <IconButton
+                onClick={() => navigate('/notifications')}
+                sx={{ p: '10px' }}
+                aria-label="notifications"
+              >
+                <Badge badgeContent={notificationCount} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+
+              {/* אייקון פרופיל */}
+              <IconButton
+                onClick={() => navigate('/account')}
+                sx={{ p: '10px' }}
+                aria-label="profile"
+                disabled={!user}
+              >
+                <Avatar 
+                  // src={profileImageUrl} // תחליף את זה בכתובת התמונה של הפרופיל
+                  src={user?.profileURL || user?.photoURL || '/default-profile.png'}
+                  alt={user?.name || 'Guest'}
+                  sx={{ width: 32, height: 32 }}
+                />
+              </IconButton>
+
+            </Box>
           </Toolbar>
         </AppBar>
+
 
         {/* Drawer */}
         <Drawer

@@ -14,9 +14,7 @@ import {
 const AccountPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  // const { user, setUser } = useContext(AuthContext);
   const { user, setUser, loading: authLoading } = useContext(AuthContext);
-
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

@@ -49,7 +49,8 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen p-4 bg-gradient-to-br from-purple-50 to-indigo-100">
-      <h1 className="text-2xl font-bold text-center text-indigo-900 mb-6">היסטוריית מועמדויות</h1>
+      <h4 className="text font-bold text-center text-indigo-900 mb-6">היסטוריית מועמדויות (?)</h4>
+      <h1 className="text-2xl font-bold text-center text-indigo-900 mb-6">היסטוריית העבודות שלי</h1>
 
       <div className="grid grid-cols-1 gap-4">
         {history.map((job) => (

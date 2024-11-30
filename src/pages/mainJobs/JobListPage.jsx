@@ -168,26 +168,26 @@ export default function JobListPage() {
           status: 'applied',
         });
   
-        // const jobDoc = await getDoc(doc(db, 'jobs', jobId));
-        // const jobData = jobDoc.exists() ? jobDoc.data() : null;
+        const jobDoc = await getDoc(doc(db, 'jobs', jobId));
+        const jobData = jobDoc.exists() ? jobDoc.data() : null;
   
-        // const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        // const userData = userDoc.exists() ? userDoc.data() : null;
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const userData = userDoc.exists() ? userDoc.data() : null;
   
-        // if (jobData && userData) {
-          // const applicantName = userData.name || 'מועמד לא מזוהה';
+        if (jobData && userData) {
+          const applicantName = userData.name || 'מועמד לא מזוהה';
   
-          // await addDoc(notificationRef, {
-          //   userId: jobData.employerId,
-          //   jobId: jobId,
-          //   applicantId: currentUser.uid,
-          //   jobTitle: jobData.title || 'Unknown Job',
-          //   type: 'new_application',
-          //   message: `המשתמש ${applicantName} הגיש מועמדות למשרה: ${jobData.title}`,
-          //   timestamp: serverTimestamp(),
-          //   isHistory: false,
-          // });
-          // }
+          await addDoc(notificationRef, {
+            userId: jobData.employerId,
+            jobId: jobId,
+            applicantId: currentUser.uid,
+            jobTitle: jobData.title || 'Unknown Job',
+            type: 'new_application',
+            message: `המשתמש ${applicantName} הגיש מועמדות למשרה: ${jobData.title}`,
+            timestamp: serverTimestamp(),
+            isHistory: false,
+          });
+          }
   
         setAppliedJobs([...appliedJobs, jobId]);
         setSnackbar({ open: true, message: 'המועמדות הוגשה בהצלחה!', severity: 'success' });

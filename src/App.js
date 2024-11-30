@@ -21,7 +21,7 @@ import HomePage from './pages/recycling basket/HomePage';
 import JobListPage from 'pages/mainJobs/JobListPage';
 
 import SavedJobsPage from './pages/mainJobs/SavedJobsPage';
-import ManageUsers from './pages/Management/ManageUsers';
+import ManageUsers from './pages/Management/ManageUsers/ManageUsers';
 import AccountPage from './pages/profile/AccountPage';
 import JobChat from './pages/JobChat';
 import LoginPage from './pages/profile/loginPage';
@@ -29,7 +29,7 @@ import AdminPage from './pages/Management/AdminPage.jsx';
 import AdminUsersPage from './pages/Management/AdminUsersPage';
 import MyWorksPage from './pages/publishedWorkes/MyWorksPage';
 import MyApplications from './pages/NominatedWorks.js';
-import UserProfilePage from './pages/profile/SocialProfile.js';
+import UserProfilePage from './pages/profile/SocialProfile/SocialProfilePage'
 import TopUsersPage from './pages/Management/TopUsersPage.js';
 import JobCompletionRating from './pages/rating/JobCompletionRating';
 import EmployerRegistrationForm from './pages/profile/EmployerRegistrationForm.jsx';
@@ -118,8 +118,6 @@ function App() {
                 <Route path="/mobile-menu" element={<MobileMenuPage />} />
                 <Route path="/my-job-history" element={<HistoryPage />} />
                 <Route path="/notification-settings" element={<NotificationSettings />} />
-
-
                 <Route path="/notification-test" element={<NotificationTestPage />} />
 
                 <Route path="*" element={<Navigate to="/" replace />} />

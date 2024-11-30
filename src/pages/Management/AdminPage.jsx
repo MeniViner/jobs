@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Container, Typography, Tabs, Tab, Box, Badge, CircularProgress } from '@mui/material';
 import AdminUsersPage from './AdminUsersPage';
-import ManageUsers from './ManageUsers';
+import ManageUsers from './ManageUsers/ManageUsers';
 import AdminJobsDashboard from './AdminMessagesDashboard';
 import ApprovalRequests from './ApprovalRequests';
 import AdminStatisticsPage from './AdminStatisticsPage';

@@ -432,7 +432,7 @@ export default function Header() {
 
           <Button
             variant="contained"
-            startIcon={<AddIcon />}
+            startIcon={<AddIcon sx={{ml: 1}}/>}
             onClick={handlePostJobClick}
             sx={{
               ml: 2,

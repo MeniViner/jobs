@@ -10,7 +10,7 @@ import { db } from '../../../services/firebase';
 import { getAuth } from 'firebase/auth';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import MyJobsList from '../MyJobsList';
+import MyJobsList from './MyJobsList';
 import DeleteJobDialog from '../DeleteJobDialog';
 import EditJobDialog from '../EditJobDialog';
 import ChatDialog from '../ChatDialog';

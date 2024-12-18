@@ -27,7 +27,7 @@ import JobChat from './pages/JobChat';
 import LoginPage from './pages/profile/loginPage';
 import AdminPage from './pages/Management/AdminPage.jsx';
 import AdminUsersPage from './pages/Management/AdminUsersPage';
-import MyWorksPage from './pages/publishedWorkes/MyWorksPage';
+import MyWorksPage from './pages/publishedWorkes/MyWorks/MyWorksPage-old';
 import MyApplications from './pages/NominatedWorks.js';
 import UserProfilePage from './pages/profile/SocialProfile/SocialProfilePage'
 import TopUsersPage from './pages/Management/TopUsersPage.js';

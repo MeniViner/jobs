@@ -6,16 +6,16 @@ import MuiAlert from '@mui/material/Alert';
 import {
   collection, query, where, onSnapshot, doc, getDoc, getDocs, deleteDoc, updateDoc, addDoc, serverTimestamp, collectionGroup,
 } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { db } from '../../../services/firebase';
 import { getAuth } from 'firebase/auth';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import MyJobsList from './MyJobsList';
-import DeleteJobDialog from './DeleteJobDialog';
-import EditJobDialog from './EditJobDialog';
-import ChatDialog from './ChatDialog';
-import JobCompletionRating from '../rating/JobCompletionRating';
-import JobDetails from './JobDetails'; 
+import MyJobsList from '../MyJobsList';
+import DeleteJobDialog from '../DeleteJobDialog';
+import EditJobDialog from '../EditJobDialog';
+import ChatDialog from '../ChatDialog';
+import JobCompletionRating from '../../rating/JobCompletionRating';
+import JobDetails from '../JobDetails'; 
 import { RefreshCw} from 'lucide-react';
 
 
@@ -309,8 +309,8 @@ export default function MyWorksPage() {
       {(!selectedJob || !isMobile) && (
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center space-x-4 rtl:space-x-reverse">
+            <div className="flex items-center mt-1 h-16 space-x-4 rtl:space-x-reverse">
+              {/* <div className="flex items-center space-x-4 rtl:space-x-reverse justify-between"> */}
                 <TabButton 
                   active={activeTab === 0} 
                   onClick={() => setActiveTab(0)}
@@ -323,13 +323,13 @@ export default function MyWorksPage() {
                 >
                   היסטוריה
                 </TabButton>
-              </div>
-              <button
+              {/* </div> */}
+              {/* <button
                 onClick={fetchEmployerJobs}
                 className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
               >
                 <RefreshCw className="w-5 h-5" />
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

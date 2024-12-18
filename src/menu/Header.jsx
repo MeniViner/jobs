@@ -232,7 +232,7 @@ export default function Header() {
               WorkMatch
             </Typography>
 
-            {/* אייקון פרופיל והתראות בצד שמאל */}
+            {/* אייקון התראות בצד שמאל */}
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               {/* אייקון התראות */}
               <IconButton
@@ -244,23 +244,8 @@ export default function Header() {
                   <NotificationsIcon />
                 </Badge>
               </IconButton>
-
-              {/* אייקון פרופיל */}
-              <IconButton
-                onClick={() => navigate('/account')}
-                sx={{ p: '10px' }}
-                aria-label="profile"
-                disabled={!user}
-              >
-                <Avatar 
-                  // src={profileImageUrl} // תחליף את זה בכתובת התמונה של הפרופיל
-                  src={user?.profileURL || user?.photoURL || '/default-profile.png'}
-                  alt={user?.name || 'Guest'}
-                  sx={{ width: 32, height: 32 }}
-                />
-              </IconButton>
-
             </Box>
+            
           </Toolbar>
         </AppBar>
 

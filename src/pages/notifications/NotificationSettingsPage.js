@@ -78,7 +78,7 @@ export default function NotificationSettings() {
               color="primary"
             />
           }
-          label={isNotificationsEnabled ? 'התראות דפדפן מופעלות' : 'התראות דפדפן מכובוץ'}
+          label={isNotificationsEnabled ? 'התראות דפדפן מופעלות' : 'התראות דפדפן מכובות'}
         />
       </Box>
       <Button 

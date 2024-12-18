@@ -534,10 +534,10 @@ export default function NotificationsPage() {
             <IconButton onClick={() => navigate('/notification-settings')}>
               <SettingsIcon />
             </IconButton>
-            test
+            {/* test
             <IconButton onClick={() => navigate('/notification-test')}>
               <SettingsIcon />
-            </IconButton>
+            </IconButton> */}
 
             <Button
               variant="text"
